@@ -56,13 +56,15 @@ Firestore, and Storage enabled.
 - **Auth domain:** `aasthi-3a009.firebaseapp.com`
 - **Storage bucket:** `aasthi-3a009.firebasestorage.app`
 - **Enabled:** Email/Password + Google auth, Firestore, Storage.
-- **Authorized domains** include `localhost` and the hosted preview domain.
+- **Authorized domains:** `localhost` plus the Firebase-provided
+  `aasthi-3a009.firebaseapp.com` / `.web.app`.
 - **Current admin allow-list:** `gadiger14@gmail.com` (no admin password stored anywhere).
 
 ## Android package name
-`com.emergent.appcraft.navjwn`  (in `frontend/app.json`, iOS bundle id identical).
-The original Firebase Android app registration in `google-services.json` used
-`com.aasthi.app`; align these before an Android production build.
+`com.aasthi.app` — consistent across `frontend/app.json` (`android.package` and
+`ios.bundleIdentifier`), `android/app/build.gradle` (`namespace` and
+`applicationId`), and the Firebase Android app registration in
+`google-services.json`. Nothing to align.
 
 ## Completed features
 - Firebase **Auth**: Email/Password (auto-register on first sign-in) + **Google** (web popup).
