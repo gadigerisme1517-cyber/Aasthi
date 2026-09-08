@@ -101,9 +101,10 @@ function freshDraft(): Draft {
     title: "New independent house listing",
     addr: "Nandyal Road, Kurnool",
     geo: "15.8281, 78.0373",
-    price: "â‚¹86,00,000",
+    price: "₹86,00,000",
     areaUnit: "Square Feet",
-    area: "2,240 sq.ft",
+    // Bare number: the unit picker in app/sell/details.tsx appends the suffix.
+    area: "2,240",
     facing: "East",
     beds: "-",
     baths: "-",

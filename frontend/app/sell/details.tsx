@@ -15,6 +15,19 @@ const UNIT_SUFFIX: Record<string, string> = {
   Acres: "acres",
 };
 
+// The unit picker owns the suffix. Strip one that is already present so a
+// re-entered draft (draft.area repopulates this field) or a hand-typed
+// "2240 sq.ft" cannot produce "2240 sq.ft sq.ft".
+function bareArea(value: string) {
+  const s = value.trim();
+  for (const suffix of Object.values(UNIT_SUFFIX)) {
+    if (s.toLowerCase().endsWith(suffix.toLowerCase())) {
+      return s.slice(0, -suffix.length).trim();
+    }
+  }
+  return s;
+}
+
 export default function SellDetails() {
   const router = useRouter();
   const { draft, setDraft, showToast } = useApp();
@@ -47,7 +60,7 @@ export default function SellDetails() {
       title: title.trim(),
       price: price.trim(),
       areaUnit: unit,
-      area: `${area.trim()} ${UNIT_SUFFIX[unit] ?? ""}`.trim(),
+      area: `${bareArea(area)} ${UNIT_SUFFIX[unit] ?? ""}`.trim(),
       beds: beds.trim() || "-",
       baths: baths.trim() || "-",
       desc: desc.trim(),
