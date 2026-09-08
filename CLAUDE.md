@@ -105,6 +105,18 @@ policy, delete/logout), seller "Get verified" submission, and the /admin panel
 - **Phone OTP** and **FCM push** — activate only on a native build.
 - **i18n** (Telugu/Hindi) — preference is stored; strings not translated.
 
+## Open questions (undecided — do not "fix" without a decision)
+- **Who should a lead notify?** `src/services/db.ts` `addLead()` writes the
+  notification with `uid: payload.buyerUid`, so the *buyer* receives
+  "The seller has been notified and will respond shortly." The seller is never
+  notified. The comment on the `notifications` block in
+  `firebase/firestore.rules` describes the opposite intent ("created for
+  another user (e.g. seller notified of a buyer's enquiry)"), and the rule
+  itself allows creating a notification addressed to someone else. Either the
+  buyer-side receipt is intentional and the rules comment is stale, or the
+  seller notification was never wired up. Undecided as of 2026-09-08 — leave
+  as-is until the owner rules on it.
+
 ## STRICT rules for future work
 1. Do NOT commit secrets. `.env`, service-account JSON, google-services.json are gitignored — keep it that way.
 2. Do NOT replace live Firebase with mock data. Do NOT downgrade Email/Password or Google auth.

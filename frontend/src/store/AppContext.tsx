@@ -58,6 +58,8 @@ export type User = {
   partnerType?: string;
   businessName?: string;
   operatingAreas?: string;
+  // Epoch ms, written by change-password.tsx via saveUserDoc.
+  passwordChangedAt?: number;
 };
 
 export type Draft = {
@@ -154,7 +156,12 @@ type Ctx = {
   setPhoto: (i: number, uri: string | null) => void;
   resetDraft: () => void;
   publishListing: () => Promise<void>;
-  addLead: (listingId: string, sellerId: number, type: "enquiry" | "contact" | "visit") => void;
+  addLead: (
+    listingId: string,
+    sellerId: number,
+    type: "enquiry" | "contact" | "visit",
+    message?: string,
+  ) => void;
   submitBug: (category: string, desc: string) => Promise<string>;
   toggleBlock: (sellerId: number) => void;
 };
@@ -246,6 +253,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       partnerType: profile?.partnerType ?? "",
       businessName: profile?.businessName ?? "",
       operatingAreas: profile?.operatingAreas ?? "",
+      // No default: privacy.tsx distinguishes "never changed" from a real
+      // timestamp, so this must stay undefined until the doc actually has it.
+      passwordChangedAt: profile?.passwordChangedAt,
     }),
     [profile],
   );
@@ -410,9 +420,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [uid, draft, resetDraft]);
 
   const addLead = useCallback(
-    (listingId: string, sellerId: number, type: "enquiry" | "contact" | "visit") => {
+    (
+      listingId: string,
+      sellerId: number,
+      type: "enquiry" | "contact" | "visit",
+      message?: string,
+    ) => {
       if (!uid) return;
-      fsAddLead({ listingId, sellerId, buyerUid: uid, type }).catch(() => {});
+      // Omit `message` entirely when the caller passes nothing. Firestore is
+      // initialised without ignoreUndefinedProperties, so spreading
+      // `message: undefined` would make addDoc throw on contact.tsx, which
+      // calls this with three arguments. An empty string is a deliberate
+      // value and is kept.
+      fsAddLead({
+        listingId,
+        sellerId,
+        buyerUid: uid,
+        type,
+        ...(message !== undefined ? { message } : {}),
+      }).catch(() => {});
     },
     [uid],
   );
