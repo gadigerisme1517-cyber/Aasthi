@@ -155,6 +155,13 @@ def main():
                     help="actually write the repairs (default is a dry run)")
     args = ap.parse_args()
 
+    # This script exists to print non-ASCII text, so it must not die on a
+    # console that cannot encode it (Windows cp1252 cannot represent U+20B9).
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+    except (AttributeError, ValueError):
+        pass
+
     token = get_token()
     print("MODE:", "APPLY - writing changes" if args.apply else "DRY RUN - nothing written")
     print("project:", PROJECT)

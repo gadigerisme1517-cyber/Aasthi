@@ -117,6 +117,40 @@ policy, delete/logout), seller "Get verified" submission, and the /admin panel
   seller notification was never wired up. Undecided as of 2026-09-08 — leave
   as-is until the owner rules on it.
 
+## Learned on 2026-09-08 (branch `restore/c-aa-2026-07`)
+
+**This branch has been run on a real device.** Built and installed on a Galaxy
+S24 Ultra (Android 16) and walked end to end: create a listing (title/beds/baths),
+enquiry with a message, visit with a time slot, change password, delete-account
+then cancel, block/unblock a seller, listing detail, and the contact pill. No
+crashes, no red boxes, no JS exceptions. Everything below was found by that walk,
+not by reading the code.
+
+- **A confirmation screen must never write.** `enquiry.tsx` and `visit.tsx` used
+  to confirm by navigating to `/contact`, whose mount effect calls
+  `addLead(..., "contact")`. So every enquiry and every visit silently wrote a
+  *second*, wrongly-typed lead and notification, and confirmed with the wrong
+  words ("Contact Request Sent"). It survived because `addLead` is
+  fire-and-forget with a swallowed `.catch(() => {})`, so nothing ever surfaced —
+  the only visible symptom was a pile of "Contact request sent" rows. Fixed by
+  adding `app/request-sent.tsx`, a purely presentational confirmation whose copy
+  is driven by `?type=`. Keep it side-effect free. `contact.tsx` still writes,
+  which is correct: `/contact` *is* the contact action.
+- **The area unit is owned by the unit picker, not the value.**
+  `app/sell/details.tsx` appends `UNIT_SUFFIX[unit]` on save, so `draft.area`
+  must stay a bare number. When the default carried its own "sq.ft", every
+  listing saved as "2,240 sq.ft sq.ft" — and picking any other unit produced
+  "2,240 sq.ft acres", i.e. the picker was worse than inert. `bareArea()` in that
+  file strips a suffix that is already present, because `useState(draft.area)`
+  repopulates the field from a saved draft and would otherwise double it again.
+- **The corrupted rupee sign came from source, not from the database.**
+  `freshDraft().price` held `â‚¹` (U+00E2 U+201A U+00B9), the UTF-8 bytes of
+  `₹` read as Windows-1252, so every new listing inherited it. Fixed at source;
+  the three already-stored rows were repaired with `scripts/repair_mojibake.py`
+  on 2026-09-08 and that script now reports 0. If you write Firestore from a
+  shell script, check the encoding — this is the same class of bug that mangles
+  backslashes in generated files on this machine.
+
 ## STRICT rules for future work
 1. Do NOT commit secrets. `.env`, service-account JSON, google-services.json are gitignored — keep it that way.
 2. Do NOT replace live Firebase with mock data. Do NOT downgrade Email/Password or Google auth.
