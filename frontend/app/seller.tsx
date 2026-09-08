@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { ResultCard } from "@/src/components/cards";
 import { Block, Empty, PageHead, Screen, SectionHead, T, TrustTag } from "@/src/components/ui";
@@ -23,9 +23,18 @@ function Fact({ b, label }: { b: string | number; label: string }) {
 export default function SellerDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { sellers, listingsBySeller } = useApp();
-  const seller = sellers.find((s) => s.id === Number(id)) ?? sellers[0];
-  const mine = listingsBySeller(seller.id);
+  const { sellers, listingsBySeller, blocked, toggleBlock, showToast } = useApp();
+  const seller = sellers.find((s) => s.id === Number(id));
+  const mine = listingsBySeller(seller?.id ?? -1);
+  const isBlocked = seller ? blocked.includes(seller.id) : false;
+
+  if (!seller) {
+    return (
+      <Screen header={<PageHead title="Seller" onBack={() => router.back()} />}>
+        <Empty title="Seller not found" body="This seller may have been removed." />
+      </Screen>
+    );
+  }
 
   return (
     <Screen header={<PageHead title="Seller" onBack={() => router.back()} />}>
@@ -46,10 +55,23 @@ export default function SellerDetail() {
         </View>
       </Block>
 
+      <Pressable
+        style={styles.blockRow}
+        onPress={() => {
+          toggleBlock(seller.id);
+          showToast(isBlocked ? `Unblocked ${seller.name}` : `Blocked ${seller.name}`);
+        }}
+        testID="seller-block-toggle"
+      >
+        <T weight={700} size={12} color={isBlocked ? colors.ink : colors.red}>
+          {isBlocked ? "Unblock this seller" : "Block this seller"}
+        </T>
+      </Pressable>
+
       <View style={styles.facts}>
-        <Fact b={seller.sold} label="Sold" />
-        <Fact b={seller.rating} label="Rating" />
-        <Fact b={mine.length} label="Listings" />
+        <Fact b={seller.sold} label="sold" />
+        <Fact b={seller.rating} label="rating" />
+        <Fact b={mine.length} label="listings" />
       </View>
 
       <SectionHead title="Listings" sub="Properties from this seller." />
@@ -70,6 +92,7 @@ const styles = StyleSheet.create({
   wide: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   left: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
   img: { width: 54, height: 54, borderRadius: 27 },
+  blockRow: { alignSelf: "flex-start", marginTop: 10 },
   facts: { flexDirection: "row", gap: 8, marginTop: 14 },
   fact: {
     flex: 1,

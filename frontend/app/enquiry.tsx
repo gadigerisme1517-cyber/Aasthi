@@ -15,7 +15,7 @@ export default function Enquiry() {
   const [msg, setMsg] = useState("Please share more details and available visit timings.");
 
   const onSend = () => {
-    addLead(listing.id, sellerOf(listing).id, "enquiry");
+    addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
     showToast("Enquiry sent to seller");
     router.replace(`/contact?id=${listing.id}`);
   };

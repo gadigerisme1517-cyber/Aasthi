@@ -1,4 +1,4 @@
-﻿import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import * as WebBrowser from "expo-web-browser";
 import {
   FacebookAuthProvider,
@@ -59,7 +59,7 @@ export async function facebookSignIn() {
     throw err;
   }
 
-  const redirectUri = "aasthi://authorize";
+  const redirectUri = `fb${FACEBOOK_APP_ID}://authorize`;
   const params = new URLSearchParams({
     client_id: FACEBOOK_APP_ID,
     redirect_uri: redirectUri,
@@ -88,39 +88,64 @@ export async function facebookSignIn() {
   return cred.user;
 }
 
-export function googleErrorMessage(code?: string): string {
+function authErrorDetails(error?: unknown) {
+  const value = error as any;
+  const code = typeof error === "string" ? error : value?.code;
+  const message = typeof error === "string" ? "" : value?.message;
+  const details = [code ? `code: ${code}` : "", message ? `message: ${message}` : ""]
+    .filter(Boolean)
+    .join("\n");
+  return { code, details };
+}
+
+export function googleErrorMessage(error?: unknown): string {
+  const { code, details } = authErrorDetails(error);
+  let base: string;
   switch (code) {
     case "auth/unauthorized-domain":
-      return "This domain is not authorized in Firebase yet";
+      base = "This domain is not authorized in Firebase yet";
+      break;
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
     case statusCodes.SIGN_IN_CANCELLED:
-      return "Sign-in cancelled";
+      base = "Sign-in cancelled";
+      break;
     case "native-unconfigured":
-      return "Google login needs native OAuth setup";
+      base = "Google login needs native OAuth setup";
+      break;
     case "missing-google-client-id":
-      return "Google login needs Google OAuth client ID";
+      base = "Google login needs Google OAuth client ID";
+      break;
     default:
-      return "Google sign-in failed. Please try again";
+      base = "Google sign-in failed";
   }
+  return details ? `${base}\n${details}` : base;
 }
 
-export function facebookErrorMessage(code?: string): string {
+export function facebookErrorMessage(error?: unknown): string {
+  const { code, details } = authErrorDetails(error);
+  let base: string;
   switch (code) {
     case "auth/unauthorized-domain":
-      return "This domain is not authorized in Firebase yet";
+      base = "This domain is not authorized in Firebase yet";
+      break;
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "Sign-in cancelled";
+      base = "Sign-in cancelled";
+      break;
     case "facebook-token-missing":
-      return "Facebook did not return a login token";
+      base = "Facebook did not return a login token";
+      break;
     case "native-unconfigured":
-      return "Facebook login needs native OAuth setup";
+      base = "Facebook login needs native OAuth setup";
+      break;
     case "missing-facebook-app-id":
-      return "Facebook login needs Facebook app ID";
+      base = "Facebook login needs Facebook app ID";
+      break;
     default:
-      return "Facebook sign-in failed. Please try again";
+      base = "Facebook sign-in failed";
   }
+  return details ? `${base}\n${details}` : base;
 }
 
 

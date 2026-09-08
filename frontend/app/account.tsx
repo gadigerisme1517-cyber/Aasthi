@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { Block, Button, Field, MenuRow, PageHead, Screen, T } from "@/src/components/ui";
+import { auth } from "@/src/services/firebase";
+import { uploadImages } from "@/src/services/db";
 import { colors } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
@@ -17,6 +19,7 @@ export default function Account() {
   const [email, setEmail] = useState(user.email);
   const [city, setCity] = useState(user.city);
   const [avatar, setAvatar] = useState(user.avatar);
+  const [busy, setBusy] = useState(false);
 
   const changePhoto = async () => {
     let perm = await ImagePicker.getMediaLibraryPermissionsAsync();
@@ -32,10 +35,24 @@ export default function Account() {
     if (!res.canceled && res.assets?.[0]) setAvatar(res.assets[0].uri);
   };
 
-  const save = () => {
-    updateAccount({ name: name.trim() || user.name, phone, email, city, avatar });
-    showToast("Profile updated");
-    router.back();
+  const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      let avatarUrl = avatar;
+      const uid = auth.currentUser?.uid;
+      if (uid && avatar && !avatar.startsWith("http")) {
+        const [uploaded] = await uploadImages([avatar], `listings/${uid}`);
+        if (uploaded) avatarUrl = uploaded;
+      }
+      await updateAccount({ name: name.trim() || user.name, phone, email, city, avatar: avatarUrl });
+      showToast("Profile updated");
+      router.back();
+    } catch {
+      showToast("Could not save changes. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -54,7 +71,7 @@ export default function Account() {
         <Field value={phone} onChangeText={setPhone} placeholder="Phone number" testID="account-phone" />
         <Field value={email} onChangeText={setEmail} placeholder="Email address" testID="account-email" />
         <Field value={city} onChangeText={setCity} placeholder="City" testID="account-city" />
-        <Button label="Save changes" onPress={save} testID="account-save" />
+        <Button label={busy ? "Saving…" : "Save changes"} onPress={save} testID="account-save" />
       </View>
 
       <View style={{ marginTop: 16 }}>

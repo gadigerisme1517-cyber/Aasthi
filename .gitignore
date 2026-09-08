@@ -45,3 +45,26 @@ coverage/
 .vscode/
 google-services*.json
 GoogleService-Info*.plist
+
+# ===== merged from the C:\aa copy =====
+*.keystore.backup
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.p12
+*.mobileprovision
+android/local.properties
+.firebase/
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+*.hprof
+captures/
+ios/build/
+ios/Pods/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.env*.local
+app-example

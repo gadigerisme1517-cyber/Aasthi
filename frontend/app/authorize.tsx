@@ -1,49 +1,38 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Linking, View } from "react-native";
-import { FacebookAuthProvider, signInWithCredential } from "firebase/auth";
+import { ActivityIndicator, View } from "react-native";
 
-import { Empty, Screen } from "@/src/components/ui";
-import { auth } from "@/src/services/firebase";
-import { getUserDoc } from "@/src/services/db";
+import { useApp } from "@/src/store/AppContext";
 
-function tokenFromUrl(url: string | null) {
-  if (!url) return "";
-  const raw = url.includes("#") ? url.split("#")[1] : url.split("?")[1];
-  if (!raw) return "";
-  return new URLSearchParams(raw).get("access_token") ?? "";
-}
-
+// OAuth redirect target for native Facebook login (fb<APP_ID>://authorize).
+// The actual sign-in is completed by WebBrowser.openAuthSessionAsync's promise
+// in src/services/authProviders.ts (still running in the background Login
+// screen), which then navigates to the right place itself (tabs or
+// profile-setup). This screen must NOT redirect based on auth state the
+// instant it mounts — that state hasn't caught up yet. It waits, and stays
+// visually minimal (no card/title) so the brief wait doesn't read as a
+// separate screen popping up.
 export default function Authorize() {
   const router = useRouter();
-  const [message, setMessage] = useState("Completing Facebook sign-in...");
+  const { authed } = useApp();
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    Linking.getInitialURL()
-      .then(async (url) => {
-        const token = tokenFromUrl(url);
-        if (!token) throw new Error("Facebook did not return a login token");
-        const cred = await signInWithCredential(auth, FacebookAuthProvider.credential(token));
-        const existing = await getUserDoc(cred.user.uid);
-        if (!mounted) return;
-        router.replace(existing?.setup ? "/(tabs)" : "/auth/profile-setup");
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setMessage("Facebook sign-in could not finish. Please try again.");
-        setTimeout(() => router.replace("/auth/login"), 1200);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
+    if (authed) {
+      router.replace("/");
+      return;
+    }
+    const timer = setTimeout(() => setTimedOut(true), 6000);
+    return () => clearTimeout(timer);
+  }, [authed, router]);
+
+  useEffect(() => {
+    if (timedOut) router.replace("/auth/login");
+  }, [timedOut, router]);
 
   return (
-    <Screen scroll={false} dark>
-      <View style={{ flex: 1, justifyContent: "center", paddingBottom: 60 }}>
-        <Empty title="Facebook login" body={message} />
-      </View>
-    </Screen>
+    <View style={{ flex: 1, backgroundColor: "#0d0d0d", alignItems: "center", justifyContent: "center" }}>
+      <ActivityIndicator color="#ffffff" />
+    </View>
   );
 }

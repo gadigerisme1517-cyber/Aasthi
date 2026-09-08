@@ -14,7 +14,7 @@ import { ScrollView } from "react-native";
 export default function Search() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { listings } = useApp();
+  const { listings, selectedLocation } = useApp();
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
 
@@ -41,13 +41,10 @@ export default function Search() {
             testID="search-input"
             value={q}
             onChangeText={setQ}
-            placeholder={cat === "All" ? "Search city, area or property" : `Search ${cat} in Kurnool`}
+            placeholder={cat === "All" ? "Search city, area or property" : `Search ${cat} in ${selectedLocation.name}`}
             placeholderTextColor={colors.faint}
             style={styles.searchInput}
           />
-          <View style={styles.filterBtn}>
-            <Icon name="sliders" size={18} color="#fff" />
-          </View>
         </View>
         <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
       </View>
@@ -103,13 +100,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.ink,
     padding: 0,
-  },
-  filterBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.black,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

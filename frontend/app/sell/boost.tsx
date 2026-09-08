@@ -16,7 +16,7 @@ export default function Boost() {
           Property Promotion
         </T>
         <T weight={800} size={21} color="#fff" ls={-1} style={{ marginTop: 8 }}>
-          Promote your listing clearly.
+          Get more views on your listing.
         </T>
         <T weight={500} size={13} color="#c7c7c7" style={{ marginTop: 7, lineHeight: 19 }}>
           Your property can appear higher in search and the home page as a promoted listing.

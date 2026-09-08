@@ -4,29 +4,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Block, Button, PageHead, Screen, T } from "@/src/components/ui";
 import { colors } from "@/src/theme";
+import { useApp } from "@/src/store/AppContext";
 
 export default function SellLocation() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { draft } = useApp();
 
   return (
     <Screen
       header={<PageHead title="Location" onBack={() => router.back()} />}
       footer={
         <View style={[styles.dock, { paddingBottom: insets.bottom + 12 }]}>
-          <Button label="Change" variant="light" onPress={() => router.push("/sell/manual-location")} style={{ flex: 1 }} testID="sell-loc-change" />
-          <Button label="Use Location" onPress={() => router.push("/sell/details")} style={{ flex: 1 }} testID="sell-loc-use" />
+          <Button label="Enter Address" onPress={() => router.push("/sell/manual-location")} style={{ flex: 1 }} testID="sell-loc-use" />
         </View>
       }
     >
-      <Block title="Detected Location" style={{ marginTop: 18 }}>
+      <Block title="Property Location" style={{ marginTop: 18 }}>
         <T weight={500} size={14} color="#5f5f5f" style={{ lineHeight: 20 }}>
-          Use current location or change it manually.
+          Enter the property's address on the next screen.
         </T>
         <View style={styles.mapBox}>
           <View style={styles.pin}>
             <T weight={900} size={11} color="#fff">
-              Current location
+              {draft.addr || "Set your property address"}
             </T>
           </View>
         </View>

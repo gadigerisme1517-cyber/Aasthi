@@ -14,6 +14,7 @@ import {
 import { Icon, IconName } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
+import { FEATURES } from "@/src/config";
 
 function StatusPill({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "good" | "gold" }) {
   const color = tone === "good" ? colors.green : tone === "gold" ? colors.gold : colors.ink;
@@ -69,7 +70,9 @@ export default function Profile() {
         <View style={styles.actionGrid}>
           <QuickAction icon="heart" label="Saved" onPress={() => router.push("/(tabs)/saved")} testID="profile-saved" />
           <QuickAction icon="plus" label="List" onPress={() => router.push("/sell")} testID="profile-list" />
-          <QuickAction icon="star" label="Premium" onPress={() => router.push("/premium")} testID="profile-premium" />
+          {FEATURES.premium ? (
+            <QuickAction icon="star" label="Premium" onPress={() => router.push("/premium")} testID="profile-premium" />
+          ) : null}
           <QuickAction icon="shield" label="Partner" onPress={() => router.push("/property-partner")} testID="profile-partner" />
         </View>
       </Block>
@@ -77,9 +80,11 @@ export default function Profile() {
       <SectionLabel>Account</SectionLabel>
       <MenuRow icon="user" title="Account" sub="Name, phone, email, city" onPress={() => router.push("/account")} testID="menu-account" />
       <MenuRow icon="shield" title="Get verified" sub="Upload documents for a Verified badge" onPress={() => router.push("/verify")} testID="menu-verify" />
-      <MenuRow icon="bell" title="Notifications" sub="Alerts, price drops, messages" onPress={() => router.push("/notif-prefs")} testID="menu-notif" />
+      {FEATURES.notificationPrefs ? (
+        <MenuRow icon="bell" title="Notifications" sub="Alerts, price drops, messages" onPress={() => router.push("/notif-prefs")} testID="menu-notif" />
+      ) : null}
       <MenuRow icon="shield" title="Privacy" sub="Visibility, data, password" onPress={() => router.push("/privacy")} testID="menu-privacy" />
-      <MenuRow icon="gear" title="Settings" sub="Language, currency, theme" onPress={() => router.push("/settings")} testID="menu-settings" />
+      <MenuRow icon="gear" title="Settings" sub="Storage and app preferences" onPress={() => router.push("/settings")} testID="menu-settings" />
 
       <SectionLabel>Support</SectionLabel>
       <MenuRow icon="lifebuoy" title="Help & Support" sub="FAQs and report a bug" onPress={() => router.push("/help")} testID="menu-help" />

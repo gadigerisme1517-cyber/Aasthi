@@ -28,6 +28,16 @@ ADMIN_EMAILS = {
     e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
 }
 
+_allowed_origins_env = os.environ.get("ADMIN_ALLOWED_ORIGINS", "").strip()
+if _allowed_origins_env:
+    ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+else:
+    logger.warning(
+        "ADMIN_ALLOWED_ORIGINS is not set — CORS is wide open (*). "
+        "Set it to your real /admin origin(s) before production."
+    )
+    ALLOWED_ORIGINS = ["*"]
+
 app = FastAPI(title="AASTHI Admin API")
 api_router = APIRouter(prefix="/api")
 
@@ -136,7 +146,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
