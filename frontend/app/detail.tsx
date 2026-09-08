@@ -214,6 +214,23 @@ export default function Detail() {
             </Pressable>
           ) : null}
 
+          {/* Independent of the tour flag: a visit is always requestable, and
+              when tour360 returns both bars should show, not one or the other. */}
+          <Pressable style={styles.tourBar} onPress={() => router.push(`/visit${q}`)} testID="detail-visit">
+            <View style={styles.tourIcon}>
+              <Icon name="mapPin" size={19} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T weight={900} size={14} color="#fff">
+                Schedule a visit
+              </T>
+              <T weight={600} size={10.5} color="rgba(255,255,255,0.68)" style={{ marginTop: 2 }}>
+                Pick a time that suits you.
+              </T>
+            </View>
+            <Icon name="chev" size={17} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+
           <Section title="Listed by">
             <Pressable style={styles.sellerRow} onPress={() => router.push(`/seller?id=${seller.id}`)} testID="detail-seller">
               <Image source={{ uri: seller.img }} style={styles.sellerImg} />

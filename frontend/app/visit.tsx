@@ -40,7 +40,7 @@ export default function Visit() {
     const chosen = SLOTS[slot];
     addLead(listing.id, sellerOf(listing).id, "visit", `${chosen.title}, ${chosen.sub}`);
     showToast("Visit request sent");
-    router.replace(`/contact?id=${listing.id}`);
+    router.replace(`/request-sent?type=visit&id=${listing.id}`);
   };
 
   return (

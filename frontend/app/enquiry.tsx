@@ -17,7 +17,7 @@ export default function Enquiry() {
   const onSend = () => {
     addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
     showToast("Enquiry sent to seller");
-    router.replace(`/contact?id=${listing.id}`);
+    router.replace(`/request-sent?type=enquiry&id=${listing.id}`);
   };
 
   return (
