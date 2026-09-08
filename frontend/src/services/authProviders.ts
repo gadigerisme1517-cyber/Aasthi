@@ -1,7 +1,5 @@
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
-import * as WebBrowser from "expo-web-browser";
 import {
-  FacebookAuthProvider,
   GoogleAuthProvider,
   signInWithCredential,
   signInWithPopup,
@@ -13,9 +11,11 @@ import { auth } from "@/src/services/firebase";
 const GOOGLE_WEB_CLIENT_ID =
   process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
   "58983588171-nm68dsc3ppeo3rh65eb0u3p5t473r9j5.apps.googleusercontent.com";
-const FACEBOOK_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? "855947210672662";
 
-WebBrowser.maybeCompleteAuthSession();
+// No WebBrowser.maybeCompleteAuthSession() here: that existed only to close the
+// expo-web-browser redirect session used by the removed Facebook OAuth flow.
+// Native Google uses the @react-native-google-signin SDK and web Google uses
+// Firebase's signInWithPopup, neither of which needs a redirect session.
 
 if (Platform.OS !== "web") {
   GoogleSignin.configure({
@@ -43,47 +43,6 @@ export async function googleSignIn() {
 
 export async function googleSignInWithIdToken(idToken: string) {
   const credential = GoogleAuthProvider.credential(idToken);
-  const cred = await signInWithCredential(auth, credential);
-  return cred.user;
-}
-
-export async function facebookSignIn() {
-  if (Platform.OS === "web") {
-    const provider = new FacebookAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    return cred.user;
-  }
-  if (!FACEBOOK_APP_ID) {
-    const err: any = new Error("Missing Facebook app ID");
-    err.code = "missing-facebook-app-id";
-    throw err;
-  }
-
-  const redirectUri = `fb${FACEBOOK_APP_ID}://authorize`;
-  const params = new URLSearchParams({
-    client_id: FACEBOOK_APP_ID,
-    redirect_uri: redirectUri,
-    response_type: "token",
-    scope: "public_profile",
-    display: "touch",
-  });
-  const result = await WebBrowser.openAuthSessionAsync(
-    `https://www.facebook.com/v20.0/dialog/oauth?${params.toString()}`,
-    redirectUri,
-  );
-  if (result.type !== "success" || !result.url) {
-    const err: any = new Error("Facebook sign-in cancelled");
-    err.code = result.type === "cancel" ? "auth/cancelled-popup-request" : "facebook-token-missing";
-    throw err;
-  }
-  const raw = result.url.includes("#") ? result.url.split("#")[1] : result.url.split("?")[1];
-  const accessToken = raw ? new URLSearchParams(raw).get("access_token") : null;
-  if (!accessToken) {
-    const err: any = new Error("Facebook did not return a login token");
-    err.code = "facebook-token-missing";
-    throw err;
-  }
-  const credential = FacebookAuthProvider.credential(accessToken);
   const cred = await signInWithCredential(auth, credential);
   return cred.user;
 }
@@ -122,30 +81,5 @@ export function googleErrorMessage(error?: unknown): string {
   return details ? `${base}\n${details}` : base;
 }
 
-export function facebookErrorMessage(error?: unknown): string {
-  const { code, details } = authErrorDetails(error);
-  let base: string;
-  switch (code) {
-    case "auth/unauthorized-domain":
-      base = "This domain is not authorized in Firebase yet";
-      break;
-    case "auth/popup-closed-by-user":
-    case "auth/cancelled-popup-request":
-      base = "Sign-in cancelled";
-      break;
-    case "facebook-token-missing":
-      base = "Facebook did not return a login token";
-      break;
-    case "native-unconfigured":
-      base = "Facebook login needs native OAuth setup";
-      break;
-    case "missing-facebook-app-id":
-      base = "Facebook login needs Facebook app ID";
-      break;
-    default:
-      base = "Facebook sign-in failed";
-  }
-  return details ? `${base}\n${details}` : base;
-}
 
 

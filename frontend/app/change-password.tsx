@@ -17,7 +17,7 @@ function passwordErrorMessage(code?: string): string {
     case "auth/requires-recent-login":
       return "Please sign out and sign back in, then try again";
     case "no-password-account":
-      return "Password change isn't available for accounts signed in with Google or Facebook";
+      return "Password change isn't available for accounts signed in with Google";
     default:
       return "Could not update password. Please try again";
   }

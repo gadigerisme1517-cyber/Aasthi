@@ -30,12 +30,6 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="com.googleusercontent.apps.58983588171-54fv3ov7tuj40b0p032qt1kan9gdunhn" android:path="/oauthredirect"/>
       </intent-filter>
-      <intent-filter>
-        <action android:name="android.intent.action.VIEW"/>
-        <category android:name="android.intent.category.DEFAULT"/>
-        <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="fb855947210672662" android:host="authorize"/>
-      </intent-filter>
     </activity>
   </application>
 </manifest>

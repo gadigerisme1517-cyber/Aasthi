@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": ["aasthi", "fb855947210672662"],
+    "scheme": "aasthi",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -47,10 +47,6 @@
         }
       ]
     ],
-    "extra": {
-      "facebookAppId": "855947210672662",
-      "facebookClientToken": "116cd3eb2f794849317b03b0cfb3b9c9"
-    },
     "experiments": {
       "typedRoutes": true
     }

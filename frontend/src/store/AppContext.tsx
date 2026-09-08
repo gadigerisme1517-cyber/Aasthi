@@ -38,7 +38,6 @@ import {
   watchUserDoc,
 } from "@/src/services/db";
 import {
-  facebookSignIn,
   googleSignIn,
   googleSignInWithIdToken,
 } from "@/src/services/authProviders";
@@ -142,7 +141,6 @@ type Ctx = {
   signup: (email: string, password: string) => Promise<{ needsSetup: boolean }>;
   loginWithGoogle: () => Promise<{ needsSetup: boolean }>;
   loginWithGoogleIdToken: (idToken: string) => Promise<{ needsSetup: boolean }>;
-  loginWithFacebook: () => Promise<{ needsSetup: boolean }>;
   completeProfile: (data: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -302,12 +300,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogleIdToken = useCallback(async (idToken: string) => {
     const fu = await googleSignInWithIdToken(idToken);
-    const existing = await getUserDoc(fu.uid);
-    return { needsSetup: !existing?.setup };
-  }, []);
-
-  const loginWithFacebook = useCallback(async () => {
-    const fu = await facebookSignIn();
     const existing = await getUserDoc(fu.uid);
     return { needsSetup: !existing?.setup };
   }, []);
@@ -484,7 +476,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signup,
       loginWithGoogle,
       loginWithGoogleIdToken,
-      loginWithFacebook,
       completeProfile,
       logout,
       deleteAccount,
@@ -522,7 +513,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signup,
       loginWithGoogle,
       loginWithGoogleIdToken,
-      loginWithFacebook,
       completeProfile,
       logout,
       deleteAccount,
