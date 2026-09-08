@@ -1,40 +1,37 @@
 rules_version = '2';
 
 // ============================================================================
-// AASTHI — Firebase Storage security rules
+// AASTHI — Firebase Storage security rules (PRODUCTION)
 // ----------------------------------------------------------------------------
-// CURRENT (development) rules — OPEN. DO NOT ship to production.
-// Uploads used by the app:
-//   listings/{uid}/...       (property photos)
-//   verifications/{uid}/...  (Govt ID + ownership proof)
+// Replaces the open dev rules (allow read, write: if true).
+// Upload paths used by the app:
+//   listings/{uid}/...       (property photos, set in src/services/db.ts)
+//   verifications/{uid}/...  (Govt ID + ownership proof, set in app/verify.tsx)
 // ============================================================================
 service firebase.storage {
   match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+
+    // Listing photos: public read (shown in the app), owner-only write.
+    match /listings/{uid}/{file=**} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Verification docs (Govt ID, ownership proof): private. Only the owner
+    // can write; nobody reads from the client — admin reads via Admin SDK.
+    match /verifications/{uid}/{file=**} {
+      allow read: if false;
+      allow write: if signedIn() && request.auth.uid == uid
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Deny everything else by default.
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
-
-// ============================================================================
-// RECOMMENDED production rules (replace the block above before launch):
-// ----------------------------------------------------------------------------
-// service firebase.storage {
-//   match /b/{bucket}/o {
-//     function signedIn() { return request.auth != null; }
-//     // Listing photos: public read, owner write
-//     match /listings/{uid}/{file=**} {
-//       allow read: if true;
-//       allow write: if signedIn() && request.auth.uid == uid
-//                    && request.resource.size < 8 * 1024 * 1024
-//                    && request.resource.contentType.matches('image/.*');
-//     }
-//     // Verification docs: private (owner write only; admin reads via Admin SDK)
-//     match /verifications/{uid}/{file=**} {
-//       allow read: if false;
-//       allow write: if signedIn() && request.auth.uid == uid
-//                    && request.resource.size < 8 * 1024 * 1024;
-//     }
-//   }
-// }
-// ============================================================================

@@ -72,7 +72,7 @@ backend/
   server.py                    # FastAPI app + Firebase Admin init + /api/admin/*
   requirements.txt
 firebase/
-  firestore.rules, storage.rules   # CURRENT dev rules + recommended prod rules
+  firestore.rules, storage.rules   # the LIVE production rules — must match what is deployed
 scripts/
   seed_firestore.py            # seed demo sellers/listings (Admin SDK or REST)
 ```
@@ -109,7 +109,7 @@ policy, delete/logout), seller "Get verified" submission, and the /admin panel
 1. Do NOT commit secrets. `.env`, service-account JSON, google-services.json are gitignored — keep it that way.
 2. Do NOT replace live Firebase with mock data. Do NOT downgrade Email/Password or Google auth.
 3. Keep all backend routes under `/api`. Admin stays gated by Firebase ID token + `ADMIN_EMAILS`.
-4. Before production: replace the OPEN dev Firestore/Storage rules with the hardened versions in `firebase/*.rules`.
+4. `firebase/firestore.rules` and `firebase/storage.rules` ARE the live production rules and must always match what is deployed in the Firebase console. Never replace them with the old open development version (`allow read, write: if true`) — deploying that would expose the entire production database and every uploaded verification document. If you need permissive rules to test something locally, use the emulator; do not edit these files to get it.
 5. Use `@/src/utils/storage` for local KV (not AsyncStorage directly) except Firebase's own auth persistence.
 6. `npx tsc --noEmit` reports expo-router typed-route href warnings on dynamic query routes (e.g. `/detail?id=...`). These are type-narrowing warnings only — runtime is fine and ESLint is clean. Do not mass-refactor to "fix" them.
 7. Don't change `metro.config.js` or the Expo packager env vars.
