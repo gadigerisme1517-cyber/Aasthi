@@ -17,6 +17,7 @@ import { T, TrustTag } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors, NAV_HEIGHT, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
+import { FEATURES } from "@/src/config";
 
 const NEARBY = [
   { label: "School", dist: "0.8 km" },
@@ -73,7 +74,7 @@ function cleanDescription(listing: Record<string, any>) {
 
   const facts = [
     listing.title,
-    listing.area ? `${listing.area} sq.ft` : null,
+    listing.area ? listing.area : null,
     listing.beds && listing.beds !== "-" ? `${listing.beds} bedrooms` : null,
     listing.baths && listing.baths !== "-" ? `${listing.baths} bathrooms` : null,
     listing.facing ? `${listing.facing}-facing` : null,
@@ -97,23 +98,9 @@ export default function Detail() {
   const q = `?id=${listing?.id ?? ""}`;
   const heroImages = [listing?.img, ...(listing?.g ?? [])].filter(Boolean) as string[];
   const [heroIndex, setHeroIndex] = useState(0);
-  const buyerIsPremium = Boolean((user as any)?.premium || (user as any)?.isPremium);
-  const sellerSharesNumber = Boolean(
-    (listing as any)?.shareNumberAutomatically ||
-      (listing as any)?.showContactNumber ||
-      (seller as any)?.shareNumberAutomatically ||
-      (seller as any)?.showContactNumber,
-  );
-  const contactNumberLabel = buyerIsPremium
-    ? sellerSharesNumber
-      ? "Call"
-      : "Request number"
-    : "Get Premium";
-  const contactNumberHint = buyerIsPremium
-    ? sellerSharesNumber
-      ? "Seller shares number"
-      : "Seller approval needed"
-    : "To view number";
+  const buyerIsPremium = !FEATURES.premium || Boolean((user as any)?.premium || (user as any)?.isPremium);
+  const contactNumberLabel = buyerIsPremium ? "Request number" : "Get Premium";
+  const contactNumberHint = buyerIsPremium ? "Seller approval needed" : "To view number";
   const descriptionText = cleanDescription(listing as any);
 
   const onHeroScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -142,12 +129,17 @@ export default function Detail() {
             style={StyleSheet.absoluteFill}
           >
             {heroImages.map((uri, index) => (
-              <Image
+              <Pressable
                 key={`${uri}-${index}`}
-                source={{ uri }}
-                style={{ width, height: "100%" }}
-                contentFit="cover"
-              />
+                onPress={() => router.push(`/gallery${q}&index=${index}`)}
+                testID={index === 0 ? "detail-photo-gallery" : undefined}
+              >
+                <Image
+                  source={{ uri }}
+                  style={{ width, height: "100%" }}
+                  contentFit="cover"
+                />
+              </Pressable>
             ))}
           </ScrollView>
           <LinearGradient
@@ -200,42 +192,27 @@ export default function Detail() {
             <View style={styles.factRow}>
               <Fact value={listing.beds} label="Beds" />
               <Fact value={listing.baths} label="Baths" />
-              <Fact value={listing.area} label="Sq.ft" />
+              <Fact value={listing.area} label="Area" />
               <Fact value={listing.facing} label="Facing" />
             </View>
           </View>
 
-          <Pressable style={styles.tourBar} onPress={() => router.push(`/tour${q}`)} testID="detail-tour">
-            <View style={styles.tourIcon}>
-              <Icon name="scan" size={19} color="#fff" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <T weight={900} size={14} color="#fff">
-                View 360-degree tour
-              </T>
-              <T weight={600} size={10.5} color="rgba(255,255,255,0.68)" style={{ marginTop: 2 }}>
-                Walk through rooms before visiting.
-              </T>
-            </View>
-            <Icon name="chev" size={17} color="rgba(255,255,255,0.7)" />
-          </Pressable>
-
-          <Section title="Photo gallery">
-            <Pressable style={styles.photoGrid} onPress={() => router.push(`/gallery${q}&index=0`)} testID="detail-photo-gallery">
-              <Image source={{ uri: listing.g[0] ?? listing.img }} style={styles.photoLarge} contentFit="cover" />
-              <View style={{ flex: 1, gap: 7 }}>
-                <Image source={{ uri: listing.g[1] ?? listing.img }} style={styles.photoSmall} contentFit="cover" />
-                <View style={styles.photoSmallWrap}>
-                  <Image source={{ uri: listing.g[2] ?? listing.img }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                  <View style={styles.photoOverlay}>
-                    <T weight={900} size={12} color="#fff">
-                      View all
-                    </T>
-                  </View>
-                </View>
+          {FEATURES.tour360 ? (
+            <Pressable style={styles.tourBar} onPress={() => router.push(`/tour${q}`)} testID="detail-tour">
+              <View style={styles.tourIcon}>
+                <Icon name="scan" size={19} color="#fff" />
               </View>
+              <View style={{ flex: 1 }}>
+                <T weight={900} size={14} color="#fff">
+                  View 360-degree tour
+                </T>
+                <T weight={600} size={10.5} color="rgba(255,255,255,0.68)" style={{ marginTop: 2 }}>
+                  Walk through rooms before visiting.
+                </T>
+              </View>
+              <Icon name="chev" size={17} color="rgba(255,255,255,0.7)" />
             </Pressable>
-          </Section>
+          ) : null}
 
           <Section title="Listed by">
             <Pressable style={styles.sellerRow} onPress={() => router.push(`/seller?id=${seller.id}`)} testID="detail-seller">
@@ -432,22 +409,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   section: { marginTop: 18 },
-  photoGrid: { flexDirection: "row", gap: 7 },
-  photoLarge: { width: "56%", height: 220, borderRadius: 16 },
-  photoSmall: { width: "100%", height: 106.5, borderRadius: 16 },
-  photoSmallWrap: {
-    width: "100%",
-    height: 106.5,
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#111",
-  },
-  photoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.34)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   sellerRow: {
     flexDirection: "row",
     alignItems: "center",
