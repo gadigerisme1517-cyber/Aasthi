@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "AASTHI",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": ["aasthi", "fb855947210672662"],
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aasthi.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Add property photos to your listings"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.aasthi.app",
+      "permissions": ["READ_MEDIA_IMAGES"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Add property photos to your listings"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-image.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ]
+    ],
+    "extra": {
+      "facebookAppId": "855947210672662",
+      "facebookClientToken": "116cd3eb2f794849317b03b0cfb3b9c9"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

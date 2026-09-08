@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// ============================================================================
+// AASTHI — Firebase Storage security rules
+// ----------------------------------------------------------------------------
+// CURRENT (development) rules — OPEN. DO NOT ship to production.
+// Uploads used by the app:
+//   listings/{uid}/...       (property photos)
+//   verifications/{uid}/...  (Govt ID + ownership proof)
+// ============================================================================
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// ============================================================================
+// RECOMMENDED production rules (replace the block above before launch):
+// ----------------------------------------------------------------------------
+// service firebase.storage {
+//   match /b/{bucket}/o {
+//     function signedIn() { return request.auth != null; }
+//     // Listing photos: public read, owner write
+//     match /listings/{uid}/{file=**} {
+//       allow read: if true;
+//       allow write: if signedIn() && request.auth.uid == uid
+//                    && request.resource.size < 8 * 1024 * 1024
+//                    && request.resource.contentType.matches('image/.*');
+//     }
+//     // Verification docs: private (owner write only; admin reads via Admin SDK)
+//     match /verifications/{uid}/{file=**} {
+//       allow read: if false;
+//       allow write: if signedIn() && request.auth.uid == uid
+//                    && request.resource.size < 8 * 1024 * 1024;
+//     }
+//   }
+// }
+// ============================================================================

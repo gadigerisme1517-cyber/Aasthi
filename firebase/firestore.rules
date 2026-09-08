@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// ============================================================================
+// AASTHI — Firestore security rules
+// ----------------------------------------------------------------------------
+// CURRENT (development) rules — OPEN. This is what the project uses today so the
+// app + seed script work without friction. DO NOT ship this to production.
+// ============================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// ============================================================================
+// RECOMMENDED production rules (replace the block above before launch):
+// ----------------------------------------------------------------------------
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     function signedIn() { return request.auth != null; }
+//     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+//
+//     // Public catalogue
+//     match /sellers/{id}   { allow read: if true;  allow write: if false; }
+//     match /listings/{id}  {
+//       allow read: if true;
+//       allow create: if signedIn();
+//       allow update, delete: if signedIn() && resource.data.sellerUid == request.auth.uid;
+//     }
+//
+//     // Per-user private data
+//     match /users/{uid}    { allow read, write: if isOwner(uid); }
+//
+//     // Write-only-ish submissions (server/admin reads via Admin SDK)
+//     match /leads/{id}                { allow create: if signedIn(); allow read: if false; }
+//     match /notifications/{id}        { allow read: if signedIn() && resource.data.uid == request.auth.uid;
+//                                        allow create: if signedIn(); }
+//     match /bugReports/{id}           { allow create: if signedIn(); allow read: if false; }
+//     match /verificationRequests/{id} { allow create: if signedIn(); allow read: if false; }
+//   }
+// }
+// Admin reads/writes go through the FastAPI backend using the Firebase Admin
+// SDK, which bypasses these rules — so locking them down does NOT break /admin.
+// ============================================================================
