@@ -74,7 +74,7 @@ export default function Verify() {
   const active = status === "pending" || status === "approved";
 
   return (
-    <Screen header={<PageHead title="Get Verified" onBack={() => router.back()} />}>
+    <Screen header={<PageHead title="Get verified" onBack={() => router.back()} />}>
       {status && STATUS_COPY[status] ? (
         <View style={[styles.status, { borderColor: STATUS_COPY[status].color }]}>
           <T weight={800} size={17} color={STATUS_COPY[status].color}>

@@ -27,7 +27,7 @@ Close and reopen PowerShell after installing, so it picks up the new tools.
 ## 2. Unzip the project
 
 Right‑click the ZIP → **Extract All…** → choose a simple location like
-`C:\aasthi`. You should end up with `C:\aasthi\frontend`, `C:\aasthi\backend`, etc.
+`C:\aasthi`. You should end up with `C:\aasthi\frontend`, `C:\aasthi\functions`, etc.
 
 ---
 
@@ -38,37 +38,30 @@ Right‑click the ZIP → **Extract All…** → choose a simple location like
 2. Copy the file `.env.example` and rename the copy to `.env`.
    (The Firebase values are already filled in — they are safe to use.)
 
-### Backend
-1. Open the `backend` folder. Copy `.env.example` → `.env`.
-2. You need your **Firebase service account** (a secret file):
-   - Go to https://console.firebase.google.com → project **aasthi-3a009**
-   - Gear icon → **Project settings** → **Service accounts** →
-     **Generate new private key** → a `.json` file downloads.
-3. Turn that JSON into one line of text:
-   - In PowerShell (change the path to where your file is):
-     ```
-     [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\service-account.json"))
-     ```
-   - Copy the long line it prints.
-4. Open `backend\.env` in Notepad and set:
-   ```
-   FIREBASE_ADMIN_CREDENTIALS_B64=PASTE_THE_LONG_LINE_HERE
-   ADMIN_EMAILS=gadiger14@gmail.com
-   ```
-   Save the file. **Never share this file.**
+### Admin API
+Nothing to do. The admin API runs as a deployed Cloud Function (`api_fn`) and
+needs no local setup and no service-account file. `frontend/.env` already points
+at it via `EXPO_PUBLIC_BACKEND_URL`.
 
 ---
 
-## 4. Start the backend (admin API)
+## 4. The admin API (already running — nothing to start)
 
-Open PowerShell and run:
+The admin API is deployed as the Cloud Function `api_fn` in project
+**aasthi-3a009**. Its source is in the `functions/` folder. You do not need to
+run anything locally.
+
+Check it is up by visiting this in a browser:
 ```
-cd C:\aasthi\backend
-pip install -r requirements.txt
-python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+https://us-central1-aasthi-3a009.cloudfunctions.net/api_fn/api/
 ```
-Leave this window open. Test it by visiting http://localhost:8001/api/ in a
-browser — you should see `{"service":"aasthi-admin","status":"ok"}`.
+You should see `{"service":"aasthi-admin","status":"ok"}`.
+
+Only if you change `functions/main.py` do you need to redeploy:
+```
+cd C:\aasthi
+firebase deploy --only functions
+```
 
 ---
 
@@ -109,4 +102,5 @@ python seed_firestore.py
   (`localhost` is allowed by default).
 - **Red Firestore `ERR_ABORTED` lines in the browser console** → normal, ignore.
 
-You’re done. Two windows running (backend + frontend) = the full app.
+You’re done. One window running (the frontend) = the full app; the admin API is
+already deployed as a Cloud Function.

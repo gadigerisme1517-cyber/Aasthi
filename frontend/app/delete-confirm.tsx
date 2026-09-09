@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { Alert, StyleSheet, View } from "react-native";
 
 import { Button, PageHead, Screen, T } from "@/src/components/ui";
 import { colors } from "@/src/theme";
@@ -7,7 +8,35 @@ import { useApp } from "@/src/store/AppContext";
 
 export default function DeleteConfirm() {
   const router = useRouter();
-  const { deleteAccount } = useApp();
+  const { deleteAccount, logout } = useApp();
+  const [busy, setBusy] = useState(false);
+
+  const onDelete = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await deleteAccount();
+      router.replace("/account-deleted");
+    } catch (e: any) {
+      setBusy(false);
+      if (e?.code === "auth/requires-recent-login") {
+        Alert.alert(
+          "Please sign in again",
+          "For your security, deleting an account needs a recent sign-in. Sign out, sign back in, then try deleting your account again.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Sign out now",
+              style: "destructive",
+              onPress: () => logout().then(() => router.replace("/auth/login")),
+            },
+          ],
+        );
+      } else {
+        Alert.alert("Could not delete account", "Something went wrong. Please try again.");
+      }
+    }
+  };
 
   return (
     <Screen header={<PageHead title="Delete account" onBack={() => router.back()} />}>
@@ -21,12 +50,9 @@ export default function DeleteConfirm() {
       </View>
       <View style={{ gap: 10, marginTop: 4 }}>
         <Button
-          label="Yes, delete my account"
+          label={busy ? "Deleting…" : "Yes, delete my account"}
           variant="red"
-          onPress={() => {
-            deleteAccount();
-            router.replace("/account-deleted");
-          }}
+          onPress={onDelete}
           testID="confirm-delete"
         />
         <Button label="Cancel" variant="light" onPress={() => router.back()} testID="cancel-delete" />

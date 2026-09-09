@@ -16,10 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, T } from "@/src/components/ui";
 import { colors } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
-import {
-  facebookErrorMessage,
-  googleErrorMessage,
-} from "@/src/services/authProviders";
+import { googleErrorMessage } from "@/src/services/authProviders";
 
 const HERO =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=90";
@@ -33,7 +30,6 @@ export default function Login() {
     login,
     signup,
     loginWithGoogle,
-    loginWithFacebook,
     showToast,
   } = useApp();
   const [mode, setMode] = useState<AuthMode>("signin");
@@ -76,22 +72,15 @@ export default function Login() {
     }
   };
 
-  const submitSocial = async (provider: "google" | "facebook") => {
+  const submitGoogle = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      let result;
-      const action = provider === "google" ? loginWithGoogle : loginWithFacebook;
-      result = await action();
-      const { needsSetup } = result;
+      const { needsSetup } = await loginWithGoogle();
       if (needsSetup) router.replace("/auth/profile-setup");
       else router.replace("/(tabs)");
     } catch (e: any) {
-      showToast(
-        provider === "google"
-          ? googleErrorMessage(e?.code)
-          : facebookErrorMessage(e?.code),
-      );
+      showToast(googleErrorMessage(e?.code));
       setBusy(false);
     }
   };
@@ -214,7 +203,7 @@ export default function Login() {
           </View>
 
           <View style={{ gap: 8 }}>
-            <Pressable style={styles.social} onPress={() => submitSocial("google")} testID="login-google">
+            <Pressable style={styles.social} onPress={submitGoogle} testID="login-google">
               <View style={styles.googleLogo}>
                 <T weight={900} size={16} color="#4285F4" ls={0}>
                   G
@@ -222,16 +211,6 @@ export default function Login() {
               </View>
               <T weight={900} size={13}>
                 Continue with Google
-              </T>
-            </Pressable>
-            <Pressable style={styles.social} onPress={() => submitSocial("facebook")} testID="login-facebook">
-              <View style={styles.facebookLogo}>
-                <T weight={900} size={16} color="#fff" ls={0}>
-                  f
-                </T>
-              </View>
-              <T weight={900} size={13}>
-                Continue with Facebook
               </T>
             </Pressable>
           </View>
@@ -321,14 +300,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  facebookLogo: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#1877F2",
     alignItems: "center",
     justifyContent: "center",
   },

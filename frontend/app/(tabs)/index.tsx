@@ -80,9 +80,8 @@ export default function Home() {
               </T>
               <View style={styles.heroStats}>
                 {[
-                  { b: "128", s: "Listings" },
-                  { b: "34", s: "Verified sellers" },
-                  { b: "18", s: "360 tours" },
+                  { b: String(listings.length), s: "Listings" },
+                  { b: String(sellers.filter((s) => s.verified).length), s: "Verified sellers" },
                 ].map((x) => (
                   <View key={x.s} style={styles.stat}>
                     <T weight={800} size={15} color="#fff">{x.b}</T>
@@ -140,7 +139,7 @@ export default function Home() {
               Simple. Trusted. Easy to contact.
             </T>
             <T weight={500} size={12} color="#6b665f" style={{ marginTop: 8, lineHeight: 17 }}>
-              AASTHI keeps the property page simple: big photos, clear price, location, seller details, 360 tour and direct enquiry.
+              AASTHI keeps the property page simple: big photos, clear price, location, seller details and direct enquiry.
             </T>
           </View>
 
@@ -167,7 +166,7 @@ export default function Home() {
               Promoted Property
             </T>
             <T weight={800} size={18} color="#fff" ls={-0.5} style={{ marginTop: 6 }}>
-              Promote your property clearly.
+              Get more views on your property.
             </T>
             <T weight={500} size={12} color="#c7c7c7" style={{ marginTop: 5, lineHeight: 17 }}>
               Paid listings appear neatly inside the app without disturbing users.

@@ -3,9 +3,12 @@
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   type User as FbUser,
 } from "firebase/auth";
 import {
@@ -67,6 +70,18 @@ export async function deleteAuthUser() {
   if (auth.currentUser) await deleteUser(auth.currentUser);
 }
 
+export async function changeOwnPassword(currentPassword: string, newPassword: string) {
+  const user = auth.currentUser;
+  if (!user?.email) {
+    const err: any = new Error("No email/password account to change");
+    err.code = "no-password-account";
+    throw err;
+  }
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
+}
+
 // ---------- Users ----------
 export async function getUserDoc(uid: string) {
   const snap = await getDoc(doc(db, "users", uid));
@@ -82,7 +97,13 @@ export function watchUserDoc(uid: string, cb: (data: any | null) => void) {
 }
 
 export async function deleteUserData(uid: string) {
-  await deleteDoc(doc(db, "users", uid)).catch(() => {});
+  const listingsSnap = await getDocs(query(collection(db, "listings"), where("sellerUid", "==", uid)));
+  if (!listingsSnap.empty) {
+    const batch = writeBatch(db);
+    listingsSnap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+  await deleteDoc(doc(db, "users", uid));
 }
 
 // ---------- Seed ----------
@@ -154,6 +175,7 @@ export async function addLead(payload: {
   sellerId: number;
   buyerUid: string;
   type: string;
+  message?: string;
 }) {
   await addDoc(collection(db, "leads"), { ...payload, ts: serverTimestamp() });
   await addDoc(collection(db, "notifications"), {

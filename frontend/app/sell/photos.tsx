@@ -7,6 +7,7 @@ import { Block, Button, PageHead, Screen, T } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
+import { FEATURES } from "@/src/config";
 
 export default function SellPhotos() {
   const router = useRouter();
@@ -34,10 +35,12 @@ export default function SellPhotos() {
   };
 
   return (
-    <Screen header={<PageHead title="Photos & 360 Tour" onBack={() => router.back()} />}>
+    <Screen header={<PageHead title={FEATURES.tour360 ? "Photos & 360 Tour" : "Photos"} onBack={() => router.back()} />}>
       <Block title="Photo Guide">
         <T weight={500} size={14} color="#5f5f5f" style={{ lineHeight: 20 }}>
-          Upload clear photos: front view, hall, kitchen, bedroom, road view and optional 360 tour.
+          {FEATURES.tour360
+            ? "Upload clear photos: front view, hall, kitchen, bedroom, road view and optional 360 tour."
+            : "Upload clear photos: front view, hall, kitchen, bedroom and road view."}
         </T>
       </Block>
 
@@ -69,7 +72,9 @@ export default function SellPhotos() {
 
       <View style={{ gap: 10, marginTop: 14 }}>
         <MoreRow tag="Optional" title="Add Vastu Details" sub="Facing, entrance and room notes." onPress={() => router.push("/sell/vastu")} testID="photos-vastu" />
-        <MoreRow tag="Premium" title="Add 360 Tour Link" sub="Paste your 360 tour link here." onPress={() => router.push("/sell/tour")} testID="photos-tour" />
+        {FEATURES.tour360 ? (
+          <MoreRow tag="Premium" title="Add 360 Tour Link" sub="Paste your 360 tour link here." onPress={() => router.push("/sell/tour")} testID="photos-tour" />
+        ) : null}
       </View>
 
       <Button label="Preview Listing" onPress={() => router.push("/sell/preview")} style={{ marginTop: 14 }} testID="photos-preview" />

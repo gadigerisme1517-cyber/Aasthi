@@ -66,8 +66,19 @@ export default function Admin() {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       await verifyAdmin();
-    } catch {
-      setErr("Invalid credentials");
+    } catch (e: any) {
+      const code = e?.code ?? "";
+      const msg =
+        code === "auth/invalid-email"
+          ? "That email does not look right"
+          : code === "auth/user-not-found"
+            ? "No account found with this email"
+            : code === "auth/wrong-password" || code === "auth/invalid-credential"
+              ? "Incorrect email or password"
+              : code === "auth/too-many-requests"
+                ? "Too many attempts. Try again later"
+                : "Could not sign in. Please try again";
+      setErr(msg);
     }
     setBusy(false);
   };
@@ -79,7 +90,7 @@ export default function Admin() {
       await googleSignIn();
       await verifyAdmin();
     } catch (e: any) {
-      setErr(googleErrorMessage(e?.code));
+      setErr(googleErrorMessage(e));
     }
     setBusy(false);
   };

@@ -7,6 +7,10 @@ import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
 import { T } from "@/src/components/ui";
 
+function countLabel(value: string, singular: string, plural: string) {
+  return value === "1" ? singular : plural;
+}
+
 function Fact({ b, label }: { b: string; label: string }) {
   return (
     <View style={styles.fact}>
@@ -73,8 +77,12 @@ export function FeatureCard({
           {listing.addr}
         </T>
         <View style={styles.factGlass}>
-          <Fact b={listing.beds} label="Beds" />
-          <Fact b={listing.baths} label="Baths" />
+          {listing.beds && listing.beds !== "-" ? (
+            <Fact b={listing.beds} label={countLabel(listing.beds, "Bed", "Beds")} />
+          ) : null}
+          {listing.baths && listing.baths !== "-" ? (
+            <Fact b={listing.baths} label={countLabel(listing.baths, "Bath", "Baths")} />
+          ) : null}
           <Fact b={listing.area} label="Area" />
           <Fact b={listing.facing} label="Facing" />
         </View>
@@ -125,13 +133,19 @@ export function ResultCard({
           {listing.addr}
         </T>
         <View style={styles.tinyFacts}>
-          {[`${listing.beds} Beds`, `${listing.baths} Baths`, listing.area].map((t) => (
-            <View key={t} style={styles.tinyFact}>
-              <T weight={850} size={9.5} color="#4a4a4d">
-                {t}
-              </T>
-            </View>
-          ))}
+          {[
+            listing.beds && listing.beds !== "-" ? `${listing.beds} ${countLabel(listing.beds, "Bed", "Beds")}` : null,
+            listing.baths && listing.baths !== "-" ? `${listing.baths} ${countLabel(listing.baths, "Bath", "Baths")}` : null,
+            listing.area,
+          ]
+            .filter(Boolean)
+            .map((t) => (
+              <View key={t} style={styles.tinyFact}>
+                <T weight={850} size={9.5} color="#4a4a4d">
+                  {t}
+                </T>
+              </View>
+            ))}
         </View>
       </View>
     </Pressable>

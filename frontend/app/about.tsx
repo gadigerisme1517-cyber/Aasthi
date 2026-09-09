@@ -1,17 +1,17 @@
 import { useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 
 import { Block, MenuRow, PageHead, Screen, T } from "@/src/components/ui";
 import { APP_VERSION } from "@/src/data/seed";
 import { colors } from "@/src/theme";
-import { useApp } from "@/src/store/AppContext";
+
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.aasthi.app";
 
 export default function About() {
   const router = useRouter();
-  const { showToast } = useApp();
 
   return (
-    <Screen header={<PageHead title="About" onBack={() => router.back()} />}>
+    <Screen header={<PageHead title="About AASTHI" onBack={() => router.back()} />}>
       <View style={styles.head}>
         <View style={styles.mark}>
           <T weight={900} size={26} color="#fff">
@@ -35,7 +35,7 @@ export default function About() {
       <View style={{ marginTop: 14 }}>
         <MenuRow icon="info" title="Terms of Service" onPress={() => router.push("/terms")} testID="about-terms" />
         <MenuRow icon="shield" title="Privacy Policy" onPress={() => router.push("/policy")} testID="about-policy" />
-        <MenuRow icon="star" title="Rate AASTHI" onPress={() => showToast("Thanks for your support!")} testID="about-rate" />
+        <MenuRow icon="star" title="Rate AASTHI" onPress={() => Linking.openURL(PLAY_STORE_URL)} testID="about-rate" />
       </View>
     </Screen>
   );

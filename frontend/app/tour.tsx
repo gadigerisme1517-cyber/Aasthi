@@ -120,7 +120,7 @@ export default function Tour() {
             Tour intelligence
           </T>
           <T weight={500} size={13} color="#bfbfbf" style={{ lineHeight: 20 }}>
-            AASTHI 360 presents each property as a guided premium walkthrough, with room points, smooth movement cues and seller actions built directly into the viewing experience.
+            A panning preview of this property's photo, with tappable room labels for reference. Contact the seller to arrange a full in-person or video walkthrough.
           </T>
         </View>
 

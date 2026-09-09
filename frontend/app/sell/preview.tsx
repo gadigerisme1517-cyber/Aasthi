@@ -12,9 +12,17 @@ export default function Preview() {
   const [publishing, setPublishing] = useState(false);
 
   const filled = draft.photos.filter(Boolean) as string[];
+  const previewType: Listing["type"] =
+    draft.propertyType === "Open Plot"
+      ? "Plots"
+      : draft.propertyType === "Commercial"
+        ? "Commercial"
+        : draft.category.startsWith("Rent")
+          ? "Rent"
+          : "Buy";
   const preview: Listing = {
     id: "preview",
-    type: draft.category.startsWith("Rent") ? "Rent" : "Buy",
+    type: previewType,
     price: draft.price,
     title: draft.title,
     addr: draft.addr,
@@ -31,6 +39,11 @@ export default function Preview() {
 
   const onPublish = async () => {
     if (publishing) return;
+    if (!filled.length) {
+      showToast("Add at least one real photo before publishing");
+      router.push("/sell/photos");
+      return;
+    }
     setPublishing(true);
     showToast("Publishing listing…");
     try {

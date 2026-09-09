@@ -1,10 +1,13 @@
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { MenuRow, PageHead, Screen, SectionLabel, T, ToggleRow } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
+import { FEATURES } from "@/src/config";
 
 const LANGS = ["English", "తెలుగు (Telugu)", "हिन्दी (Hindi)"];
 const CURR = ["₹ Indian Rupee", "$ US Dollar"];
@@ -25,31 +28,49 @@ function SelectRow({ label, on, onPress, testID }: { label: string; on: boolean;
 export default function Settings() {
   const router = useRouter();
   const { settings, setSetting, showToast } = useApp();
+  const [clearing, setClearing] = useState(false);
+
+  const clearCache = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]);
+      showToast("Image cache cleared");
+    } catch {
+      showToast("Could not clear cache. Please try again.");
+    } finally {
+      setClearing(false);
+    }
+  };
 
   return (
     <Screen header={<PageHead title="Settings" onBack={() => router.back()} />}>
-      <SectionLabel>Language</SectionLabel>
-      <View style={styles.group}>
-        {LANGS.map((l) => (
-          <SelectRow key={l} label={l} on={settings.language === l || (l === "English" && settings.language === "English")} onPress={() => { setSetting("language", l); showToast(l + " selected"); }} testID={`lang-${l}`} />
-        ))}
-      </View>
+      {FEATURES.personalization ? (
+        <>
+          <SectionLabel>Language</SectionLabel>
+          <View style={styles.group}>
+            {LANGS.map((l) => (
+              <SelectRow key={l} label={l} on={settings.language === l || (l === "English" && settings.language === "English")} onPress={() => { setSetting("language", l); showToast(l + " selected"); }} testID={`lang-${l}`} />
+            ))}
+          </View>
 
-      <SectionLabel>Currency</SectionLabel>
-      <View style={styles.group}>
-        {CURR.map((c) => {
-          const val = c.startsWith("₹") ? "₹ INR" : "$ USD";
-          return (
-            <SelectRow key={c} label={c} on={settings.currency === val} onPress={() => { setSetting("currency", val); showToast(val + " selected"); }} testID={`curr-${val}`} />
-          );
-        })}
-      </View>
+          <SectionLabel>Currency</SectionLabel>
+          <View style={styles.group}>
+            {CURR.map((c) => {
+              const val = c.startsWith("₹") ? "₹ INR" : "$ USD";
+              return (
+                <SelectRow key={c} label={c} on={settings.currency === val} onPress={() => { setSetting("currency", val); showToast(val + " selected"); }} testID={`curr-${val}`} />
+              );
+            })}
+          </View>
 
-      <SectionLabel>Appearance</SectionLabel>
-      <ToggleRow title="Dark mode" sub="Reduce glare in low light" value={settings.darkMode} onChange={() => { setSetting("darkMode", !settings.darkMode); showToast(settings.darkMode ? "Dark mode disabled" : "Dark mode enabled"); }} testID="toggle-dark" />
+          <SectionLabel>Appearance</SectionLabel>
+          <ToggleRow title="Dark mode" sub="Reduce glare in low light" value={settings.darkMode} onChange={() => { setSetting("darkMode", !settings.darkMode); showToast(settings.darkMode ? "Dark mode disabled" : "Dark mode enabled"); }} testID="toggle-dark" />
+        </>
+      ) : null}
 
       <SectionLabel>Storage</SectionLabel>
-      <MenuRow icon="trash" title="Clear cache" sub="Free up space used by AASTHI" onPress={() => showToast("Cache cleared · 0 MB freed")} testID="clear-cache" />
+      <MenuRow icon="trash" title="Clear cache" sub="Free up space used by AASTHI" onPress={clearCache} testID="clear-cache" />
     </Screen>
   );
 }

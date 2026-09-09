@@ -15,7 +15,7 @@ export default function SellTour() {
       <View style={{ gap: 12, marginTop: 20 }}>
         <Field value={link} onChangeText={setLink} placeholder="https://…" testID="tour-link" />
         <Button
-          label="Save tour"
+          label="Save Tour"
           onPress={() => {
             setDraft({ tourLink: link });
             router.back();

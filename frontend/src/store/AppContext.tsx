@@ -38,7 +38,6 @@ import {
   watchUserDoc,
 } from "@/src/services/db";
 import {
-  facebookSignIn,
   googleSignIn,
   googleSignInWithIdToken,
 } from "@/src/services/authProviders";
@@ -58,6 +57,8 @@ export type User = {
   partnerType?: string;
   businessName?: string;
   operatingAreas?: string;
+  // Epoch ms, written by change-password.tsx via saveUserDoc.
+  passwordChangedAt?: number;
 };
 
 export type Draft = {
@@ -99,9 +100,10 @@ function freshDraft(): Draft {
     title: "New independent house listing",
     addr: "Nandyal Road, Kurnool",
     geo: "15.8281, 78.0373",
-    price: "â‚¹86,00,000",
+    price: "₹86,00,000",
     areaUnit: "Square Feet",
-    area: "2,240 sq.ft",
+    // Bare number: the unit picker in app/sell/details.tsx appends the suffix.
+    area: "2,240",
     facing: "East",
     beds: "-",
     baths: "-",
@@ -139,7 +141,6 @@ type Ctx = {
   signup: (email: string, password: string) => Promise<{ needsSetup: boolean }>;
   loginWithGoogle: () => Promise<{ needsSetup: boolean }>;
   loginWithGoogleIdToken: (idToken: string) => Promise<{ needsSetup: boolean }>;
-  loginWithFacebook: () => Promise<{ needsSetup: boolean }>;
   completeProfile: (data: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -154,7 +155,12 @@ type Ctx = {
   setPhoto: (i: number, uri: string | null) => void;
   resetDraft: () => void;
   publishListing: () => Promise<void>;
-  addLead: (listingId: string, sellerId: number, type: "enquiry" | "contact" | "visit") => void;
+  addLead: (
+    listingId: string,
+    sellerId: number,
+    type: "enquiry" | "contact" | "visit",
+    message?: string,
+  ) => void;
   submitBug: (category: string, desc: string) => Promise<string>;
   toggleBlock: (sellerId: number) => void;
 };
@@ -246,6 +252,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       partnerType: profile?.partnerType ?? "",
       businessName: profile?.businessName ?? "",
       operatingAreas: profile?.operatingAreas ?? "",
+      // No default: privacy.tsx distinguishes "never changed" from a real
+      // timestamp, so this must stay undefined until the doc actually has it.
+      passwordChangedAt: profile?.passwordChangedAt,
     }),
     [profile],
   );
@@ -291,12 +300,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogleIdToken = useCallback(async (idToken: string) => {
     const fu = await googleSignInWithIdToken(idToken);
-    const existing = await getUserDoc(fu.uid);
-    return { needsSetup: !existing?.setup };
-  }, []);
-
-  const loginWithFacebook = useCallback(async () => {
-    const fu = await facebookSignIn();
     const existing = await getUserDoc(fu.uid);
     return { needsSetup: !existing?.setup };
   }, []);
@@ -410,9 +413,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [uid, draft, resetDraft]);
 
   const addLead = useCallback(
-    (listingId: string, sellerId: number, type: "enquiry" | "contact" | "visit") => {
+    (
+      listingId: string,
+      sellerId: number,
+      type: "enquiry" | "contact" | "visit",
+      message?: string,
+    ) => {
       if (!uid) return;
-      fsAddLead({ listingId, sellerId, buyerUid: uid, type }).catch(() => {});
+      // Omit `message` entirely when the caller passes nothing. Firestore is
+      // initialised without ignoreUndefinedProperties, so spreading
+      // `message: undefined` would make addDoc throw on contact.tsx, which
+      // calls this with three arguments. An empty string is a deliberate
+      // value and is kept.
+      fsAddLead({
+        listingId,
+        sellerId,
+        buyerUid: uid,
+        type,
+        ...(message !== undefined ? { message } : {}),
+      }).catch(() => {});
     },
     [uid],
   );
@@ -457,7 +476,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signup,
       loginWithGoogle,
       loginWithGoogleIdToken,
-      loginWithFacebook,
       completeProfile,
       logout,
       deleteAccount,
@@ -495,7 +513,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signup,
       loginWithGoogle,
       loginWithGoogleIdToken,
-      loginWithFacebook,
       completeProfile,
       logout,
       deleteAccount,

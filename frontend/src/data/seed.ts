@@ -29,6 +29,8 @@ export type Listing = {
   img: string;
   g: string[];
   desc: string;
+  vastu?: string;
+  propertyType?: string;
   boosted?: boolean;
 };
 
@@ -36,7 +38,7 @@ export const SELLERS: Seller[] = [
   {
     id: 0,
     name: "Sri Homes Realty",
-    meta: "98% response · 42 listings",
+    meta: "98% response · Independent houses",
     trust: "Top seller",
     verified: true,
     img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80",
@@ -126,7 +128,6 @@ export const LISTINGS: Listing[] = [
     seller: 1,
     img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=90",
     g: [
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=88",
       "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=900&q=88",
       "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=900&q=88",
     ],
@@ -146,7 +147,6 @@ export const LISTINGS: Listing[] = [
     seller: 1,
     img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=90",
     g: [
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=88",
       "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=88",
       "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=88",
     ],
@@ -209,5 +209,3 @@ export const SEED_NOTIFICATIONS: NotificationItem[] = [
 ];
 
 export const APP_VERSION = "2.4.1";
-export const SUPPORT_PHONE = "+919000012345";
-export const SUPPORT_WHATSAPP = "919000012345";

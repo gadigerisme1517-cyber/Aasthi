@@ -43,7 +43,7 @@ export default function LocationPicker() {
           <View style={{ flex: 1 }}>
             <T weight={900} size={14}>All locations</T>
             <T weight={600} size={11.5} color={colors.muted} style={{ marginTop: 2 }}>
-              Show properties from every city for now
+              Show properties from every city
             </T>
           </View>
         </Pressable>
