@@ -5,7 +5,8 @@ rules_version = '2';
 // ----------------------------------------------------------------------------
 // Replaces the open dev rules (allow read, write: if true). Admin reads/writes
 // (verification approvals, listing approvals, bug report triage) go through
-// the FastAPI backend using the Firebase Admin SDK, which bypasses these rules
+// the api_fn Cloud Function (functions/) using the Firebase Admin SDK, which
+// bypasses these rules
 // entirely — locking this down does not break /admin.
 // ============================================================================
 service cloud.firestore {

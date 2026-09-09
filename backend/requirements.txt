@@ -1,4 +1,0 @@
-fastapi==0.110.1
-uvicorn==0.25.0
-firebase_admin==7.5.0
-python-dotenv==1.2.2
