@@ -106,10 +106,14 @@ android {
             keyPassword 'android'
         }
         release {
+            // No literal fallbacks here on purpose: a default would put the
+            // real password back into a tracked file. Supply these from the
+            // per-user Gradle home (%USERPROFILE%\.gradle\gradle.properties).
+            // Missing them fails release signing only; debug is unaffected.
             storeFile file('aasthi-release.keystore')
-            storePassword findProperty('AASTHI_UPLOAD_STORE_PASSWORD') ?: 'aasthi-release-2026'
-            keyAlias findProperty('AASTHI_UPLOAD_KEY_ALIAS') ?: 'aasthi-release'
-            keyPassword findProperty('AASTHI_UPLOAD_KEY_PASSWORD') ?: 'aasthi-release-2026'
+            storePassword findProperty('AASTHI_UPLOAD_STORE_PASSWORD')
+            keyAlias findProperty('AASTHI_UPLOAD_KEY_ALIAS')
+            keyPassword findProperty('AASTHI_UPLOAD_KEY_PASSWORD')
         }
     }
     buildTypes {
