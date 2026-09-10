@@ -92,7 +92,7 @@ export default function Profile() {
         testID="menu-my-listings"
       />
       <MenuRow
-        icon="message"
+        icon="inbox"
         title="My enquiries"
         sub={
           myLeads.length === 0

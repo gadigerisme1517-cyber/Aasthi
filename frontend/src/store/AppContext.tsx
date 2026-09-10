@@ -167,6 +167,9 @@ type Ctx = {
   // Seller-side
   myListings: Listing[];
   myLeads: any[];
+  // Buyer-side: leads THIS user sent. Readable under the deployed rules
+  // (leads: buyerUid == request.auth.uid).
+  mySentLeads: any[];
   contactedListingIds: string[];
   updateMyListing: (listingId: string, data: Record<string, any>) => Promise<void>;
   deleteMyListing: (listingId: string) => Promise<void>;
@@ -646,6 +649,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [myBuyerLeads],
   );
 
+  // Same data as contactedListingIds is derived from, but ordered for
+  // display. watchLeadsForBuyer does not sort (it only feeds a set), so the
+  // ordering happens here.
+  const mySentLeads = useMemo(
+    () =>
+      [...myBuyerLeads].sort(
+        (a: any, b: any) => (b.ts?.seconds ?? 0) - (a.ts?.seconds ?? 0),
+      ),
+    [myBuyerLeads],
+  );
+
   const submitBug = useCallback(
     async (category: string, desc: string) => {
       return addBugReport({ category, desc, uid: uid ?? "anon", appVersion: APP_VERSION });
@@ -686,6 +700,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       version: APP_VERSION,
       myListings,
       myLeads,
+      mySentLeads,
       contactedListingIds,
       updateMyListing,
       deleteMyListing,
@@ -731,6 +746,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toast,
       myListings,
       myLeads,
+      mySentLeads,
       contactedListingIds,
       updateMyListing,
       deleteMyListing,

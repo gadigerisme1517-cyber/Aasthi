@@ -28,6 +28,10 @@ export type IconName =
   | "trash"
   | "star"
   | "message"
+  // Added for the Enquiries tab. Deliberately NOT "message": a speech bubble
+  // promises a conversation, and this app has no chat — an enquiry is a
+  // one-way record. Feather's tray icon reads as an inbox instead.
+  | "inbox"
   | "bug"
   | "phone"
   | "mapPin"
@@ -55,6 +59,7 @@ const FEATHER: Partial<Record<IconName, string>> = {
   trash: "trash-2",
   star: "star",
   message: "message-circle",
+  inbox: "inbox",
   phone: "phone",
   mapPin: "map-pin",
   close: "x",

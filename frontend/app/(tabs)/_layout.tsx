@@ -7,10 +7,12 @@ import { T } from "@/src/components/ui";
 import { Icon, IconName } from "@/src/icons";
 import { colors, shadow } from "@/src/theme";
 
+// Real tab routes only. "saved" is deliberately still a Tabs.Screen below —
+// it lost its slot in the bar, NOT its route. It is reached from the Saved
+// quick action on /profile, and every heart control still writes to it.
 const TABS: { name: string; label: string; icon: IconName }[] = [
   { name: "index", label: "Home", icon: "home" },
   { name: "search", label: "Search", icon: "search" },
-  { name: "saved", label: "Saved", icon: "heart" },
   { name: "profile", label: "Profile", icon: "user" },
 ];
 
@@ -49,6 +51,28 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     );
   };
 
+  // /my-enquiries lives in the stack, not in this tab group, so its slot is a
+  // push — the same shape the List button already uses. It therefore never
+  // shows the active pill, because the tab navigator has no state for it.
+  const PushItem = ({
+    icon,
+    label,
+    href,
+    testID,
+  }: {
+    icon: IconName;
+    label: string;
+    href: string;
+    testID: string;
+  }) => (
+    <Pressable style={styles.item} onPress={() => router.push(href as any)} testID={testID}>
+      <Icon name={icon} size={19} color="#7e7e7e" />
+      <T weight={850} size={9.5} color="#7e7e7e" style={{ marginTop: 3 }}>
+        {label}
+      </T>
+    </Pressable>
+  );
+
   return (
     <View style={[styles.nav, { paddingBottom: 8 + insets.bottom }]}>
       <Item tab={TABS[0]} />
@@ -61,8 +85,10 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           List
         </T>
       </Pressable>
+      {/* Was Saved. Labelled "Enquiries", not "Chat": there are no threads
+          here, only a record of contact. */}
+      <PushItem icon="inbox" label="Enquiries" href="/my-enquiries" testID="tab-enquiries" />
       <Item tab={TABS[2]} />
-      <Item tab={TABS[3]} />
     </View>
   );
 }
