@@ -40,7 +40,7 @@ function QuickAction({ icon, label, onPress, testID }: { icon: IconName; label: 
 
 export default function Profile() {
   const router = useRouter();
-  const { user } = useApp();
+  const { user, myListings, myLeads } = useApp();
   const premium = Boolean((user as any).premium);
   const partnerStatus = (user as any).partnerStatus;
   const city = user.city.split(",")[0];
@@ -76,6 +76,34 @@ export default function Profile() {
           <QuickAction icon="shield" label="Partner" onPress={() => router.push("/property-partner")} testID="profile-partner" />
         </View>
       </Block>
+
+      <SectionLabel>Selling</SectionLabel>
+      <MenuRow
+        icon="home"
+        title="My listings"
+        sub={
+          myListings.length === 0
+            ? "No properties published yet"
+            : myListings.length === 1
+              ? "1 property · tap to edit or remove"
+              : `${myListings.length} properties · tap to edit or remove`
+        }
+        onPress={() => router.push("/my-listings")}
+        testID="menu-my-listings"
+      />
+      <MenuRow
+        icon="message"
+        title="My enquiries"
+        sub={
+          myLeads.length === 0
+            ? "Buyers who contact you appear here"
+            : myLeads.length === 1
+              ? "1 buyer has contacted you"
+              : `${myLeads.length} buyers have contacted you`
+        }
+        onPress={() => router.push("/my-enquiries")}
+        testID="menu-my-enquiries"
+      />
 
       <SectionLabel>Account</SectionLabel>
       <MenuRow icon="user" title="Account" sub="Name, phone, email, city" onPress={() => router.push("/account")} testID="menu-account" />

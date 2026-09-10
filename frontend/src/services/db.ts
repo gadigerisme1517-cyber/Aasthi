@@ -143,6 +143,9 @@ export function watchListings(cb: (listings: FsListing[]) => void) {
   });
 }
 
+// Throws on the first failure and loses every upload that already succeeded.
+// Kept unchanged because account.tsx, verify.tsx and edit-listing.tsx rely on
+// that all-or-nothing behaviour and surface the throw to the user themselves.
 export async function uploadImages(uris: string[], folder: string): Promise<string[]> {
   const urls: string[] = [];
   for (let i = 0; i < uris.length; i++) {
@@ -155,6 +158,32 @@ export async function uploadImages(uris: string[], folder: string): Promise<stri
   return urls;
 }
 
+export type UploadOutcome = { index: number; url?: string; error?: string };
+
+// Per-photo outcome instead of all-or-nothing. Never throws: the caller
+// decides what a failure means. publishListing uses this so it can (a) refuse
+// to publish when any photo failed and (b) keep the ones that succeeded so a
+// retry only re-uploads the rest.
+export async function uploadImagesIndexed(
+  items: { index: number; uri: string }[],
+  folder: string,
+): Promise<UploadOutcome[]> {
+  const out: UploadOutcome[] = [];
+  for (const item of items) {
+    try {
+      const res = await fetch(item.uri);
+      if (!res.ok) throw new Error(`could not read the photo (HTTP ${res.status})`);
+      const blob = await res.blob();
+      const r = ref(storage, `${folder}/${Date.now()}_${item.index}.jpg`);
+      await uploadBytes(r, blob);
+      out.push({ index: item.index, url: await getDownloadURL(r) });
+    } catch (e: any) {
+      out.push({ index: item.index, error: e?.code || e?.message || "upload failed" });
+    }
+  }
+  return out;
+}
+
 export async function addListing(data: Record<string, any>) {
   const docRef = await addDoc(collection(db, "listings"), {
     ...data,
@@ -164,20 +193,44 @@ export async function addListing(data: Record<string, any>) {
   return docRef.id;
 }
 
+// Owner-scoped edit. firestore.rules:27 already allows update when
+// resource.data.sellerUid == request.auth.uid, so no rules change is needed
+// for this one.
+export function updateListing(listingId: string, data: Record<string, any>) {
+  return updateDoc(doc(db, "listings", listingId), data);
+}
+
+export function deleteListing(listingId: string) {
+  return deleteDoc(doc(db, "listings", listingId));
+}
+
 export function boostListing(listingId: string) {
   const expiry = Date.now() + 7 * 24 * 3600 * 1000;
   return updateDoc(doc(db, "listings", listingId), { boosted: true, boostExpiry: expiry });
 }
 
 // ---------- Leads / Notifications ----------
+const LEAD_NOUN: Record<string, string> = {
+  visit: "Visit request",
+  contact: "Contact request",
+  enquiry: "Enquiry",
+};
+
 export async function addLead(payload: {
   listingId: string;
   sellerId: number;
   buyerUid: string;
   type: string;
   message?: string;
+  // Optional so existing call sites keep compiling; publishListing-era
+  // listings always supply sellerUid, seeded ones cannot.
+  sellerUid?: string;
+  buyerName?: string;
+  listingTitle?: string;
 }) {
   await addDoc(collection(db, "leads"), { ...payload, ts: serverTimestamp() });
+
+  // 1. The buyer's own receipt. Unchanged on purpose.
   await addDoc(collection(db, "notifications"), {
     uid: payload.buyerUid,
     title:
@@ -189,6 +242,49 @@ export async function addLead(payload: {
     body: "The seller has been notified and will respond shortly.",
     ts: serverTimestamp(),
   });
+
+  // 2. The seller's notification — the one that never existed. Only possible
+  // when the listing carries a sellerUid, i.e. it was published by a real
+  // user. Seeded listings have no owner to notify.
+  if (payload.sellerUid) {
+    const noun = LEAD_NOUN[payload.type] ?? "Enquiry";
+    const who = payload.buyerName?.trim() || "A buyer";
+    const what = payload.listingTitle?.trim();
+    await addDoc(collection(db, "notifications"), {
+      uid: payload.sellerUid,
+      title: `${noun} received`,
+      body: what
+        ? `${who} sent a ${noun.toLowerCase()} about "${what}". Open My enquiries to see it.`
+        : `${who} sent a ${noun.toLowerCase()} on one of your listings. Open My enquiries to see it.`,
+      ts: serverTimestamp(),
+    });
+  }
+}
+
+// Leads addressed to me as the seller. Requires the updated firestore.rules
+// (leads: allow read when resource.data.sellerUid == request.auth.uid).
+export function watchLeadsForSeller(uid: string, cb: (items: any[]) => void) {
+  const qy = query(collection(db, "leads"), where("sellerUid", "==", uid));
+  return onSnapshot(
+    qy,
+    (snap) => {
+      const arr = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      arr.sort((a: any, b: any) => (b.ts?.seconds ?? 0) - (a.ts?.seconds ?? 0));
+      cb(arr);
+    },
+    () => cb([]),
+  );
+}
+
+// Leads I sent as the buyer. Used only to decide whether this buyer has
+// already earned the seller's number on a given listing.
+export function watchLeadsForBuyer(uid: string, cb: (items: any[]) => void) {
+  const qy = query(collection(db, "leads"), where("buyerUid", "==", uid));
+  return onSnapshot(
+    qy,
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))),
+    () => cb([]),
+  );
 }
 
 export function watchNotifications(uid: string, cb: (items: any[]) => void) {

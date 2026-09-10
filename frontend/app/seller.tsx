@@ -22,11 +22,24 @@ function Fact({ b, label }: { b: string | number; label: string }) {
 
 export default function SellerDetail() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { sellers, listingsBySeller, blocked, toggleBlock, showToast } = useApp();
-  const seller = sellers.find((s) => s.id === Number(id));
-  const mine = listingsBySeller(seller?.id ?? -1);
-  const isBlocked = seller ? blocked.includes(seller.id) : false;
+  const { id, uid } = useLocalSearchParams<{ id?: string; uid?: string }>();
+  const { sellers, listings, listingsBySeller, sellerOf, blocked, toggleBlock, showToast } = useApp();
+
+  // Two kinds of seller reach this screen. A seeded one is looked up by its
+  // numeric id. A real publisher has no numeric id — it is identified by uid,
+  // and its profile is reconstructed from its own listings, because
+  // firestore.rules:32 forbids reading another user's users/{uid} document.
+  const userListings = uid ? listings.filter((l) => (l as any).sellerUid === uid) : [];
+  const seller = uid
+    ? userListings.length
+      ? sellerOf(userListings[0])
+      : undefined
+    : sellers.find((s) => s.id === Number(id));
+  const mine = uid ? userListings : listingsBySeller(seller?.id ?? -999);
+  // The block key is the uid for a private publisher, the numeric id for a
+  // seeded seller. Both live in the same users/{uid}.blocked array.
+  const blockKey = uid ?? seller?.id;
+  const isBlocked = blockKey !== undefined && blocked.includes(blockKey);
 
   if (!seller) {
     return (
@@ -55,18 +68,22 @@ export default function SellerDetail() {
         </View>
       </Block>
 
-      <Pressable
-        style={styles.blockRow}
-        onPress={() => {
-          toggleBlock(seller.id);
-          showToast(isBlocked ? `Unblocked ${seller.name}` : `Blocked ${seller.name}`);
-        }}
-        testID="seller-block-toggle"
-      >
-        <T weight={700} size={12} color={isBlocked ? colors.ink : colors.red}>
-          {isBlocked ? "Unblock this seller" : "Block this seller"}
-        </T>
-      </Pressable>
+      {/* Restored for private publishers. users.blocked now holds uids as
+          well as the seeded numeric ids, so this works for both. */}
+      {blockKey !== undefined ? (
+        <Pressable
+          style={styles.blockRow}
+          onPress={() => {
+            toggleBlock(blockKey);
+            showToast(isBlocked ? `Unblocked ${seller.name}` : `Blocked ${seller.name}`);
+          }}
+          testID="seller-block-toggle"
+        >
+          <T weight={700} size={12} color={isBlocked ? colors.ink : colors.red}>
+            {isBlocked ? "Unblock this seller" : "Block this seller"}
+          </T>
+        </Pressable>
+      ) : null}
 
       <View style={styles.facts}>
         <Fact b={seller.sold} label="sold" />

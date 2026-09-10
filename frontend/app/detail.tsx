@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -13,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { T, TrustTag } from "@/src/components/ui";
+import { ListingStatusTag, T, TrustTag } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors, NAV_HEIGHT, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
@@ -91,7 +92,7 @@ export default function Detail() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
-  const { listings, sellerOf, isSaved, toggleSave, user } = useApp();
+  const { listings, sellerOf, isSaved, toggleSave, user, contactedListingIds } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const seller = sellerOf(listing ?? ({} as any));
   const saved = listing ? isSaved(listing.id) : false;
@@ -99,6 +100,12 @@ export default function Detail() {
   const heroImages = [listing?.img, ...(listing?.g ?? [])].filter(Boolean) as string[];
   const [heroIndex, setHeroIndex] = useState(0);
   const buyerIsPremium = !FEATURES.premium || Boolean((user as any)?.premium || (user as any)?.isPremium);
+  // The number is earned, not given: it appears only once this buyer has
+  // actually sent an enquiry / visit / contact request on THIS listing, and
+  // only when the publisher supplied one. Seeded listings have no phone, so
+  // they keep the old "Request number" state forever.
+  const sellerPhone = (seller as any)?.phone?.trim?.() ?? "";
+  const numberRevealed = Boolean(sellerPhone) && contactedListingIds.includes(listing?.id ?? "");
   const contactNumberLabel = buyerIsPremium ? "Request number" : "Get Premium";
   const contactNumberHint = buyerIsPremium ? "Seller approval needed" : "To view number";
   const descriptionText = cleanDescription(listing as any);
@@ -189,6 +196,13 @@ export default function Detail() {
               {listing.addr}
             </T>
 
+            {/* The PROPERTY's verification state. Distinct from the seller's
+                TrustTag in the "Listed by" section below — one is about the
+                listing, the other about the person. */}
+            <View style={{ marginTop: 10 }}>
+              <ListingStatusTag status={(listing as any).verificationStatus} />
+            </View>
+
             <View style={styles.factRow}>
               <Fact value={listing.beds} label="Beds" />
               <Fact value={listing.baths} label="Baths" />
@@ -232,7 +246,19 @@ export default function Detail() {
           </Pressable>
 
           <Section title="Listed by">
-            <Pressable style={styles.sellerRow} onPress={() => router.push(`/seller?id=${seller.id}`)} testID="detail-seller">
+            <Pressable
+              style={styles.sellerRow}
+              onPress={() =>
+                router.push(
+                  // A seller identity built from a user document has no
+                  // numeric id, so route it by uid instead.
+                  (seller as any).uid
+                    ? `/seller?uid=${(seller as any).uid}`
+                    : `/seller?id=${seller.id}`,
+                )
+              }
+              testID="detail-seller"
+            >
               <Image source={{ uri: seller.img }} style={styles.sellerImg} />
               <View style={{ flex: 1 }}>
                 <T weight={800} size={14} numberOfLines={1}>
@@ -318,18 +344,26 @@ export default function Detail() {
             Message
           </T>
         </Pressable>
-        <Pressable style={[styles.stickyPill, styles.numberPill]} onPress={() => router.push(buyerIsPremium ? `/contact${q}` : `/premium${q}`)} testID="detail-contact-number">
+        <Pressable
+          style={[styles.stickyPill, styles.numberPill]}
+          onPress={() =>
+            numberRevealed
+              ? Linking.openURL(`tel:${sellerPhone.replace(/\s+/g, "")}`)
+              : router.push(buyerIsPremium ? `/contact${q}` : `/premium${q}`)
+          }
+          testID={numberRevealed ? "detail-call-seller" : "detail-contact-number"}
+        >
           <View style={styles.numberText}>
             <T weight={900} size={12.5} color={colors.ink} numberOfLines={1}>
-              Contact number
+              {numberRevealed ? sellerPhone : "Contact number"}
             </T>
             <T weight={700} size={9.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 1 }}>
-              {contactNumberHint}
+              {numberRevealed ? `${seller.name}` : contactNumberHint}
             </T>
           </View>
           <View style={styles.numberAction}>
             <T weight={900} size={10.5} color="#fff" numberOfLines={1}>
-              {contactNumberLabel}
+              {numberRevealed ? "Call" : contactNumberLabel}
             </T>
           </View>
         </Pressable>

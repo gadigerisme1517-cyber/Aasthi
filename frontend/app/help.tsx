@@ -10,7 +10,7 @@ const FAQS = [
   { q: "How do I list a property?", a: "Tap List on the bottom bar, choose Sell or Rent, then follow the steps for details, photos and an optional 360° tour." },
   { q: "Is AASTHI free to use?", a: "Browsing and listing your first property is free. Promoted listings use paid boosts, shown clearly before you pay." },
   { q: "How are sellers verified?", a: "Sellers submit ID and property documents, which our team reviews before a Verified badge is shown on their listings." },
-  { q: "Can I edit a listing after publishing?", a: "Yes, open the listing from your profile and update price, photos or details at any time." },
+  { q: "Can I edit a listing after publishing?", a: "Yes. Open Profile, tap My listings, then tap the property to change its title, price, area, beds, baths, description or photos. You can also delete it from the same screen." },
 ];
 
 export default function Help() {

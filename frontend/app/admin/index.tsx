@@ -1,6 +1,7 @@
+import { Image } from "expo-image";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, Field, T } from "@/src/components/ui";
@@ -95,12 +96,29 @@ export default function Admin() {
     setBusy(false);
   };
 
+  // Was `catch {}`. An approve or reject that failed left the row exactly as
+  // it was and said nothing, so an admin could believe they had verified a
+  // seller when the call had 401'd or timed out. This is a verification write
+  // path, so the failure is now shown.
   const act = async (id: string, action: "approve" | "reject") => {
+    setErr("");
     try {
       if (tab === "verifications") await adminApi.actVerification(id, action);
       else if (tab === "listings") await adminApi.actListing(id, action);
       loadTab(tab);
-    } catch {}
+    } catch (e: any) {
+      const status = e?.status;
+      setErr(
+        status === 401
+          ? "Your admin session expired. Sign out and sign in again."
+          : status === 403
+            ? "This account is not an admin."
+            : status === 404
+              ? "That item no longer exists. Refreshing."
+              : `Could not ${action} this item. Nothing was changed.`,
+      );
+      if (status === 404) loadTab(tab);
+    }
   };
 
   // ---- Login ----
@@ -210,6 +228,16 @@ export default function Admin() {
           })}
         </View>
 
+        {/* Dashboard-side error banner. `err` used to be rendered only on the
+            login card, so a failed approve/reject had nowhere to appear. */}
+        {err ? (
+          <View style={styles.dashError} testID="admin-error">
+            <T weight={700} size={12.5} color={colors.red}>
+              {err}
+            </T>
+          </View>
+        ) : null}
+
         {loading ? (
           <View style={{ paddingVertical: 40 }}>
             <ActivityIndicator color={colors.ink} />
@@ -232,6 +260,38 @@ export default function Admin() {
                     <T weight={500} size={12} color={colors.muted} style={{ marginTop: 3 }}>
                       Govt ID + ownership proof · {it.status}
                     </T>
+                    {/* The documents themselves. The row used to show only
+                        the words above, so an admin was approving or
+                        rejecting without ever seeing what was submitted.
+                        These are getDownloadURL links carrying their own
+                        access token, so storage.rules denying client reads on
+                        verifications/** does not block them. */}
+                    <View style={styles.docRow}>
+                      {[
+                        { label: "Government ID", uri: it.idDocUrl },
+                        { label: "Ownership proof", uri: it.ownershipDocUrl },
+                      ].map((doc) => (
+                        <View key={doc.label} style={{ flex: 1 }}>
+                          <T weight={900} size={9} color={colors.faint} ls={0.5} style={styles.docLabel}>
+                            {doc.label}
+                          </T>
+                          {doc.uri ? (
+                            <Pressable
+                              onPress={() => Linking.openURL(doc.uri)}
+                              testID={`admin-doc-${it.id}-${doc.label}`}
+                            >
+                              <Image source={{ uri: doc.uri }} style={styles.doc} contentFit="cover" />
+                            </Pressable>
+                          ) : (
+                            <View style={[styles.doc, styles.docMissing]}>
+                              <T weight={700} size={11} color={colors.red}>
+                                Not uploaded
+                              </T>
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                    </View>
                   </>
                 ) : tab === "listings" ? (
                   <>
@@ -277,6 +337,25 @@ export default function Admin() {
 }
 
 const styles = StyleSheet.create({
+  dashError: {
+    marginTop: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(180,18,24,0.25)",
+    backgroundColor: "rgba(180,18,24,0.06)",
+    padding: 12,
+  },
+  docRow: { flexDirection: "row", gap: 10, marginTop: 12 },
+  docLabel: { textTransform: "uppercase", marginBottom: 5 },
+  doc: {
+    width: "100%",
+    height: 130,
+    borderRadius: 14,
+    backgroundColor: colors.soft,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  docMissing: { alignItems: "center", justifyContent: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.screen },
   loginWrap: { flex: 1, backgroundColor: colors.warm, alignItems: "center", paddingHorizontal: 20 },
   card: {

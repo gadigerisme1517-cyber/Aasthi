@@ -14,10 +14,22 @@ export default function Enquiry() {
   const [subject, setSubject] = useState("I am interested in this property");
   const [msg, setMsg] = useState("Please share more details and available visit timings.");
 
-  const onSend = () => {
-    addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
-    showToast("Enquiry sent to seller");
-    router.replace(`/request-sent?type=enquiry&id=${listing.id}`);
+  const [sending, setSending] = useState(false);
+
+  // Only confirm what actually happened. This used to fire addLead and
+  // navigate straight to "Enquiry Sent" without waiting, so a write that
+  // failed still told the buyer the seller had their message.
+  const onSend = async () => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
+      showToast("Enquiry sent to seller");
+      router.replace(`/request-sent?type=enquiry&id=${listing.id}`);
+    } catch {
+      showToast("Could not send your enquiry. Check your connection and try again.");
+      setSending(false);
+    }
   };
 
   return (
@@ -25,7 +37,7 @@ export default function Enquiry() {
       <View style={{ gap: 12, marginTop: 20 }}>
         <Field value={subject} onChangeText={setSubject} testID="enquiry-subject" />
         <Textarea value={msg} onChangeText={setMsg} testID="enquiry-message" />
-        <Button label="Send enquiry" onPress={onSend} testID="enquiry-send" />
+        <Button label={sending ? "Sending…" : "Send enquiry"} onPress={onSend} testID="enquiry-send" />
       </View>
     </Screen>
   );

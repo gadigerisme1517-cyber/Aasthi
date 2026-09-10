@@ -17,6 +17,7 @@ import {
   NotificationItem,
   Seller,
   Settings,
+  USER_SELLER_ID,
 } from "@/src/data/seed";
 import {
   addBugReport,
@@ -24,14 +25,18 @@ import {
   addListing,
   createEmailUser,
   deleteAuthUser,
+  deleteListing as fsDeleteListing,
   deleteUserData,
   getUserDoc,
   saveUserDoc,
   seedIfEmpty,
   signInExistingUser,
   signOutUser,
-  uploadImages,
+  updateListing as fsUpdateListing,
+  uploadImagesIndexed,
   watchAuth,
+  watchLeadsForBuyer,
+  watchLeadsForSeller,
   watchListings,
   watchNotifications,
   watchSellers,
@@ -61,6 +66,10 @@ export type User = {
   passwordChangedAt?: number;
 };
 
+// A blocked seller is identified either by the seeded numeric id or, for a
+// private publisher, by uid. Both live in the same users/{uid}.blocked array.
+export type BlockKey = number | string;
+
 export type Draft = {
   category: string;
   propertyType: string;
@@ -78,11 +87,26 @@ export type Draft = {
   vastu: string;
   tourLink: string;
   photos: (string | null)[];
+  // Parallel to `photos`. Holds the Storage download URL once that slot has
+  // uploaded successfully, so a retry after a partial failure re-uploads only
+  // the slots that are still null instead of starting again.
+  uploaded: (string | null)[];
   img: string;
   g: string[];
 };
 
 const PHOTO_LABELS = ["Front view", "Hall", "Kitchen", "Bedroom", "Road view", "Extra"];
+
+// The saved `type` must agree with what /sell/preview shows. It used to be
+// `category.startsWith("Rent") ? "Rent" : "Buy"`, which collapsed Open Plot
+// and Commercial into "Buy" — so a plot previewed as Plots and was stored,
+// filtered and displayed as Buy for the rest of its life. This is the same
+// mapping /sell/preview uses, kept in one place so they cannot drift again.
+export function listingTypeOf(category: string, propertyType: string): Listing["type"] {
+  if (propertyType === "Open Plot") return "Plots";
+  if (propertyType === "Commercial") return "Commercial";
+  return category.startsWith("Rent") ? "Rent" : "Buy";
+}
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=90";
@@ -111,6 +135,7 @@ function freshDraft(): Draft {
     vastu: "Entrance east-facing. Kitchen southeast. Puja room northeast.",
     tourLink: "https://youtube.com/360-tour-demo",
     photos: [null, null, null, null, null, null],
+    uploaded: [null, null, null, null, null, null],
     img: FALLBACK_IMG,
     g: FALLBACK_G,
   };
@@ -131,10 +156,20 @@ type Ctx = {
   settings: Settings;
   draft: Draft;
   notifications: NotificationItem[];
-  blocked: number[];
+  blocked: BlockKey[];
+  // Listings with blocked sellers removed — what Home, Search and Saved show.
+  browseListings: Listing[];
+  blockKeyOfListing: (l: any) => BlockKey;
+  isBlockedKey: (key: BlockKey | undefined) => boolean;
   toast: string | null;
   photoLabels: string[];
   version: string;
+  // Seller-side
+  myListings: Listing[];
+  myLeads: any[];
+  contactedListingIds: string[];
+  updateMyListing: (listingId: string, data: Record<string, any>) => Promise<void>;
+  deleteMyListing: (listingId: string) => Promise<void>;
 
   showToast: (m: string) => void;
   login: (email: string, password: string) => Promise<{ needsSetup: boolean }>;
@@ -160,9 +195,9 @@ type Ctx = {
     sellerId: number,
     type: "enquiry" | "contact" | "visit",
     message?: string,
-  ) => void;
+  ) => Promise<void>;
   submitBug: (category: string, desc: string) => Promise<string>;
-  toggleBlock: (sellerId: number) => void;
+  toggleBlock: (key: BlockKey) => void;
 };
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -175,6 +210,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  // Leads where I am the seller (My enquiries) and where I am the buyer
+  // (used only to decide whether I have earned a seller's number).
+  const [myLeads, setMyLeads] = useState<any[]>([]);
+  const [myBuyerLeads, setMyBuyerLeads] = useState<any[]>([]);
   const [draft, setDraftState] = useState<Draft>(freshDraft());
   const [toast, setToast] = useState<string | null>(null);
   const [selectedLocationState, setSelectedLocationState] = useState<LocationOption>(() => locationById(DEFAULT_LOCATION_ID));
@@ -216,13 +255,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!uid) {
       setProfile(null);
       setNotifications([]);
+      setMyLeads([]);
+      setMyBuyerLeads([]);
       return;
     }
     const unsubUser = watchUserDoc(uid, setProfile);
     const unsubNotif = watchNotifications(uid, (items) => setNotifications(items as NotificationItem[]));
+    // Both lead listeners fail closed to [] if the deployed rules have not
+    // been updated yet (see firebase/firestore.rules), so a stale ruleset
+    // shows an empty enquiry list rather than crashing the app.
+    const unsubSellerLeads = watchLeadsForSeller(uid, setMyLeads);
+    const unsubBuyerLeads = watchLeadsForBuyer(uid, setMyBuyerLeads);
     return () => {
       unsubUser();
       unsubNotif();
+      unsubSellerLeads();
+      unsubBuyerLeads();
     };
   }, [uid]);
 
@@ -239,7 +287,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const user: User = useMemo(
     () => ({
       name: profile?.name ?? "",
-      phone: profile?.phone ?? "+91 90000 12345",
+      // NO FALLBACK. The old default "+91 90000 12345" made every user look
+      // as though they had saved a number they had never entered, and that
+      // fake number is now what a buyer would be shown after enquiring.
+      // An empty phone must read as empty.
+      phone: profile?.phone ?? "",
       email: profile?.email ?? "",
       city: profile?.city ?? "Kurnool, Andhra Pradesh",
       type: profile?.type ?? "AASTHI member",
@@ -264,7 +316,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({ ...DEFAULT_SETTINGS, ...(profile?.settings ?? {}) }),
     [profile],
   );
-  const blocked: number[] = useMemo(() => profile?.blocked ?? [], [profile]);
+  // `blocked` now holds BOTH kinds of key: the seeded sellers' numeric ids
+  // (which is all it ever held) and the uids of private publishers, who
+  // could not be blocked at all before. Existing documents keep working
+  // untouched — a number[] is a valid BlockKey[].
+  const blocked: BlockKey[] = useMemo(() => profile?.blocked ?? [], [profile]);
+
+  // The key that identifies a listing's owner for blocking. A private
+  // publisher is keyed by uid; a seeded seller by its numeric id.
+  const blockKeyOfListing = useCallback((l: any): BlockKey => l?.sellerUid ?? l?.seller, []);
+
+  const isBlockedKey = useCallback(
+    (key: BlockKey | undefined) => key !== undefined && key !== null && blocked.includes(key),
+    [blocked],
+  );
+
+  // Listings with blocked sellers removed. This is what Home, Search and
+  // Saved render. `listings` stays unfiltered so a direct /detail?id= link
+  // still resolves and so /blocked can find a blocked seller's properties.
+  const browseListings = useMemo(
+    () => listings.filter((l) => !isBlockedKey(blockKeyOfListing(l))),
+    [listings, isBlockedKey, blockKeyOfListing],
+  );
 
   useEffect(() => {
     const id = profile?.selectedLocationId;
@@ -336,14 +409,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const isSaved = useCallback((id: string) => saved.includes(id), [saved]);
 
+  // Resolves BOTH kinds of seller:
+  //   - a seeded seller, matched on the numeric `seller` field
+  //   - a real publisher, built from the identity fields denormalised onto
+  //     the listing at publish time. It has to come off the listing:
+  //     firestore.rules:32 restricts users/{uid} to its owner, so there is no
+  //     way to read another publisher's profile document at render time.
   const sellerOf = useCallback(
-    (l: Listing) => sellers.find((s) => s.id === l.seller) ?? sellers[0] ?? ({} as Seller),
+    (l: Listing): Seller => {
+      const anyL = l as any;
+      if (anyL?.sellerUid && (anyL.sellerName || anyL.seller === USER_SELLER_ID)) {
+        return {
+          id: USER_SELLER_ID,
+          uid: anyL.sellerUid,
+          name: anyL.sellerName || "AASTHI member",
+          meta: anyL.sellerCity || "Private seller",
+          trust: "Private seller",
+          verified: false,
+          img: anyL.sellerAvatar || DEFAULT_AVATAR,
+          cover: anyL.img || FALLBACK_IMG,
+          sold: 0,
+          rating: "-",
+          phone: anyL.sellerPhone || "",
+        };
+      }
+      return sellers.find((s) => s.id === l.seller) ?? sellers[0] ?? ({} as Seller);
+    },
     [sellers],
   );
 
+  // Saved respects blocking too — a shortlisted property from a seller you
+  // later blocked should not keep appearing.
   const savedListings = useCallback(
-    () => saved.map((id) => listings.find((l) => l.id === id)).filter(Boolean) as Listing[],
-    [saved, listings],
+    () => saved.map((id) => browseListings.find((l) => l.id === id)).filter(Boolean) as Listing[],
+    [saved, browseListings],
   );
 
   const listingsBySeller = useCallback(
@@ -375,7 +474,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDraftState((p) => {
       const photos = [...p.photos];
       photos[i] = uri;
-      return { ...p, photos };
+      // Changing or clearing a slot invalidates whatever was uploaded for it,
+      // otherwise a swapped photo would publish the previous image's URL.
+      const uploaded = [...p.uploaded];
+      uploaded[i] = null;
+      return { ...p, photos, uploaded };
     });
   }, []);
 
@@ -383,17 +486,74 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const publishListing = useCallback(async () => {
     if (!uid) return;
-    const filledUris = draft.photos.filter(Boolean) as string[];
-    let urls: string[] = [];
-    if (filledUris.length) {
-      try {
-        urls = await uploadImages(filledUris, `listings/${uid}`);
-      } catch (e) {
-        console.log("upload error", e);
+    // A listing must carry a reachable seller. Without a number the "Contact
+    // number" promise on /detail cannot be kept, so publishing is refused
+    // here and /sell/preview routes the user to /account to add one.
+    if (!user.phone.trim()) {
+      const err: any = new Error("Add your phone number before publishing");
+      err.code = "no-phone";
+      throw err;
+    }
+    // ---- Photos: a failed upload now FAILS THE PUBLISH ----
+    // This used to be a try/catch whose body was console.log, so a listing
+    // whose photos never uploaded was published anyway carrying the stock
+    // FALLBACK_IMG / FALLBACK_G Unsplash photographs under the publisher's
+    // own name. That is the single worst thing this app did.
+    const slots = draft.photos
+      .map((uri, index) => ({ index, uri }))
+      .filter((s) => Boolean(s.uri)) as { index: number; uri: string }[];
+
+    if (!slots.length) {
+      const err: any = new Error("Add at least one photo before publishing");
+      err.code = "no-photos";
+      throw err;
+    }
+
+    // Only the slots that have not already uploaded. After a partial failure
+    // the successful ones are held in draft.uploaded and are not re-sent.
+    const pending = slots.filter((s) => !draft.uploaded[s.index]);
+    let uploadedMap = [...draft.uploaded];
+
+    if (pending.length) {
+      const outcomes = await uploadImagesIndexed(pending, `listings/${uid}`);
+      outcomes.forEach((o) => {
+        if (o.url) uploadedMap[o.index] = o.url;
+      });
+      // Persist the partial success immediately, so a retry skips these even
+      // if the throw below unwinds the rest of publish.
+      setDraftState((p) => ({ ...p, uploaded: uploadedMap }));
+
+      const failed = outcomes.filter((o) => !o.url);
+      if (failed.length) {
+        const err: any = new Error("Some photos did not upload");
+        err.code = "upload-failed";
+        err.failedIndexes = failed.map((f) => f.index);
+        err.failedLabels = failed.map((f) => PHOTO_LABELS[f.index] ?? `Photo ${f.index + 1}`);
+        err.uploadedCount = slots.length - failed.length;
+        err.totalCount = slots.length;
+        throw err;
       }
     }
+
+    // In slot order, so "Front view" stays the cover.
+    const urls = slots
+      .map((s) => uploadedMap[s.index])
+      .filter(Boolean) as string[];
+
+    if (urls.length !== slots.length) {
+      const err: any = new Error("Some photos did not upload");
+      err.code = "upload-failed";
+      err.failedIndexes = slots.filter((s) => !uploadedMap[s.index]).map((s) => s.index);
+      err.failedLabels = slots
+        .filter((s) => !uploadedMap[s.index])
+        .map((s) => PHOTO_LABELS[s.index] ?? `Photo ${s.index + 1}`);
+      err.uploadedCount = urls.length;
+      err.totalCount = slots.length;
+      throw err;
+    }
+
     await addListing({
-      type: draft.category.startsWith("Rent") ? "Rent" : "Buy",
+      type: listingTypeOf(draft.category, draft.propertyType),
       price: draft.price,
       title: draft.title,
       addr: draft.addr,
@@ -402,38 +562,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       area: draft.area,
       facing: draft.facing,
       dist: "1.0 km",
-      seller: 0,
-      img: urls[0] || draft.img,
-      g: urls.length ? urls : draft.g,
+      // USER_SELLER_ID, not 0. `seller: 0` attributed every user's property
+      // to the seeded company "Sri Homes Realty".
+      seller: USER_SELLER_ID,
+      // No FALLBACK_IMG / FALLBACK_G fallback any more. Reaching this line
+      // means every photo the seller chose is in Storage.
+      img: urls[0],
+      g: urls,
       desc: draft.desc,
       tourLink: draft.tourLink,
+      propertyType: draft.propertyType,
+      vastu: draft.vastu,
+      // Denormalised publisher identity — see sellerOf for why.
       sellerUid: uid,
+      sellerName: user.name,
+      sellerAvatar: user.avatar,
+      sellerCity: user.city,
+      sellerPhone: user.phone.trim(),
     });
     resetDraft();
-  }, [uid, draft, resetDraft]);
+  }, [uid, draft, resetDraft, user]);
 
   const addLead = useCallback(
-    (
+    async (
       listingId: string,
       sellerId: number,
       type: "enquiry" | "contact" | "visit",
       message?: string,
     ) => {
       if (!uid) return;
+      // Carry the listing's owner uid and enough context for the seller's
+      // notification and the My enquiries row. Same undefined discipline as
+      // `message`: Firestore is initialised without
+      // ignoreUndefinedProperties, so every optional key is spread in only
+      // when it actually has a value.
+      const listing = listings.find((l) => l.id === listingId) as any;
+      const sellerUid: string | undefined = listing?.sellerUid;
+      const listingTitle: string | undefined = listing?.title;
       // Omit `message` entirely when the caller passes nothing. Firestore is
       // initialised without ignoreUndefinedProperties, so spreading
       // `message: undefined` would make addDoc throw on contact.tsx, which
       // calls this with three arguments. An empty string is a deliberate
       // value and is kept.
-      fsAddLead({
+      // Was `.catch(() => {})`. A lead that failed to write still showed the
+      // buyer "Enquiry Sent", which is the worst possible outcome on the one
+      // path this whole app exists for. The promise is returned so callers
+      // can refuse to navigate to the confirmation until the write lands.
+      return fsAddLead({
         listingId,
         sellerId,
         buyerUid: uid,
         type,
         ...(message !== undefined ? { message } : {}),
-      }).catch(() => {});
+        ...(sellerUid ? { sellerUid } : {}),
+        ...(listingTitle ? { listingTitle } : {}),
+        ...(user.name ? { buyerName: user.name } : {}),
+      });
     },
-    [uid],
+    [uid, listings, user.name],
+  );
+
+  // ---- Seller-side: my listings, my enquiries ----
+  const myListings = useMemo(
+    () => (uid ? listings.filter((l) => (l as any).sellerUid === uid) : []),
+    [listings, uid],
+  );
+
+  const updateMyListing = useCallback(
+    async (listingId: string, data: Record<string, any>) => {
+      await fsUpdateListing(listingId, data);
+    },
+    [],
+  );
+
+  const deleteMyListing = useCallback(async (listingId: string) => {
+    await fsDeleteListing(listingId);
+  }, []);
+
+  // Listings this buyer has already enquired/contacted/visited on. Drives the
+  // number reveal on /detail.
+  const contactedListingIds = useMemo(
+    () => Array.from(new Set(myBuyerLeads.map((l: any) => l.listingId).filter(Boolean))),
+    [myBuyerLeads],
   );
 
   const submitBug = useCallback(
@@ -444,11 +654,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toggleBlock = useCallback(
-    (sellerId: number) => {
+    (key: BlockKey) => {
       if (!uid) return;
-      const next = blocked.includes(sellerId)
-        ? blocked.filter((x) => x !== sellerId)
-        : [...blocked, sellerId];
+      const next = blocked.includes(key)
+        ? blocked.filter((x) => x !== key)
+        : [...blocked, key];
       saveUserDoc(uid, { blocked: next });
     },
     [uid, blocked],
@@ -468,9 +678,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       draft,
       notifications,
       blocked,
+      browseListings,
+      blockKeyOfListing,
+      isBlockedKey,
       toast,
       photoLabels: PHOTO_LABELS,
       version: APP_VERSION,
+      myListings,
+      myLeads,
+      contactedListingIds,
+      updateMyListing,
+      deleteMyListing,
       showToast,
       login,
       signup,
@@ -507,7 +725,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       draft,
       notifications,
       blocked,
+      browseListings,
+      blockKeyOfListing,
+      isBlockedKey,
       toast,
+      myListings,
+      myLeads,
+      contactedListingIds,
+      updateMyListing,
+      deleteMyListing,
       showToast,
       login,
       signup,

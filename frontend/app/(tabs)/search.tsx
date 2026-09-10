@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResultCard } from "@/src/components/cards";
 import { Chips, Empty, SectionHead, T } from "@/src/components/ui";
 import { CATEGORIES } from "@/src/data/seed";
+import { listingMatchesLocation } from "@/src/data/locations";
 import { Icon } from "@/src/icons";
 import { colors, NAV_HEIGHT, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
@@ -14,11 +15,20 @@ import { ScrollView } from "react-native";
 export default function Search() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { listings, selectedLocation } = useApp();
+  // browseListings, not listings: blocked sellers' properties must not appear.
+  const { browseListings, selectedLocation } = useApp();
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
 
-  const base = listings.filter((l) => cat === "All" || l.type === cat);
+  // The placeholder has always said "Search {cat} in {location}" while the
+  // filter ignored the location entirely. I changed the BEHAVIOUR to match
+  // the copy rather than the copy to match the behaviour: Home already
+  // location-filters, and a search that silently ignores the location the
+  // user picked returns properties in other cities with no explanation.
+  // "All locations" is a real option in the picker for anyone who wants the
+  // unfiltered list.
+  const inLocation = browseListings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
+  const base = inLocation.filter((l) => cat === "All" || l.type === cat);
   const query = q.trim().toLowerCase();
   const filtered = query
     ? base.filter(
@@ -56,7 +66,7 @@ export default function Search() {
       >
         <SectionHead
           title={cat === "All" ? "Properties" : `${cat} properties`}
-          sub="Simple list for quick checking."
+          sub={`Showing ${selectedLocation.name}. Change it from the home screen.`}
         />
         {filtered.length ? (
           <View style={{ gap: 14 }}>
@@ -65,7 +75,10 @@ export default function Search() {
             ))}
           </View>
         ) : (
-          <Empty title="No properties found" body="Try a different search term or filter." />
+          <Empty
+            title="No properties found"
+            body={`Nothing matches in ${selectedLocation.name}. Try a different search term, another category, or switch to All locations.`}
+          />
         )}
       </ScrollView>
     </View>

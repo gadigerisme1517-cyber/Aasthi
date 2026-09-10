@@ -32,11 +32,26 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
-    // Leads: buyers create, nobody reads directly from the client
-    // (sellers see their leads via notifications; admin uses Admin SDK).
+    // Leads: buyers create; the two parties to a lead can read it.
+    //
+    // The seller read is what makes /my-enquiries possible — before this,
+    // read was denied to everyone and a lead was written to a collection
+    // nothing could ever query, so an enquiry reached no one.
+    //
+    // The buyer read is narrower in purpose: /detail only reveals a seller's
+    // phone number to a buyer who has already enquired, and that check needs
+    // the buyer to see their own leads. It exposes nothing the buyer did not
+    // write themselves.
+    //
+    // update and delete stay denied for BOTH sides: a lead is an immutable
+    // record of contact, and neither party may rewrite or erase it.
     match /leads/{id} {
       allow create: if signedIn();
-      allow read, update, delete: if false;
+      allow read: if signedIn() && (
+        resource.data.sellerUid == request.auth.uid ||
+        resource.data.buyerUid == request.auth.uid
+      );
+      allow update, delete: if false;
     }
 
     // Notifications: created for another user (e.g. seller notified of a

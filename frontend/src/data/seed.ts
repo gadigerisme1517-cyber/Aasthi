@@ -12,7 +12,17 @@ export type Seller = {
   cover: string;
   sold: number;
   rating: string;
+  // Set only for a seller identity built from a real user's own listing
+  // (see sellerOf in AppContext). Seeded sellers leave both undefined and
+  // keep using the numeric `id`. USER_SELLER_ID marks the synthetic case.
+  uid?: string;
+  phone?: string;
 };
+
+// Sentinel `Seller.id` for a seller identity derived from a user document
+// rather than from the seeded `sellers` collection. Never collides: seeded
+// ids start at 0 and count up.
+export const USER_SELLER_ID = -1;
 
 export type Listing = {
   id: string;
@@ -32,6 +42,16 @@ export type Listing = {
   vastu?: string;
   propertyType?: string;
   boosted?: boolean;
+  // Written by publishListing. `seller` stays at USER_SELLER_ID for these and
+  // the identity is read from the denormalised fields below, because
+  // firestore.rules only lets a user read their OWN users/{uid} document —
+  // there is no way to look another publisher's profile up at read time.
+  sellerUid?: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  sellerCity?: string;
+  sellerPhone?: string;
+  verificationStatus?: string; // "pending" | "verified" | "rejected"
 };
 
 export const SELLERS: Seller[] = [

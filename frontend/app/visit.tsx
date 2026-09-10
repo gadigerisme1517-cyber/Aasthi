@@ -36,11 +36,21 @@ export default function Visit() {
   const [slot, setSlot] = useState(0);
   const [SLOTS] = useState(() => buildSlots(new Date()));
 
-  const onRequest = () => {
+  const [sending, setSending] = useState(false);
+
+  // Same reason as enquiry.tsx: confirm only after the write lands.
+  const onRequest = async () => {
+    if (sending) return;
+    setSending(true);
     const chosen = SLOTS[slot];
-    addLead(listing.id, sellerOf(listing).id, "visit", `${chosen.title}, ${chosen.sub}`);
-    showToast("Visit request sent");
-    router.replace(`/request-sent?type=visit&id=${listing.id}`);
+    try {
+      await addLead(listing.id, sellerOf(listing).id, "visit", `${chosen.title}, ${chosen.sub}`);
+      showToast("Visit request sent");
+      router.replace(`/request-sent?type=visit&id=${listing.id}`);
+    } catch {
+      showToast("Could not send your visit request. Check your connection and try again.");
+      setSending(false);
+    }
   };
 
   return (
@@ -60,7 +70,7 @@ export default function Visit() {
           );
         })}
       </View>
-      <Button label="Request Visit" onPress={onRequest} style={{ marginTop: 14 }} testID="visit-request" />
+      <Button label={sending ? "Sending…" : "Request Visit"} onPress={onRequest} style={{ marginTop: 14 }} testID="visit-request" />
     </Screen>
   );
 }

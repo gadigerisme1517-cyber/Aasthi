@@ -481,6 +481,52 @@ export function TrustTag({ label }: { label: string }) {
   );
 }
 
+// The PROPERTY's own verification state, written on every listing as
+// `verificationStatus` and, until now, rendered on no screen at all.
+//
+// Deliberately shaped NOTHING like TrustTag. TrustTag is a solid black pill
+// and describes the SELLER; this is an outlined pill with a coloured dot and
+// describes the LISTING, so the two never read as the same claim when they
+// sit near each other on /detail.
+//
+// Three states, distinguishable by dot colour, border colour and wording —
+// not by colour alone:
+//   verified -> green   "Verified property"
+//   pending  -> ink     "Verification pending"
+//   rejected -> red     "Verification rejected"
+// Anything else (including a missing field on the seeded rows) renders
+// nothing rather than guessing.
+export function ListingStatusTag({
+  status,
+  compact = false,
+}: {
+  status?: string;
+  compact?: boolean;
+}) {
+  const map: Record<string, { label: string; short: string; color: string }> = {
+    verified: { label: "Verified property", short: "Verified", color: colors.green },
+    pending: { label: "Verification pending", short: "Pending", color: colors.ink },
+    rejected: { label: "Verification rejected", short: "Rejected", color: colors.red },
+  };
+  const s = status ? map[status] : undefined;
+  if (!s) return null;
+  return (
+    <View
+      testID={`listing-status-${status}`}
+      style={[
+        styles.statusTag,
+        { borderColor: s.color },
+        compact && { height: 20, paddingHorizontal: 7, gap: 4 },
+      ]}
+    >
+      <View style={[styles.statusDot, { backgroundColor: s.color }]} />
+      <T weight={900} size={compact ? 8.5 : 10} color={s.color}>
+        {compact ? s.short : s.label}
+      </T>
+    </View>
+  );
+}
+
 export function ToastHost() {
   const { toast } = useApp();
   const insets = useSafeAreaInsets();
@@ -671,6 +717,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  statusTag: {
+    height: 24,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    backgroundColor: colors.white,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    alignSelf: "flex-start",
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
   toast: {
     position: "absolute",
     left: 40,

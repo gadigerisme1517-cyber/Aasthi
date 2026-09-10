@@ -19,10 +19,11 @@ const HERO =
 export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { listings, sellers, isSaved, toggleSave, sellerOf, selectedLocation } = useApp();
+  // browseListings, not listings: blocked sellers' properties must not appear.
+  const { browseListings, sellers, isSaved, toggleSave, sellerOf, selectedLocation } = useApp();
   const [cat, setCat] = useState<string>("All");
 
-  const locationFiltered = listings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
+  const locationFiltered = browseListings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
   const filtered = locationFiltered.filter((l) => cat === "All" || l.type === cat);
   const visibleListings = filtered.length ? filtered : locationFiltered;
   const featured = visibleListings.slice(0, 2);
@@ -80,7 +81,7 @@ export default function Home() {
               </T>
               <View style={styles.heroStats}>
                 {[
-                  { b: String(listings.length), s: "Listings" },
+                  { b: String(browseListings.length), s: "Listings" },
                   { b: String(sellers.filter((s) => s.verified).length), s: "Verified sellers" },
                 ].map((x) => (
                   <View key={x.s} style={styles.stat}>
