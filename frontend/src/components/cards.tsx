@@ -103,12 +103,22 @@ function SpecLine({ listing }: { listing: Listing }) {
   );
 }
 
+export type OwnerBar = {
+  onEdit: () => void;
+  onToggleHide: () => void;
+  hidden?: boolean;
+  // Exactly one of these is supplied: Delete for rentals, Mark sold for sales.
+  onMarkSold?: () => void;
+  onDelete?: () => void;
+};
+
 function BrowseCard({
   listing,
   saved,
   onPress,
   onToggleSave,
   preview,
+  ownerBar,
   testIDPrefix,
 }: {
   listing: Listing;
@@ -116,6 +126,7 @@ function BrowseCard({
   onPress?: () => void;
   onToggleSave?: () => void;
   preview?: boolean;
+  ownerBar?: OwnerBar;
   testIDPrefix: string;
 }) {
   const photos = photosOf(listing);
@@ -197,7 +208,60 @@ function BrowseCard({
 
         <View style={styles.hairline} />
         <SpecLine listing={listing} />
+
+        {/* OWNER BAR. Rendered only when the storefront passes it, which it
+            does only on the agent's own store. A buyer never receives these
+            handlers, so there is no branch here that could leak them. */}
+        {ownerBar ? (
+          <>
+            <View style={styles.hairline} />
+            <View style={styles.ownerBar}>
+              <OwnerAction label="Edit" onPress={ownerBar.onEdit} testID={`own-edit-${listing.id}`} />
+              <View style={styles.vDivider} />
+              <OwnerAction
+                label={ownerBar.hidden ? "Unhide" : "Hide"}
+                onPress={ownerBar.onToggleHide}
+                testID={`own-hide-${listing.id}`}
+              />
+              <View style={styles.vDivider} />
+              {ownerBar.onDelete ? (
+                <OwnerAction
+                  label="Delete"
+                  onPress={ownerBar.onDelete}
+                  danger
+                  testID={`own-delete-${listing.id}`}
+                />
+              ) : (
+                <OwnerAction
+                  label="Mark sold"
+                  onPress={ownerBar.onMarkSold ?? (() => {})}
+                  testID={`own-sold-${listing.id}`}
+                />
+              )}
+            </View>
+          </>
+        ) : null}
       </View>
+    </Pressable>
+  );
+}
+
+function OwnerAction({
+  label,
+  onPress,
+  danger,
+  testID,
+}: {
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+  testID: string;
+}) {
+  return (
+    <Pressable style={styles.ownerAction} onPress={onPress} testID={testID} hitSlop={6}>
+      <T weight={600} size={13} color={danger ? colors.red : colors.ink}>
+        {label}
+      </T>
     </Pressable>
   );
 }
@@ -208,12 +272,14 @@ export function FeatureCard({
   onPress,
   onToggleSave,
   preview,
+  ownerBar,
 }: {
   listing: Listing;
   saved?: boolean;
   onPress?: () => void;
   onToggleSave?: () => void;
   preview?: boolean;
+  ownerBar?: OwnerBar;
 }) {
   return (
     <BrowseCard
@@ -222,6 +288,7 @@ export function FeatureCard({
       onPress={onPress}
       onToggleSave={onToggleSave}
       preview={preview}
+      ownerBar={ownerBar}
       testIDPrefix="feature-card"
     />
   );
@@ -418,6 +485,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 10,
   },
+  ownerBar: { flexDirection: "row", alignItems: "center" },
+  ownerAction: { flex: 1, alignItems: "center", paddingVertical: 4 },
+  vDivider: { width: 1, height: 16, backgroundColor: colors.line },
 
   // ---- seller cards, unchanged ----
   sellerMini: {

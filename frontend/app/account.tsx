@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
-import { Block, Button, Field, MenuRow, PageHead, Screen, T } from "@/src/components/ui";
+import { Block, Button, Field, MenuRow, PageHead, Screen, T, Textarea } from "@/src/components/ui";
 import { auth } from "@/src/services/firebase";
 import { uploadImages } from "@/src/services/db";
 import { colors } from "@/src/theme";
@@ -22,6 +22,10 @@ export default function Account() {
   // The shop's banner. Edited from here so there is one place that owns
   // profile imagery, reached from the Edit control on the shop cover.
   const [cover, setCover] = useState(user.cover ?? "");
+  // Storefront fields. The store's "Edit photo, name, area and bio" line
+  // lands here, so both have to be editable in one place.
+  const [area, setArea] = useState(user.operatingAreas ?? "");
+  const [bio, setBio] = useState(user.bio ?? "");
   const [busy, setBusy] = useState(false);
 
   const pickInto = async (setter: (uri: string) => void) => {
@@ -73,6 +77,8 @@ export default function Account() {
         email,
         city,
         avatar: avatarUrl,
+        operatingAreas: area.trim(),
+        bio: bio.trim(),
         ...(coverUrl ? { cover: coverUrl } : {}),
       });
       showToast("Profile updated");
@@ -126,6 +132,8 @@ export default function Account() {
         <Field value={phone} onChangeText={setPhone} placeholder="Phone number" testID="account-phone" />
         <Field value={email} onChangeText={setEmail} placeholder="Email address" testID="account-email" />
         <Field value={city} onChangeText={setCity} placeholder="City" testID="account-city" />
+        <Field value={area} onChangeText={setArea} placeholder="Service area (e.g. Nandyal Road, Kallur)" testID="account-area" />
+        <Textarea value={bio} onChangeText={setBio} placeholder="Short bio shown on your store" testID="account-bio" />
         <Button label={busy ? "Saving…" : "Save changes"} onPress={save} testID="account-save" />
       </View>
 

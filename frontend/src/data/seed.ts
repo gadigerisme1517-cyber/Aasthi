@@ -51,6 +51,11 @@ export type Listing = {
   sellerAvatar?: string;
   sellerCity?: string;
   sellerPhone?: string;
+  // Storefront identity, denormalised for the same reason as sellerName:
+  // users/{uid} is readable only by its owner.
+  sellerBio?: string;
+  sellerArea?: string;
+  sellerVerified?: boolean;
   verificationStatus?: string; // "pending" | "verified" | "rejected"
   // A DIFFERENT CLAIM from verificationStatus. That one is about whether
   // AASTHI checked the documents; this is about whether the property is
@@ -60,6 +65,10 @@ export type Listing = {
   // Absent on every listing published before this existed — the UI shows a
   // dash for that, never 0, because "we never counted" is not "nobody looked".
   views?: number;
+  // Hidden by its owner from Home, Search and the public storefront. Distinct
+  // from sold: the property is still available, the agent just does not want
+  // it shown right now. Only the owner sees it, under the Hidden chip.
+  hidden?: boolean;
 };
 
 export type SaleStatus = "live" | "token" | "sold";

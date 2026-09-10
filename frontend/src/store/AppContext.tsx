@@ -70,6 +70,15 @@ export type User = {
   // falls back to their first listing's photo and then to a plain block —
   // never to a stock photograph, which would show a property they do not have.
   cover?: string;
+  // Storefront bio. Three lines on the page, then ellipsis.
+  bio?: string;
+  // Epoch ms of the last time this user opened their inquiry list. The unread
+  // dot on the storefront compares each lead's ts against it.
+  //
+  // It lives on the USER, not the lead, because firestore.rules denies every
+  // update to a lead — deliberately, a lead is an immutable record of contact.
+  // So "read" cannot be a flag on the lead itself.
+  inquiriesSeenAt?: number;
   // Epoch ms, written once at profile setup. Absent for every account created
   // before this existed, and "Member since" shows a dash for those rather
   // than inventing a date.
@@ -184,6 +193,14 @@ type Ctx = {
   contactedListingIds: string[];
   updateMyListing: (listingId: string, data: Record<string, any>) => Promise<void>;
   deleteMyListing: (listingId: string) => Promise<void>;
+  setListingHidden: (listingId: string, hidden: boolean) => Promise<void>;
+  setListingSaleStatus: (listingId: string, s: "live" | "token" | "sold") => Promise<void>;
+  unreadLeadCount: number;
+  isLeadUnread: (lead: any) => boolean;
+  markInquiriesSeen: () => void;
+  savedSellers: BlockKey[];
+  isSellerSaved: (key: BlockKey | undefined) => boolean;
+  toggleSaveSeller: (key: BlockKey) => void;
 
   showToast: (m: string) => void;
   login: (email: string, password: string) => Promise<{ needsSetup: boolean }>;
@@ -342,6 +359,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // timestamp, so this must stay undefined until the doc actually has it.
       passwordChangedAt: profile?.passwordChangedAt,
       cover: profile?.cover,
+      bio: profile?.bio ?? "",
+      inquiriesSeenAt: profile?.inquiriesSeenAt,
       createdAt: profile?.createdAt,
     }),
     [profile],
@@ -380,7 +399,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       listings.filter(
         (l) =>
           !isBlockedKey(blockKeyOfListing(l)) &&
-          ((l as any).saleStatus ?? "live") !== "sold",
+          ((l as any).saleStatus ?? "live") !== "sold" &&
+          // Hidden is the owner's own switch. It hides from everyone else;
+          // the owner still sees it on their storefront under Hidden.
+          !(l as any).hidden,
       ),
     [listings, isBlockedKey, blockKeyOfListing],
   );
@@ -634,6 +656,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sellerAvatar: user.avatar,
       sellerCity: user.city,
       sellerPhone: user.phone.trim(),
+      // The storefront's identity block needs these, and a buyer cannot read
+      // another agent's users/{uid} document — firestore.rules restricts it to
+      // its owner. Same denormalisation reason as sellerName above.
+      sellerBio: user.bio ?? "",
+      sellerArea: user.operatingAreas ?? "",
+      sellerVerified: Boolean(user.verified),
     });
     resetDraft();
   }, [uid, draft, resetDraft, user]);
@@ -698,6 +726,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteMyListing = useCallback(async (listingId: string) => {
     await fsDeleteListing(listingId);
   }, []);
+
+  // Storefront owner-bar actions. Thin wrappers so the screen never has to
+  // know the field names.
+  const setListingHidden = useCallback(
+    async (listingId: string, hidden: boolean) => {
+      await fsUpdateListing(listingId, { hidden });
+    },
+    [],
+  );
+
+  const setListingSaleStatus = useCallback(
+    async (listingId: string, saleStatus: "live" | "token" | "sold") => {
+      await fsUpdateListing(listingId, { saleStatus });
+    },
+    [],
+  );
+
+  // Unread inquiries. A lead cannot carry a read flag — firestore.rules
+  // denies every lead update on purpose — so the watermark lives on the user
+  // document instead and each lead is compared against it.
+  const unreadLeadCount = useMemo(() => {
+    const seen = user.inquiriesSeenAt ?? 0;
+    return myLeads.filter((l: any) => (l.ts?.seconds ?? 0) * 1000 > seen).length;
+  }, [myLeads, user.inquiriesSeenAt]);
+
+  const isLeadUnread = useCallback(
+    (lead: any) => (lead?.ts?.seconds ?? 0) * 1000 > (user.inquiriesSeenAt ?? 0),
+    [user.inquiriesSeenAt],
+  );
+
+  // Saved STORES, distinct from saved listings. The storefront's buyer-side
+  // "Save" needs somewhere real to write; without this it would be a control
+  // that does nothing, which is what half of this app used to be.
+  const savedSellers: BlockKey[] = useMemo(() => profile?.savedSellers ?? [], [profile]);
+
+  const isSellerSaved = useCallback(
+    (key: BlockKey | undefined) => key !== undefined && savedSellers.includes(key),
+    [savedSellers],
+  );
+
+  const toggleSaveSeller = useCallback(
+    (key: BlockKey) => {
+      if (!uid) {
+        showToast("Sign in to save a store");
+        return;
+      }
+      const next = savedSellers.includes(key)
+        ? savedSellers.filter((k) => k !== key)
+        : [...savedSellers, key];
+      saveUserDoc(uid, { savedSellers: next }).catch(() => {});
+    },
+    [uid, savedSellers, showToast],
+  );
+
+  const markInquiriesSeen = useCallback(() => {
+    if (!uid) return;
+    saveUserDoc(uid, { inquiriesSeenAt: Date.now() }).catch(() => {});
+  }, [uid]);
 
   // Listings this buyer has already enquired/contacted/visited on. Drives the
   // number reveal on /detail.
@@ -770,6 +856,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       contactedListingIds,
       updateMyListing,
       deleteMyListing,
+      setListingHidden,
+      setListingSaleStatus,
+      unreadLeadCount,
+      isLeadUnread,
+      markInquiriesSeen,
+      savedSellers,
+      isSellerSaved,
+      toggleSaveSeller,
       showToast,
       login,
       signup,
@@ -817,6 +911,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       contactedListingIds,
       updateMyListing,
       deleteMyListing,
+      setListingHidden,
+      setListingSaleStatus,
+      unreadLeadCount,
+      isLeadUnread,
+      markInquiriesSeen,
+      savedSellers,
+      isSellerSaved,
+      toggleSaveSeller,
       showToast,
       login,
       signup,
