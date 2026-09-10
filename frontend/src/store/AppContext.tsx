@@ -218,6 +218,9 @@ const AppCtx = createContext<Ctx | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
+  // Whether the signed-in user's profile document has arrived yet. Gates the
+  // splash so the router cannot decide before it knows. See `booted` below.
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [uid, setUid] = useState<string | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
 
@@ -271,9 +274,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotifications([]);
       setMyLeads([]);
       setMyBuyerLeads([]);
+      // Nothing to wait for: a signed-out app is fully booted.
+      setProfileLoaded(true);
       return;
     }
-    const unsubUser = watchUserDoc(uid, setProfile);
+    // A restored session arrives BEFORE its users/{uid} document does. Until
+    // that document lands we do not yet know whether this user is set up, so
+    // the app must keep showing the splash rather than guess. Guessing was
+    // the bug: index.tsx read `authed` the instant auth was ready, saw a
+    // null profile, and redirected to the login screen — permanently, since
+    // <Redirect> fires once. A user with a perfectly valid restored session
+    // was told to sign in again.
+    setProfileLoaded(false);
+    const unsubUser = watchUserDoc(uid, (p) => {
+      setProfile(p);
+      setProfileLoaded(true);
+    });
     const unsubNotif = watchNotifications(uid, (items) => setNotifications(items as NotificationItem[]));
     // Both lead listeners fail closed to [] if the deployed rules have not
     // been updated yet (see firebase/firestore.rules), so a stale ruleset
@@ -295,7 +311,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const booted = authReady;
+  // "Booted" now means we know BOTH whether someone is signed in AND, if so,
+  // what their profile says. Without the second half the router decides too
+  // early and bounces a restored session to the login screen.
+  const booted = authReady && (!uid || profileLoaded);
   const authed = authReady && !!uid && !!profile?.setup;
 
   const user: User = useMemo(
