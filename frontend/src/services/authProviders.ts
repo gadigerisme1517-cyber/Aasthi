@@ -32,6 +32,18 @@ export async function googleSignIn() {
     return cred.user;
   }
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  // ALWAYS SHOW THE ACCOUNT CHOOSER.
+  // The web path does this with prompt:"select_account" above. The native SDK
+  // has no such parameter — it caches the last account and signs straight
+  // back in — so the equivalent is to drop that cached session first. Without
+  // this, a user who signs out cannot switch to a different Google account:
+  // the picker never appears and they land back in the account they just
+  // left. Failure here is not fatal: the worst case is the old behaviour.
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // already signed out, or the SDK had nothing cached
+  }
   const result = await GoogleSignin.signIn();
   if (result.type !== "success" || !result.data.idToken) {
     const err: any = new Error("Google sign-in cancelled");

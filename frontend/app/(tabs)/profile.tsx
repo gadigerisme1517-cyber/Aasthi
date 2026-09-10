@@ -100,7 +100,7 @@ export default function Profile() {
               ·
             </T>
             <T weight={800} size={11} color={colors.muted}>
-              {enquiries} {enquiries === 1 ? "enquiry" : "enquiries"}
+              {enquiries} {enquiries === 1 ? "inquiry" : "inquiries"}
             </T>
           </View>
         </View>
@@ -204,7 +204,7 @@ export default function Profile() {
           <T weight={500} size={13} color={colors.muted} style={{ marginTop: 6, lineHeight: 19 }}>
             You have not listed a property yet. Publish one and this becomes
             your shop — cover photo, your listings, what sold, and the view and
-            enquiry counts on each.
+            inquiry counts on each.
           </T>
           <Button label="List your first property" onPress={() => router.push("/sell")} style={{ marginTop: 14 }} testID="shop-list-first" />
         </View>
@@ -234,7 +234,7 @@ export default function Profile() {
       />
       <MenuRow
         icon="inbox"
-        title="My enquiries"
+        title="My inquiries"
         sub={
           myLeads.length === 0
             ? "Buyers who contact you appear here"

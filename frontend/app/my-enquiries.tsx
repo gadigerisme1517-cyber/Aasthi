@@ -19,7 +19,7 @@ import { useApp } from "@/src/store/AppContext";
 type Side = "received" | "sent";
 
 const TYPE_LABEL: Record<string, string> = {
-  enquiry: "Enquiry",
+  enquiry: "Inquiry",
   visit: "Visit request",
   contact: "Contact request",
 };
@@ -53,7 +53,7 @@ export default function MyEnquiries() {
   const rows = side === "received" ? myLeads : mySentLeads;
 
   return (
-    <Screen header={<PageHead title="Enquiries" onBack={() => router.back()} />}>
+    <Screen header={<PageHead title="Inquiries" onBack={() => router.back()} />}>
       <View style={styles.switch}>
         {(["received", "sent"] as Side[]).map((s) => {
           const on = s === side;
@@ -75,7 +75,7 @@ export default function MyEnquiries() {
       </View>
 
       <SectionHead
-        title={side === "received" ? "Enquiries on your listings" : "Enquiries you sent"}
+        title={side === "received" ? "Inquiries on your listings" : "Inquiries you sent"}
         sub={
           side === "received"
             ? "Buyers who contacted you, newest first."
@@ -94,7 +94,7 @@ export default function MyEnquiries() {
             // screen.
             const gone = !listing;
             const title = lead.listingTitle || listing?.title || "A listing";
-            const label = TYPE_LABEL[lead.type] ?? "Enquiry";
+            const label = TYPE_LABEL[lead.type] ?? "Inquiry";
             const who =
               side === "received"
                 ? lead.buyerName?.trim() || "AASTHI buyer"
@@ -163,17 +163,17 @@ export default function MyEnquiries() {
         // buyer to wait for enquiries they will never receive.
         <Empty
           title="Nothing here yet"
-          body="Message a seller about a property and it appears under Sent. If you list a property, buyers who contact you appear under Received."
+          body="Send an inquiry about a property and it appears under Sent. If you list a property, buyers who contact you appear under Received."
         />
       ) : side === "received" ? (
         <Empty
-          title="No enquiries received"
-          body="When a buyer messages, requests your number or asks to visit one of your listings, it appears here."
+          title="No inquiries received"
+          body="When a buyer sends an inquiry, requests your number or asks to visit one of your listings, it appears here."
         />
       ) : (
         <Empty
           title="You have not contacted anyone yet"
-          body="Open a property and tap Message to ask the seller about it."
+          body="Open a property and tap Inquiry to ask the seller about it."
         />
       )}
     </Screen>

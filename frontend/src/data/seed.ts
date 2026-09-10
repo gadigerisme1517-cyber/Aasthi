@@ -233,7 +233,7 @@ export const SEED_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "n1",
     title: "Seller replied",
-    body: "Sri Homes responded to your villa enquiry.",
+    body: "Sri Homes responded to your villa inquiry.",
     ts: Date.now() - 3600_000,
   },
   {

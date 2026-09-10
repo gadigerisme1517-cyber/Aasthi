@@ -312,7 +312,7 @@ export default function EditListing() {
           <>
             <T weight={500} size={13} color={colors.muted} style={styles.dangerBody}>
               This removes the property from AASTHI permanently. Buyers will no
-              longer see it, and enquiries already sent stay in My enquiries.
+              longer see it, and inquiries already sent stay in My inquiries.
             </T>
             <Button
               label={busy ? "Deleting…" : "Yes, delete this listing"}

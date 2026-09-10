@@ -22,7 +22,7 @@ export default function Notifications() {
           ))}
         </View>
       ) : (
-        <Empty title="No notifications yet" body="Enquiries, seller replies and alerts will appear here." />
+        <Empty title="No notifications yet" body="Inquiries, seller replies and alerts will appear here." />
       )}
     </Screen>
   );

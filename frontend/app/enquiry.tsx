@@ -15,29 +15,40 @@ export default function Enquiry() {
   const [msg, setMsg] = useState("Please share more details and available visit timings.");
 
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
-  // Only confirm what actually happened. This used to fire addLead and
-  // navigate straight to "Enquiry Sent" without waiting, so a write that
-  // failed still told the buyer the seller had their message.
+  // NO CONFIRMATION PAGE. Sending now shows a toast and leaves the user
+  // exactly where they are — /request-sent is no longer pushed from here.
+  //
+  // Still only confirms what actually happened: addLead is awaited, so a
+  // failed write shows the failure instead of "Inquiry sent". And the button
+  // latches to a sent state afterwards, because staying on the form makes it
+  // easy to tap Send twice and create two identical leads.
   const onSend = async () => {
-    if (sending) return;
+    if (sending || sent) return;
     setSending(true);
     try {
       await addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
-      showToast("Enquiry sent to seller");
-      router.replace(`/request-sent?type=enquiry&id=${listing.id}`);
+      showToast("Inquiry sent");
+      setSent(true);
     } catch {
-      showToast("Could not send your enquiry. Check your connection and try again.");
+      showToast("Could not send your inquiry. Check your connection and try again.");
+    } finally {
       setSending(false);
     }
   };
 
   return (
-    <Screen keyboard header={<PageHead title="Enquiry" onBack={() => router.back()} />}>
+    <Screen keyboard header={<PageHead title="Inquiry" onBack={() => router.back()} />}>
       <View style={{ gap: 12, marginTop: 20 }}>
         <Field value={subject} onChangeText={setSubject} testID="enquiry-subject" />
         <Textarea value={msg} onChangeText={setMsg} testID="enquiry-message" />
-        <Button label={sending ? "Sending…" : "Send enquiry"} onPress={onSend} testID="enquiry-send" />
+        <Button
+          label={sent ? "Inquiry sent" : sending ? "Sending…" : "Send inquiry"}
+          onPress={onSend}
+          variant={sent ? "light" : "black"}
+          testID="enquiry-send"
+        />
       </View>
     </Screen>
   );

@@ -140,7 +140,7 @@ export default function Home() {
               Simple. Trusted. Easy to contact.
             </T>
             <T weight={500} size={12} color="#6b665f" style={{ marginTop: 8, lineHeight: 17 }}>
-              AASTHI keeps the property page simple: big photos, clear price, location, seller details and direct enquiry.
+              AASTHI keeps the property page simple: big photos, clear price, location, seller details and direct inquiry.
             </T>
           </View>
 

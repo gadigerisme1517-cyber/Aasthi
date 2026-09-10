@@ -8,7 +8,7 @@ import { useApp } from "@/src/store/AppContext";
 
 const BENEFITS = [
   "More seller contact number views",
-  "Priority enquiries in seller inbox",
+  "Priority inquiries in seller inbox",
   "Unlimited saved properties",
   "New listing and price alerts",
 ];
@@ -37,7 +37,7 @@ export default function Premium() {
           Serious buyer access
         </T>
         <T weight={500} size={13} color={colors.muted} style={{ marginTop: 8, lineHeight: 20 }}>
-          Message sellers for free. Premium adds more contact number views and priority enquiries. Seller privacy still applies.
+          Send inquiries for free. Premium adds more contact number views and priority inquiries. Seller privacy still applies.
         </T>
         {active ? (
           <View style={styles.activeBox}>

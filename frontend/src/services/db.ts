@@ -223,7 +223,7 @@ export function boostListing(listingId: string) {
 const LEAD_NOUN: Record<string, string> = {
   visit: "Visit request",
   contact: "Contact request",
-  enquiry: "Enquiry",
+  enquiry: "Inquiry",
 };
 
 export async function addLead(payload: {
@@ -251,7 +251,7 @@ export async function addLead(payload: {
         ? "Visit requested"
         : payload.type === "contact"
           ? "Contact request sent"
-          : "Enquiry sent",
+          : "Inquiry sent",
     body: "The seller has been notified and will respond shortly.",
     ts: serverTimestamp(),
   });
@@ -260,15 +260,15 @@ export async function addLead(payload: {
   // when the listing carries a sellerUid, i.e. it was published by a real
   // user. Seeded listings have no owner to notify.
   if (payload.sellerUid) {
-    const noun = LEAD_NOUN[payload.type] ?? "Enquiry";
+    const noun = LEAD_NOUN[payload.type] ?? "Inquiry";
     const who = payload.buyerName?.trim() || "A buyer";
     const what = payload.listingTitle?.trim();
     await addDoc(collection(db, "notifications"), {
       uid: payload.sellerUid,
       title: `${noun} received`,
       body: what
-        ? `${who} sent a ${noun.toLowerCase()} about "${what}". Open My enquiries to see it.`
-        : `${who} sent a ${noun.toLowerCase()} on one of your listings. Open My enquiries to see it.`,
+        ? `${who} sent a ${noun.toLowerCase()} about "${what}". Open My inquiries to see it.`
+        : `${who} sent a ${noun.toLowerCase()} on one of your listings. Open My inquiries to see it.`,
       ts: serverTimestamp(),
     });
   }

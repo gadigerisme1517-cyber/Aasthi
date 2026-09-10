@@ -122,7 +122,7 @@ export default function SellerDetail() {
           >
             <Icon name="message" size={15} color="#fff" />
             <T weight={900} size={12.5} color="#fff">
-              {enquiryTarget ? "Send an enquiry" : "No listings to enquire about"}
+              {enquiryTarget ? "Send an inquiry" : "No listings to inquire about"}
             </T>
           </Pressable>
         )}

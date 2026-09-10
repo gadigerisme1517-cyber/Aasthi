@@ -86,7 +86,7 @@ function cleanDescription(listing: Record<string, any>) {
 
   return facts.length
     ? `${facts.join(", ")}. Confirm final measurements, documents and visit timing with the seller.`
-    : "Property details are being updated. Message the seller to confirm full details before visiting.";
+    : "Property details are being updated. Send an inquiry to confirm full details before visiting.";
 }
 
 export default function Detail() {
@@ -359,7 +359,7 @@ export default function Detail() {
         <Pressable style={[styles.stickyPill, styles.messagePill]} onPress={() => router.push(`/enquiry${q}`)} testID="detail-message">
           <Icon name="message" size={16} color="#fff" />
           <T weight={900} size={12.5} color="#fff">
-            Message
+            Inquiry
           </T>
         </Pressable>
         <Pressable

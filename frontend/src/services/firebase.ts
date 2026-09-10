@@ -26,15 +26,49 @@ if (Platform.OS === "web") {
   const { getAuth } = require("firebase/auth");
   auth = getAuth(app);
 } else {
-  // Native: AsyncStorage-backed persistence (falls back to memory if unavailable).
+  // Native: AsyncStorage-backed persistence, so a session survives the app
+  // being killed, updated or restarted.
+  //
+  // WHY THE HELPER IS IMPORTED FROM "@firebase/auth" AND NOT "firebase/auth":
+  // the umbrella `firebase` package's exports map for "./auth" declares only
+  // types / node / browser / default — there is NO "react-native" condition.
+  // Metro therefore resolves `firebase/auth` to the BROWSER build, which does
+  // not export getReactNativePersistence. Calling it threw a TypeError, the
+  // catch below swallowed it, and auth silently fell back to IN-MEMORY
+  // persistence — which is why users were signed out by an app update, a
+  // force-stop, or the OS reclaiming the process.
+  // `@firebase/auth` does declare a "react-native" condition, so importing
+  // the helper from there gets the build that actually has it.
   const authMod = require("firebase/auth");
   const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+
+  let getRNPersistence: ((s: unknown) => unknown) | undefined;
   try {
-    auth = authMod.initializeAuth(app, {
-      persistence: authMod.getReactNativePersistence(AsyncStorage),
-    });
+    getRNPersistence = require("@firebase/auth").getReactNativePersistence;
   } catch {
-    auth = authMod.getAuth(app);
+    getRNPersistence = undefined;
+  }
+  // Belt and braces: if a future version restores it on the umbrella package.
+  if (typeof getRNPersistence !== "function") {
+    getRNPersistence = authMod.getReactNativePersistence;
+  }
+
+  if (typeof getRNPersistence !== "function") {
+    // Do NOT fail silently the way this used to. Memory-only auth looks fine
+    // until the app restarts, which is exactly the bug that hid here.
+    console.warn(
+      "[auth] getReactNativePersistence unavailable — sessions will NOT survive a restart",
+    );
+    auth = authMod.initializeAuth(app);
+  } else {
+    try {
+      auth = authMod.initializeAuth(app, { persistence: getRNPersistence(AsyncStorage) });
+    } catch {
+      // Already initialised (e.g. this module was evaluated twice). getAuth
+      // returns that SAME instance, persistence and all — it is not a
+      // downgrade to memory.
+      auth = authMod.getAuth(app);
+    }
   }
 }
 

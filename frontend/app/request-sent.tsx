@@ -16,8 +16,8 @@ type RequestType = "enquiry" | "visit" | "contact";
 
 const COPY: Record<RequestType, { header: string; title: string; body: string }> = {
   enquiry: {
-    header: "Enquiry",
-    title: "Enquiry Sent",
+    header: "Inquiry",
+    title: "Inquiry Sent",
     body: "The seller has your message and will respond shortly.",
   },
   visit: {
@@ -28,7 +28,7 @@ const COPY: Record<RequestType, { header: string; title: string; body: string }>
   contact: {
     header: "Contact Seller",
     title: "Contact Request Sent",
-    body: "Seller contact details will be shared after enquiry.",
+    body: "Seller contact details will be shared after an inquiry.",
   },
 };
 

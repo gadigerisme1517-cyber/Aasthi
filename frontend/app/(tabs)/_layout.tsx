@@ -87,7 +87,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
       </Pressable>
       {/* Was Saved. Labelled "Enquiries", not "Chat": there are no threads
           here, only a record of contact. */}
-      <PushItem icon="inbox" label="Enquiries" href="/my-enquiries" testID="tab-enquiries" />
+      <PushItem icon="inbox" label="Inquiries" href="/my-enquiries" testID="tab-enquiries" />
       <Item tab={TABS[2]} />
     </View>
   );
