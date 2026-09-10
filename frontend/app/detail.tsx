@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -14,7 +14,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ListingStatusTag, T, TrustTag } from "@/src/components/ui";
+import { ListingStatusTag, SaleStatusTag, T, TrustTag } from "@/src/components/ui";
+import { countListingView } from "@/src/services/db";
+import { auth } from "@/src/services/firebase";
 import { Icon } from "@/src/icons";
 import { colors, NAV_HEIGHT, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
@@ -110,6 +112,21 @@ export default function Detail() {
   const contactNumberHint = buyerIsPremium ? "Seller approval needed" : "To view number";
   const descriptionText = cleanDescription(listing as any);
 
+  // Count one view per opening of this screen, by anyone who is not the
+  // owner. The ref stops React re-renders (hero paging, save toggles) from
+  // counting again, and the uid check stops a seller inflating their own
+  // number just by checking their listing.
+  const counted = useRef<string | null>(null);
+  const authUid = auth.currentUser?.uid ?? null;
+  useEffect(() => {
+    const id = listing?.id;
+    if (!id || counted.current === id) return;
+    const ownerUid = (listing as any)?.sellerUid;
+    if (ownerUid && authUid && ownerUid === authUid) return; // owner: not a view
+    counted.current = id;
+    countListingView(id);
+  }, [listing, authUid]);
+
   const onHeroScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(event.nativeEvent.contentOffset.x / width);
     setHeroIndex(Math.max(0, Math.min(next, heroImages.length - 1)));
@@ -199,8 +216,9 @@ export default function Detail() {
             {/* The PROPERTY's verification state. Distinct from the seller's
                 TrustTag in the "Listed by" section below — one is about the
                 listing, the other about the person. */}
-            <View style={{ marginTop: 10 }}>
+            <View style={{ marginTop: 10, flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
               <ListingStatusTag status={(listing as any).verificationStatus} />
+              <SaleStatusTag status={(listing as any).saleStatus} />
             </View>
 
             <View style={styles.factRow}>

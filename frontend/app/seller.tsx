@@ -1,34 +1,38 @@
-import { Image } from "expo-image";
+import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { Linking as RNLinking, Pressable, Share, StyleSheet, View } from "react-native";
 
 import { ResultCard } from "@/src/components/cards";
-import { Block, Empty, PageHead, Screen, SectionHead, T, TrustTag } from "@/src/components/ui";
-import { colors } from "@/src/theme";
+import { Block, Empty, PageHead, Screen, T } from "@/src/components/ui";
+import { ShopCover, ShopIdentity, ShopStats, ShopTabs, memberSince } from "@/src/components/shop";
+import { Icon } from "@/src/icons";
+import { colors, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
-function Fact({ b, label }: { b: string | number; label: string }) {
-  return (
-    <View style={styles.fact}>
-      <T weight={800} size={19}>
-        {String(b)}
-      </T>
-      <T weight={850} size={10.5} color={colors.muted} style={{ marginTop: 3 }}>
-        {label}
-      </T>
-    </View>
-  );
-}
+// The public shop. Same cover, identity, badges and three stats as the
+// owner's own view in /(tabs)/profile — but WITHOUT the view and enquiry
+// counts, which are the seller's business and nobody else's.
+//
+// Two kinds of seller arrive here: a seeded one by ?id=, and a real
+// publisher by ?uid=. A publisher's details are reconstructed from their own
+// listings, because firestore.rules restricts users/{uid} to its owner.
 
 export default function SellerDetail() {
   const router = useRouter();
   const { id, uid } = useLocalSearchParams<{ id?: string; uid?: string }>();
-  const { sellers, listings, listingsBySeller, sellerOf, blocked, toggleBlock, showToast } = useApp();
+  const {
+    sellers,
+    listings,
+    listingsBySeller,
+    sellerOf,
+    blocked,
+    toggleBlock,
+    showToast,
+    contactedListingIds,
+  } = useApp();
+  const [tab, setTab] = useState("live");
 
-  // Two kinds of seller reach this screen. A seeded one is looked up by its
-  // numeric id. A real publisher has no numeric id — it is identified by uid,
-  // and its profile is reconstructed from its own listings, because
-  // firestore.rules:32 forbids reading another user's users/{uid} document.
   const userListings = uid ? listings.filter((l) => (l as any).sellerUid === uid) : [];
   const seller = uid
     ? userListings.length
@@ -36,8 +40,7 @@ export default function SellerDetail() {
       : undefined
     : sellers.find((s) => s.id === Number(id));
   const mine = uid ? userListings : listingsBySeller(seller?.id ?? -999);
-  // The block key is the uid for a private publisher, the numeric id for a
-  // seeded seller. Both live in the same users/{uid}.blocked array.
+
   const blockKey = uid ?? seller?.id;
   const isBlocked = blockKey !== undefined && blocked.includes(blockKey);
 
@@ -49,27 +52,135 @@ export default function SellerDetail() {
     );
   }
 
+  const live = mine.filter((l) => ((l as any).saleStatus ?? "live") !== "sold");
+  const sold = mine.filter((l) => (l as any).saleStatus === "sold");
+
+  // The number is earned on the SHOP the same way it is earned on a listing:
+  // only after this buyer has actually contacted one of this seller's
+  // properties. Seeded sellers carry no phone at all, so their shops never
+  // show a Call button — which is honest, there is no number to give.
+  const phone = (seller as any).phone?.trim?.() ?? "";
+  const contactedThisSeller = mine.some((l) => contactedListingIds.includes(l.id));
+  const canCall = Boolean(phone) && contactedThisSeller;
+  const enquiryTarget = live[0] ?? mine[0];
+
+  const share = async () => {
+    // NO FABRICATED WEB URL. aasthi.in does not exist. This is a real deep
+    // link built from the "aasthi" scheme in app.json, so it opens this shop
+    // for anyone who already has the app installed. See the report for the
+    // limit that leaves.
+    const link = uid
+      ? Linking.createURL("/seller", { queryParams: { uid } })
+      : Linking.createURL("/seller", { queryParams: { id: String(seller.id) } });
+    await Share.share({
+      message:
+        `${seller.name} on AASTHI — ${live.length} ${live.length === 1 ? "property" : "properties"} ` +
+        `for sale${seller.meta ? ` · ${seller.meta}` : ""}.\n${link}`,
+    });
+  };
+
   return (
     <Screen header={<PageHead title="Seller" onBack={() => router.back()} />}>
-      <Block style={{ marginTop: 18 }}>
-        <View style={styles.wide}>
-          <View style={styles.left}>
-            <Image source={{ uri: seller.img }} style={styles.img} />
-            <View style={{ flex: 1 }}>
-              <T weight={700} size={15}>
-                {seller.name}
-              </T>
-              <T weight={500} size={12} color={colors.muted} style={{ marginTop: 3 }} numberOfLines={1}>
-                {seller.meta}
-              </T>
-            </View>
-          </View>
-          <TrustTag label={seller.trust} />
-        </View>
-      </Block>
+      <ShopCover uri={seller.cover} />
+      <ShopIdentity
+        avatar={seller.img}
+        name={seller.name}
+        businessName={undefined}
+        city={seller.meta}
+        verified={seller.verified}
+        reraId={undefined}
+      />
+      <ShopStats
+        stats={[
+          { value: String(live.length), label: "Live listings" },
+          { value: String(sold.length), label: "Sold" },
+          // Another seller's createdAt is not readable from here, so a
+          // private publisher shows a dash rather than a made-up date.
+          // Seeded sellers have no such field at all.
+          { value: memberSince(undefined), label: "Member since" },
+        ]}
+      />
 
-      {/* Restored for private publishers. users.blocked now holds uids as
-          well as the seeded numeric ids, so this works for both. */}
+      <View style={styles.contactRow}>
+        {canCall ? (
+          <Pressable
+            style={[styles.contactBtn, styles.contactPrimary]}
+            onPress={() => RNLinking.openURL(`tel:${phone.replace(/\s+/g, "")}`)}
+            testID="seller-call"
+          >
+            <Icon name="phone" size={15} color="#fff" />
+            <T weight={900} size={12.5} color="#fff">
+              Call {phone}
+            </T>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.contactBtn, styles.contactPrimary, !enquiryTarget && styles.contactDisabled]}
+            disabled={!enquiryTarget}
+            onPress={() => router.push(`/enquiry?id=${enquiryTarget.id}`)}
+            testID="seller-enquire"
+          >
+            <Icon name="message" size={15} color="#fff" />
+            <T weight={900} size={12.5} color="#fff">
+              {enquiryTarget ? "Send an enquiry" : "No listings to enquire about"}
+            </T>
+          </Pressable>
+        )}
+        <Pressable style={styles.contactBtn} onPress={share} testID="seller-share">
+          <Icon name="globe" size={15} color={colors.ink} />
+          <T weight={900} size={12.5}>
+            Share
+          </T>
+        </Pressable>
+      </View>
+
+      <ShopTabs
+        tabs={[
+          { key: "live", label: "Live", count: live.length },
+          { key: "sold", label: "Sold", count: sold.length },
+          { key: "about", label: "About" },
+        ]}
+        active={tab}
+        onSelect={setTab}
+      />
+
+      <View style={{ marginTop: 14 }}>
+        {tab === "live" ? (
+          live.length ? (
+            <View style={{ gap: 14 }}>
+              {live.map((l) => (
+                <ResultCard key={l.id} listing={l} onPress={() => router.push(`/detail?id=${l.id}`)} />
+              ))}
+            </View>
+          ) : (
+            <Empty title="No active listings" body="This seller has no live properties right now." />
+          )
+        ) : null}
+
+        {tab === "sold" ? (
+          sold.length ? (
+            <View style={{ gap: 14 }}>
+              {sold.map((l) => (
+                <ResultCard key={l.id} listing={l} onPress={() => router.push(`/detail?id=${l.id}`)} />
+              ))}
+            </View>
+          ) : (
+            <Empty title="No completed sales yet." body="Properties this seller has sold will be listed here." />
+          )
+        ) : null}
+
+        {tab === "about" ? (
+          <Block>
+            <AboutRow label="Seller" value={seller.name} />
+            <AboutRow label="Details" value={seller.meta} />
+            <AboutRow label="Trust" value={seller.trust} />
+            <AboutRow label="Member since" value={memberSince(undefined)} />
+          </Block>
+        ) : null}
+      </View>
+
+      {/* Kept from last pass: works for seeded sellers by numeric id and for
+          private publishers by uid. */}
       {blockKey !== undefined ? (
         <Pressable
           style={styles.blockRow}
@@ -84,39 +195,49 @@ export default function SellerDetail() {
           </T>
         </Pressable>
       ) : null}
-
-      <View style={styles.facts}>
-        <Fact b={seller.sold} label="sold" />
-        <Fact b={seller.rating} label="rating" />
-        <Fact b={mine.length} label="listings" />
-      </View>
-
-      <SectionHead title="Listings" sub="Properties from this seller." />
-      {mine.length ? (
-        <View style={{ gap: 14 }}>
-          {mine.map((l) => (
-            <ResultCard key={l.id} listing={l} onPress={() => router.push(`/detail?id=${l.id}`)} />
-          ))}
-        </View>
-      ) : (
-        <Empty title="No active listings" body="This seller has no live properties right now." />
-      )}
     </Screen>
   );
 }
 
+function AboutRow({ label, value }: { label: string; value?: string | number }) {
+  return (
+    <View style={styles.aboutRow}>
+      <T weight={800} size={12} color={colors.muted}>
+        {label}
+      </T>
+      <T weight={700} size={13.5} style={{ marginTop: 3 }}>
+        {String(value ?? "").trim() || "-"}
+      </T>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  wide: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  left: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  img: { width: 54, height: 54, borderRadius: 27 },
-  blockRow: { alignSelf: "flex-start", marginTop: 10 },
-  facts: { flexDirection: "row", gap: 8, marginTop: 14 },
-  fact: {
+  contactRow: { flexDirection: "row", gap: 8, marginTop: 14 },
+  contactBtn: {
     flex: 1,
-    height: 74,
-    borderRadius: 22,
-    backgroundColor: "#f7f7f5",
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.line,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 7,
+    paddingHorizontal: 10,
+    ...shadow.soft,
+  },
+  contactPrimary: { backgroundColor: colors.black, borderColor: colors.black },
+  contactDisabled: { opacity: 0.5 },
+  aboutRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.line },
+  blockRow: {
+    marginTop: 18,
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: radius.result,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
   },
 });

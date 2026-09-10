@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Listing, Seller } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
-import { ListingStatusTag, T } from "@/src/components/ui";
+import { ListingStatusTag, SaleStatusTag, T } from "@/src/components/ui";
 
 function countLabel(value: string, singular: string, plural: string) {
   return value === "1" ? singular : plural;
@@ -79,9 +79,10 @@ export function FeatureCard({
         {/* The listing's own verification state. The uppercase badge over the
             photo describes the SELLER ("Buy · verified"); this describes the
             PROPERTY, so they must not look alike. */}
-        {(listing as any).verificationStatus ? (
-          <View style={{ marginTop: 8 }}>
+        {(listing as any).verificationStatus || (listing as any).saleStatus ? (
+          <View style={{ marginTop: 8, flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
             <ListingStatusTag status={(listing as any).verificationStatus} />
+            <SaleStatusTag status={(listing as any).saleStatus} />
           </View>
         ) : null}
         <View style={styles.factGlass}>
@@ -155,6 +156,7 @@ export function ResultCard({
               </View>
             ))}
           <ListingStatusTag status={(listing as any).verificationStatus} compact />
+          <SaleStatusTag status={(listing as any).saleStatus} compact />
         </View>
       </View>
     </Pressable>

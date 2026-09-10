@@ -6,6 +6,7 @@ import {
   Empty,
   ListingStatusTag,
   PageHead,
+  SaleStatusTag,
   Screen,
   SectionHead,
   T,
@@ -60,8 +61,11 @@ export default function MyListings() {
                 <T weight={500} size={11} color={colors.muted} numberOfLines={1}>
                   {l.addr}
                 </T>
-                <View style={{ marginTop: 8 }}>
+                {/* Both claims, side by side: whether the documents were
+                    checked, and whether it is still for sale. */}
+                <View style={{ marginTop: 8, flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                   <ListingStatusTag status={(l as any).verificationStatus} />
+                  <SaleStatusTag status={(l as any).saleStatus} />
                 </View>
               </View>
               <Icon name="chev" size={16} color={colors.faint} />

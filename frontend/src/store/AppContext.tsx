@@ -62,8 +62,18 @@ export type User = {
   partnerType?: string;
   businessName?: string;
   operatingAreas?: string;
+  // Written by /property-partner. Drives the RERA badge on the shop.
+  reraId?: string;
   // Epoch ms, written by change-password.tsx via saveUserDoc.
   passwordChangedAt?: number;
+  // Shop front. `cover` is the seller's own banner; when absent the shop
+  // falls back to their first listing's photo and then to a plain block —
+  // never to a stock photograph, which would show a property they do not have.
+  cover?: string;
+  // Epoch ms, written once at profile setup. Absent for every account created
+  // before this existed, and "Member since" shows a dash for those rather
+  // than inventing a date.
+  createdAt?: number;
 };
 
 // A blocked seller is identified either by the seeded numeric id or, for a
@@ -170,6 +180,7 @@ type Ctx = {
   // Buyer-side: leads THIS user sent. Readable under the deployed rules
   // (leads: buyerUid == request.auth.uid).
   mySentLeads: any[];
+  enquiryCountFor: (listingId: string) => number;
   contactedListingIds: string[];
   updateMyListing: (listingId: string, data: Record<string, any>) => Promise<void>;
   deleteMyListing: (listingId: string) => Promise<void>;
@@ -307,9 +318,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       partnerType: profile?.partnerType ?? "",
       businessName: profile?.businessName ?? "",
       operatingAreas: profile?.operatingAreas ?? "",
+      reraId: profile?.reraId ?? "",
       // No default: privacy.tsx distinguishes "never changed" from a real
       // timestamp, so this must stay undefined until the doc actually has it.
       passwordChangedAt: profile?.passwordChangedAt,
+      cover: profile?.cover,
+      createdAt: profile?.createdAt,
     }),
     [profile],
   );
@@ -337,8 +351,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Listings with blocked sellers removed. This is what Home, Search and
   // Saved render. `listings` stays unfiltered so a direct /detail?id= link
   // still resolves and so /blocked can find a blocked seller's properties.
+  // Home and Search show only what a buyer can still act on: blocked sellers
+  // removed, and SOLD properties removed. A sold listing is not deleted — it
+  // stays on its seller's shop under Sold, because a track record is the
+  // point of having a shop. "token" stays visible: money has moved but the
+  // sale is not done.
   const browseListings = useMemo(
-    () => listings.filter((l) => !isBlockedKey(blockKeyOfListing(l))),
+    () =>
+      listings.filter(
+        (l) =>
+          !isBlockedKey(blockKeyOfListing(l)) &&
+          ((l as any).saleStatus ?? "live") !== "sold",
+      ),
     [listings, isBlockedKey, blockKeyOfListing],
   );
 
@@ -383,7 +407,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const completeProfile = useCallback(
     async (data: Partial<User>) => {
       if (!uid) return;
-      await saveUserDoc(uid, { ...data, setup: true, verified: false });
+      // createdAt drives "Member since" on the shop. Written once, here.
+      await saveUserDoc(uid, { ...data, setup: true, verified: false, createdAt: Date.now() });
     },
     [uid],
   );
@@ -577,6 +602,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       propertyType: draft.propertyType,
       vastu: draft.vastu,
       // Denormalised publisher identity — see sellerOf for why.
+      saleStatus: "live",
+      views: 0,
       sellerUid: uid,
       sellerName: user.name,
       sellerAvatar: user.avatar,
@@ -602,6 +629,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const listing = listings.find((l) => l.id === listingId) as any;
       const sellerUid: string | undefined = listing?.sellerUid;
       const listingTitle: string | undefined = listing?.title;
+      const sellerName: string | undefined = listing
+        ? sellerOf(listing)?.name
+        : undefined;
       // Omit `message` entirely when the caller passes nothing. Firestore is
       // initialised without ignoreUndefinedProperties, so spreading
       // `message: undefined` would make addDoc throw on contact.tsx, which
@@ -620,9 +650,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...(sellerUid ? { sellerUid } : {}),
         ...(listingTitle ? { listingTitle } : {}),
         ...(user.name ? { buyerName: user.name } : {}),
+        // So a Sent row can name who was contacted once the listing is gone.
+        ...(sellerName ? { sellerName } : {}),
       });
     },
-    [uid, listings, user.name],
+    [uid, listings, user.name, sellerOf],
   );
 
   // ---- Seller-side: my listings, my enquiries ----
@@ -652,6 +684,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Same data as contactedListingIds is derived from, but ordered for
   // display. watchLeadsForBuyer does not sort (it only feeds a set), so the
   // ordering happens here.
+  // Enquiries per listing, for the OWNER only. Derived from the leads this
+  // user can already read as a seller — no extra Firestore read, and a buyer
+  // can never compute it because they cannot read another seller's leads.
+  const enquiryCountFor = useCallback(
+    (listingId: string) => myLeads.filter((l: any) => l.listingId === listingId).length,
+    [myLeads],
+  );
+
   const mySentLeads = useMemo(
     () =>
       [...myBuyerLeads].sort(
@@ -701,6 +741,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       myListings,
       myLeads,
       mySentLeads,
+      enquiryCountFor,
       contactedListingIds,
       updateMyListing,
       deleteMyListing,
@@ -747,6 +788,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       myListings,
       myLeads,
       mySentLeads,
+      enquiryCountFor,
       contactedListingIds,
       updateMyListing,
       deleteMyListing,

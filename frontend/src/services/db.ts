@@ -18,6 +18,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   onSnapshot,
   query,
   serverTimestamp,
@@ -204,6 +205,15 @@ export function deleteListing(listingId: string) {
   return deleteDoc(doc(db, "listings", listingId));
 }
 
+// One view, counted server-side with an atomic increment so two readers at
+// once cannot clobber each other. Callers must skip their own listings —
+// see detail.tsx. Failure is swallowed ON PURPOSE and it is the one place in
+// this codebase where that is right: a view counter must never interrupt
+// someone looking at a property.
+export function countListingView(listingId: string) {
+  return updateDoc(doc(db, "listings", listingId), { views: increment(1) }).catch(() => {});
+}
+
 export function boostListing(listingId: string) {
   const expiry = Date.now() + 7 * 24 * 3600 * 1000;
   return updateDoc(doc(db, "listings", listingId), { boosted: true, boostExpiry: expiry });
@@ -227,6 +237,9 @@ export async function addLead(payload: {
   sellerUid?: string;
   buyerName?: string;
   listingTitle?: string;
+  // Stored so a buyer's Sent row can still say who they contacted after the
+  // listing itself is deleted.
+  sellerName?: string;
 }) {
   await addDoc(collection(db, "leads"), { ...payload, ts: serverTimestamp() });
 

@@ -52,6 +52,22 @@ export type Listing = {
   sellerCity?: string;
   sellerPhone?: string;
   verificationStatus?: string; // "pending" | "verified" | "rejected"
+  // A DIFFERENT CLAIM from verificationStatus. That one is about whether
+  // AASTHI checked the documents; this is about whether the property is
+  // still for sale. A listing can be Verified and Sold at the same time.
+  saleStatus?: SaleStatus; // default "live" when absent
+  // Incremented once per /detail open by anyone who is not the owner.
+  // Absent on every listing published before this existed — the UI shows a
+  // dash for that, never 0, because "we never counted" is not "nobody looked".
+  views?: number;
+};
+
+export type SaleStatus = "live" | "token" | "sold";
+
+export const SALE_STATUS_LABEL: Record<SaleStatus, string> = {
+  live: "Live",
+  token: "Token paid",
+  sold: "Sold",
 };
 
 export const SELLERS: Seller[] = [

@@ -527,6 +527,43 @@ export function ListingStatusTag({
   );
 }
 
+// Whether the property is still available. A DIFFERENT CLAIM from
+// ListingStatusTag, which is about whether AASTHI checked the documents — a
+// property can be Verified and Sold at once, so the two must never be
+// mistaken for each other and are drawn differently on purpose:
+//   ListingStatusTag = white pill, coloured border, coloured dot
+//   SaleStatusTag    = SOLID filled pill, white text
+// "live" renders nothing: the absence of a badge is what "still available"
+// looks like, and a "Live" pill on every card would be noise.
+export function SaleStatusTag({
+  status,
+  compact = false,
+}: {
+  status?: string;
+  compact?: boolean;
+}) {
+  const map: Record<string, { label: string; bg: string }> = {
+    token: { label: "Token paid", bg: "#4a4a4d" },
+    sold: { label: "Sold", bg: colors.black },
+  };
+  const s = status ? map[status] : undefined;
+  if (!s) return null;
+  return (
+    <View
+      testID={`sale-status-${status}`}
+      style={[
+        styles.saleTag,
+        { backgroundColor: s.bg },
+        compact && { height: 20, paddingHorizontal: 8 },
+      ]}
+    >
+      <T weight={900} size={compact ? 8.5 : 10} color={colors.white}>
+        {s.label}
+      </T>
+    </View>
+  );
+}
+
 export function ToastHost() {
   const { toast } = useApp();
   const insets = useSafeAreaInsets();
@@ -729,6 +766,14 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
+  saleTag: {
+    height: 24,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
   toast: {
     position: "absolute",
     left: 40,

@@ -15,6 +15,8 @@ import {
   T,
   Textarea,
 } from "@/src/components/ui";
+import { SelectChips } from "@/src/components/choice";
+import { SALE_STATUS_LABEL, type SaleStatus } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
 import { auth } from "@/src/services/firebase";
 import { uploadImages } from "@/src/services/db";
@@ -43,6 +45,12 @@ export default function EditListing() {
   const [busy, setBusy] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingReverify, setConfirmingReverify] = useState(false);
+  // Sale status is NOT part of materialChanged below, on purpose: marking a
+  // property sold says nothing about whether its documents were checked, so
+  // it must never send an approved listing back for re-verification.
+  const [saleStatus, setSaleStatus] = useState<SaleStatus>(
+    ((listing as any)?.saleStatus as SaleStatus) ?? "live",
+  );
 
   // The photo list as it was when this screen opened. Captured once so that
   // adding then removing the same photo does not count as a change.
@@ -147,6 +155,7 @@ export default function EditListing() {
         desc: desc.trim(),
         img: finalPhotos[0],
         g: finalPhotos,
+        saleStatus,
         // Only written when a re-review is actually due, so a description
         // fix never touches an approved listing's status.
         ...(needsReverify ? { verificationStatus: "pending" } : {}),
@@ -179,6 +188,26 @@ export default function EditListing() {
       <View style={{ marginTop: 14, marginBottom: 4 }}>
         <ListingStatusTag status={(listing as any).verificationStatus} />
       </View>
+
+      <SectionLabel>Sale status</SectionLabel>
+      <SelectChips
+        items={["live", "token", "sold"].map((s) => SALE_STATUS_LABEL[s as SaleStatus])}
+        value={SALE_STATUS_LABEL[saleStatus]}
+        onSelect={(label) => {
+          const found = (["live", "token", "sold"] as SaleStatus[]).find(
+            (s) => SALE_STATUS_LABEL[s] === label,
+          );
+          if (found) setSaleStatus(found);
+        }}
+        testIDPrefix="edit-sale"
+      />
+      <T weight={500} size={11.5} color={colors.faint} style={{ marginTop: 8, lineHeight: 16 }}>
+        {saleStatus === "sold"
+          ? "Sold properties leave Home and Search, and stay on your shop under Sold."
+          : saleStatus === "token"
+            ? "Token paid stays visible to buyers, marked so they know it is nearly gone."
+            : "Live means still available and shown everywhere."}
+      </T>
 
       <SectionLabel>Details</SectionLabel>
       <View style={{ gap: 12 }}>
