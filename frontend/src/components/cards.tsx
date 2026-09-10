@@ -121,6 +121,9 @@ function BrowseCard({
   const photos = photosOf(listing);
   const isRent = listing.type === "Rent";
   const status = (listing as any).verificationStatus as string | undefined;
+  // "sold" never reaches browse — browseListings filters it out — so the only
+  // sale state worth a pill here is token-paid.
+  const isTokenPaid = (listing as any).saleStatus === "token";
 
   return (
     <Pressable style={styles.card} onPress={onPress} testID={`${testIDPrefix}-${listing.id}`}>
@@ -141,12 +144,30 @@ function BrowseCard({
           ) : null}
         </View>
 
-        {photos.length > 1 ? (
-          <View style={styles.count} testID={`photo-count-${listing.id}`}>
-            <Icon name="camera" size={12} color="#fff" />
-            <T weight={650} size={11.5} color="#fff">
-              {photos.length}
-            </T>
+        {/* Bottom-left cluster on the photo. Availability lives HERE, not on
+            the price row: how many photos there are and whether the property
+            is still going are facts about the listing, whereas the
+            Verified/Pending marker beside the price is a claim about whether
+            AASTHI checked it. They must not share a slot.
+            The row collapses cleanly — with one photo the count is hidden and
+            the Token paid pill takes the bottom-left position on its own. */}
+        {photos.length > 1 || isTokenPaid ? (
+          <View style={styles.photoTags}>
+            {photos.length > 1 ? (
+              <View style={styles.darkPill} testID={`photo-count-${listing.id}`}>
+                <Icon name="camera" size={12} color="#fff" />
+                <T weight={650} size={11.5} color="#fff">
+                  {photos.length}
+                </T>
+              </View>
+            ) : null}
+            {isTokenPaid ? (
+              <View style={styles.darkPill} testID={`token-paid-${listing.id}`}>
+                <T weight={650} size={11.5} color="#fff">
+                  Token paid
+                </T>
+              </View>
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -321,7 +342,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     ...shadow.card,
   },
-  photoWrap: { height: 246, backgroundColor: colors.black },
+  // 210, not 246: at 246 a card ran ~1374px and two of them plus the section
+  // header did not clear the floating nav island on a 3120px screen.
+  photoWrap: { height: 210, backgroundColor: colors.black },
   topRow: {
     position: "absolute",
     left: 14,
@@ -346,17 +369,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  count: {
+  // bottom 48 still clears the panel at the shorter photo: the panel's top
+  // edge sits at 210-36 = 174, this row's bottom edge at 210-48 = 162, so
+  // there is 12px of daylight. No nudge needed.
+  photoTags: {
     position: "absolute",
     left: 14,
     bottom: 48,
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  darkPill: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     borderRadius: 999,
     backgroundColor: "rgba(10,10,10,0.62)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   panel: {
     marginTop: -36,
