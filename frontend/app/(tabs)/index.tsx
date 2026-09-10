@@ -20,7 +20,8 @@ export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // browseListings, not listings: blocked sellers' properties must not appear.
-  const { browseListings, sellers, isSaved, toggleSave, sellerOf, selectedLocation } = useApp();
+  // sellerOf is no longer needed here: the browse card carries no seller strip.
+  const { browseListings, sellers, isSaved, toggleSave, selectedLocation } = useApp();
   const [cat, setCat] = useState<string>("All");
 
   const locationFiltered = browseListings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
@@ -122,7 +123,6 @@ export default function Home() {
               <FeatureCard
                 key={l.id}
                 listing={l}
-                seller={sellerOf(l)}
                 saved={isSaved(l.id)}
                 onPress={() => router.push(`/detail?id=${l.id}`)}
                 onToggleSave={() => toggleSave(l.id)}

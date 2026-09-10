@@ -98,7 +98,23 @@ export default function Preview() {
 
   return (
     <Screen header={<PageHead title="Preview" onBack={() => router.back()} />}>
-      <FeatureCard listing={preview} seller={previewSeller} preview />
+      <FeatureCard listing={preview} preview />
+      {/* The browse card no longer carries a seller strip, so the publisher
+          is named here instead. Without it the seller could not see who the
+          listing will be attributed to before publishing — which is the whole
+          reason that strip mattered on this screen. */}
+      <View style={styles.attribution}>
+        <T weight={800} size={11} color={colors.faint} ls={0.6} style={{ textTransform: "uppercase" }}>
+          Will be published as
+        </T>
+        <T weight={700} size={15} style={{ marginTop: 4 }} numberOfLines={1}>
+          {previewSeller.name}
+        </T>
+        <T weight={500} size={12.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
+          {previewSeller.meta}
+          {user.phone.trim() ? ` · ${user.phone.trim()}` : ""}
+        </T>
+      </View>
       {!user.phone.trim() ? (
         <View style={styles.warn} testID="preview-no-phone">
           <T weight={800} size={13} color={colors.red}>
@@ -157,6 +173,14 @@ export default function Preview() {
 }
 
 const styles = StyleSheet.create({
+  attribution: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    padding: 14,
+    marginBottom: 12,
+  },
   warn: {
     borderRadius: 20,
     borderWidth: 1,

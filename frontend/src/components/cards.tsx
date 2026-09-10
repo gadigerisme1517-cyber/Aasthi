@@ -5,161 +5,228 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Listing, Seller } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
-import { ListingStatusTag, SaleStatusTag, T } from "@/src/components/ui";
+import { T } from "@/src/components/ui";
 
-function countLabel(value: string, singular: string, plural: string) {
-  return value === "1" ? singular : plural;
+// ONE browse card, exported under both historical names.
+//
+// FeatureCard and ResultCard were two different shapes — a tall hero card and
+// a small horizontal row — which meant a property looked like two different
+// products depending on which list it appeared in. They are now the same
+// card. The names are kept because call sites and their intent differ
+// (FeatureCard can carry a heart and a preview mode; ResultCard is read-only).
+//
+// Deliberately NOT on this card any more: the boxed bed/bath/area/facing
+// chips, the seller strip, and any second status row. Seller identity lives
+// on /detail and the seller shop. Status is stated once, beside the price.
+
+const VERIFIED_GREEN = "#12a05e";
+const DOT = "rgba(115,115,115,0.55)"; // colors.muted at 55%
+
+function photosOf(listing: Listing): string[] {
+  // Same convention as /detail and /gallery: `img` is the cover and `g` holds
+  // the REST. If g still contains the cover (listings written before that was
+  // fixed) the duplicate is dropped here too, so the count badge cannot lie.
+  const rest = (listing.g ?? []).filter((u) => u && u !== listing.img);
+  return [listing.img, ...rest].filter(Boolean) as string[];
 }
 
-function Fact({ b, label }: { b: string; label: string }) {
+function TrustMarker({ status }: { status?: string }) {
+  if (status === "verified") {
+    return (
+      <View style={styles.trust} testID="card-trust-verified">
+        <Icon name="check" size={13} color={VERIFIED_GREEN} />
+        <T weight={700} size={12} color={VERIFIED_GREEN}>
+          Verified
+        </T>
+      </View>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <View style={styles.trust} testID="card-trust-pending">
+        <View style={styles.hollow} />
+        <T weight={700} size={12} color={colors.muted}>
+          Pending
+        </T>
+      </View>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <View style={styles.trust} testID="card-trust-rejected">
+        <View style={[styles.hollow, { borderColor: colors.red }]} />
+        <T weight={700} size={12} color={colors.red}>
+          Rejected
+        </T>
+      </View>
+    );
+  }
+  return null;
+}
+
+// "2 BHK · 2 baths · 2,240 sq.ft · East" as ONE text line: numbers heavier
+// than the words, separators dimmed. Nested Text rather than boxed chips.
+function SpecLine({ listing }: { listing: Listing }) {
+  const parts: React.ReactNode[] = [];
+  const push = (num: string | null, word: string, key: string) => {
+    parts.push(
+      <T key={key} weight={550} size={13} color={colors.muted}>
+        {num ? <T weight={700} size={13} color={colors.ink}>{num}</T> : null}
+        {num ? " " : ""}
+        {word}
+      </T>,
+    );
+  };
+
+  if (listing.beds && listing.beds !== "-") push(listing.beds, "BHK", "beds");
+  if (listing.baths && listing.baths !== "-") {
+    push(listing.baths, listing.baths === "1" ? "bath" : "baths", "baths");
+  }
+  if (listing.area) {
+    // "2,240 sq.ft" -> number bold, unit lighter.
+    const [n, ...unit] = String(listing.area).trim().split(" ");
+    push(n, unit.join(" "), "area");
+  }
+  if (listing.facing) push(null, listing.facing, "facing");
+
+  if (!parts.length) return null;
+
   return (
-    <View style={styles.fact}>
-      <T weight={800} size={12.5}>
-        {b}
-      </T>
-      <T weight={850} size={9} color={colors.muted} style={{ marginTop: 1 }}>
-        {label}
-      </T>
-    </View>
+    <T weight={550} size={13} color={colors.muted} numberOfLines={1}>
+      {parts.map((p, i) => (
+        <T key={`w${i}`} weight={550} size={13} color={colors.muted}>
+          {i > 0 ? <T weight={550} size={13} color={DOT}>{"  ·  "}</T> : null}
+          {p}
+        </T>
+      ))}
+    </T>
+  );
+}
+
+function BrowseCard({
+  listing,
+  saved,
+  onPress,
+  onToggleSave,
+  preview,
+  testIDPrefix,
+}: {
+  listing: Listing;
+  saved?: boolean;
+  onPress?: () => void;
+  onToggleSave?: () => void;
+  preview?: boolean;
+  testIDPrefix: string;
+}) {
+  const photos = photosOf(listing);
+  const isRent = listing.type === "Rent";
+  const status = (listing as any).verificationStatus as string | undefined;
+
+  return (
+    <Pressable style={styles.card} onPress={onPress} testID={`${testIDPrefix}-${listing.id}`}>
+      <View style={styles.photoWrap}>
+        <Image source={{ uri: listing.img }} style={StyleSheet.absoluteFill} contentFit="cover" transition={180} />
+
+        <View style={styles.topRow}>
+          {/* TYPE ONLY. Verification is stated once, beside the price. */}
+          <View style={styles.typePill}>
+            <T weight={700} size={11.5} ls={0.63} color={colors.ink} style={styles.upper}>
+              {listing.type}
+            </T>
+          </View>
+          {onToggleSave && !preview ? (
+            <Pressable style={styles.save} onPress={onToggleSave} testID={`save-${listing.id}`} hitSlop={8}>
+              <Icon name="heart" size={17} color={saved ? colors.red : colors.ink} filled={saved} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {photos.length > 1 ? (
+          <View style={styles.count} testID={`photo-count-${listing.id}`}>
+            <Icon name="camera" size={12} color="#fff" />
+            <T weight={650} size={11.5} color="#fff">
+              {photos.length}
+            </T>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.panel}>
+        <View style={styles.priceRow}>
+          <View style={styles.priceWrap}>
+            <T weight={800} size={27} ls={-0.95} numberOfLines={1}>
+              {listing.price}
+            </T>
+            {isRent ? (
+              <T weight={600} size={13} color={colors.muted} style={{ marginLeft: 4 }}>
+                /month
+              </T>
+            ) : null}
+          </View>
+          <TrustMarker status={status} />
+        </View>
+
+        <T weight={700} size={17} numberOfLines={1} style={{ marginTop: 6 }}>
+          {listing.title}
+        </T>
+
+        <T weight={500} size={13.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 3 }}>
+          {listing.addr}
+        </T>
+
+        <View style={styles.hairline} />
+        <SpecLine listing={listing} />
+      </View>
+    </Pressable>
   );
 }
 
 export function FeatureCard({
   listing,
-  seller,
   saved,
   onPress,
   onToggleSave,
   preview,
 }: {
   listing: Listing;
-  seller: Seller;
   saved?: boolean;
   onPress?: () => void;
   onToggleSave?: () => void;
   preview?: boolean;
 }) {
   return (
-    <Pressable
-      style={styles.feature}
+    <BrowseCard
+      listing={listing}
+      saved={saved}
       onPress={onPress}
-      testID={`feature-card-${listing.id}`}
-    >
-      <View style={styles.featureImageWrap}>
-        <Image source={{ uri: listing.img }} style={styles.featureImage} contentFit="cover" transition={200} />
-        <View style={styles.featureTop}>
-          <View style={styles.badge}>
-            <T weight={900} size={9.5} ls={0.4} style={{ textTransform: "uppercase" }}>
-              {listing.type}
-              {seller.verified ? " · verified" : ""}
-            </T>
-          </View>
-          {!preview ? (
-            <Pressable
-              style={styles.save}
-              onPress={onToggleSave}
-              testID={`save-${listing.id}`}
-              hitSlop={8}
-            >
-              <Icon name="heart" size={17} color={saved ? colors.red : colors.ink} filled={saved} />
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-      <View style={styles.featureContent}>
-        <T weight={900} size={25} ls={-1}>
-          {listing.price}
-        </T>
-        <T weight={700} size={17} ls={-0.5} style={{ marginTop: 5, marginBottom: 5 }}>
-          {listing.title}
-        </T>
-        <T weight={500} size={12} color="#5f5f62">
-          {listing.addr}
-        </T>
-        {/* The listing's own verification state. The uppercase badge over the
-            photo describes the SELLER ("Buy · verified"); this describes the
-            PROPERTY, so they must not look alike. */}
-        {(listing as any).verificationStatus || (listing as any).saleStatus ? (
-          <View style={{ marginTop: 8, flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-            <ListingStatusTag status={(listing as any).verificationStatus} />
-            <SaleStatusTag status={(listing as any).saleStatus} />
-          </View>
-        ) : null}
-        <View style={styles.factGlass}>
-          {listing.beds && listing.beds !== "-" ? (
-            <Fact b={listing.beds} label={countLabel(listing.beds, "Bed", "Beds")} />
-          ) : null}
-          {listing.baths && listing.baths !== "-" ? (
-            <Fact b={listing.baths} label={countLabel(listing.baths, "Bath", "Baths")} />
-          ) : null}
-          <Fact b={listing.area} label="Area" />
-          <Fact b={listing.facing} label="Facing" />
-        </View>
-        <View style={styles.agentStrip}>
-          <View style={styles.agentLeft}>
-            <Image source={{ uri: seller.img }} style={styles.agentImg} />
-            <View style={{ flex: 1 }}>
-              <T weight={700} size={12} numberOfLines={1}>
-                {seller.name}
-              </T>
-              <T weight={500} size={10.5} color="#6f6f72" numberOfLines={1} style={{ marginTop: 1 }}>
-                {seller.meta}
-              </T>
-            </View>
-          </View>
-          <View style={styles.openBtn}>
-            <T weight={900} size={11} color={colors.white}>
-              {preview ? "Preview" : "View"}
-            </T>
-          </View>
-        </View>
-      </View>
-    </Pressable>
+      onToggleSave={onToggleSave}
+      preview={preview}
+      testIDPrefix="feature-card"
+    />
   );
 }
 
 export function ResultCard({
   listing,
   onPress,
+  saved,
+  onToggleSave,
 }: {
   listing: Listing;
   onPress?: () => void;
+  // Optional: most result lists are read-only and pass neither, in which case
+  // no heart is rendered rather than a dead one.
+  saved?: boolean;
+  onToggleSave?: () => void;
 }) {
   return (
-    <Pressable style={styles.result} onPress={onPress} testID={`result-card-${listing.id}`}>
-      <Image source={{ uri: listing.img }} style={styles.resultImg} contentFit="cover" transition={150} />
-      <View style={{ flex: 1, paddingVertical: 3, paddingRight: 5 }}>
-        <T weight={900} size={9.5} ls={0.5} color="#8b8b8b" style={{ textTransform: "uppercase", marginBottom: 4 }}>
-          {listing.type} · {listing.facing} facing
-        </T>
-        <T weight={900} size={17} ls={-0.5}>
-          {listing.price}
-        </T>
-        <T weight={700} size={13.5} numberOfLines={2} style={{ marginVertical: 4 }}>
-          {listing.title}
-        </T>
-        <T weight={500} size={11} color={colors.muted} numberOfLines={1} style={{ marginBottom: 6 }}>
-          {listing.addr}
-        </T>
-        <View style={styles.tinyFacts}>
-          {[
-            listing.beds && listing.beds !== "-" ? `${listing.beds} ${countLabel(listing.beds, "Bed", "Beds")}` : null,
-            listing.baths && listing.baths !== "-" ? `${listing.baths} ${countLabel(listing.baths, "Bath", "Baths")}` : null,
-            listing.area,
-          ]
-            .filter(Boolean)
-            .map((t) => (
-              <View key={t} style={styles.tinyFact}>
-                <T weight={850} size={9.5} color="#4a4a4d">
-                  {t}
-                </T>
-              </View>
-            ))}
-          <ListingStatusTag status={(listing as any).verificationStatus} compact />
-          <SaleStatusTag status={(listing as any).saleStatus} compact />
-        </View>
-      </View>
-    </Pressable>
+    <BrowseCard
+      listing={listing}
+      saved={saved}
+      onPress={onPress}
+      onToggleSave={onToggleSave}
+      testIDPrefix="result-card"
+    />
   );
 }
 
@@ -247,140 +314,117 @@ export function SellerWideCard({
 }
 
 const styles = StyleSheet.create({
-  feature: {
+  card: {
     marginBottom: 16,
-    borderRadius: radius.feature,
+    borderRadius: 26,
     overflow: "hidden",
-    backgroundColor: "#111",
-    ...shadow.card,
-  },
-  featureImageWrap: { height: 340, backgroundColor: "#ddd" },
-  featureImage: { width: "100%", height: "100%" },
-  featureTop: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    top: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  badge: {
-    height: 29,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  save: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featureContent: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 10,
-    padding: 13,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.72)",
-    ...shadow.card,
-  },
-  factGlass: { flexDirection: "row", gap: 6, marginTop: 10 },
-  fact: {
-    flex: 1,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: colors.soft,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  agentStrip: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 9,
-    padding: 8,
-    borderRadius: 16,
-    backgroundColor: colors.soft,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-  },
-  agentLeft: { flexDirection: "row", alignItems: "center", gap: 7, flex: 1 },
-  agentImg: { width: 32, height: 32, borderRadius: 16 },
-  openBtn: {
-    height: 32,
-    borderRadius: 999,
     backgroundColor: colors.black,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    ...shadow.card,
   },
-  result: {
+  photoWrap: { height: 246, backgroundColor: colors.black },
+  topRow: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    top: 14,
     flexDirection: "row",
-    gap: 9,
-    padding: 7,
-    borderRadius: radius.result,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.line,
-    ...shadow.soft,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  resultImg: { width: 112, height: 118, borderRadius: 16 },
-  tinyFacts: { flexDirection: "row", gap: 4, flexWrap: "wrap" },
-  tinyFact: {
+  typePill: {
     borderRadius: 999,
-    backgroundColor: "#f1f1ef",
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  sellerMini: {
-    width: 136,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 8,
-    ...shadow.soft,
-  },
-  cover: { height: 88, borderRadius: 16, overflow: "hidden", backgroundColor: "#ddd" },
-  avatar: {
+  upper: { textTransform: "uppercase" },
+  save: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    borderWidth: 2,
-    borderColor: "#fff",
-    marginTop: -19,
-    marginLeft: 9,
-  },
-  sellerNums: { flexDirection: "row", gap: 5 },
-  numBox: {
-    flex: 1,
-    borderRadius: 11,
-    backgroundColor: colors.soft,
-    padding: 6,
+    backgroundColor: "rgba(255,255,255,0.95)",
     alignItems: "center",
+    justifyContent: "center",
   },
-  sellerWide: {
+  count: {
+    position: "absolute",
+    left: 14,
+    bottom: 48,
     flexDirection: "row",
-    gap: 10,
     alignItems: "center",
-    padding: 10,
-    borderRadius: 20,
+    gap: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(10,10,10,0.62)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  panel: {
+    marginTop: -36,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    padding: 16,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  priceWrap: { flexDirection: "row", alignItems: "baseline", flexShrink: 1 },
+  trust: { flexDirection: "row", alignItems: "center", gap: 5 },
+  hollow: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.muted,
+  },
+  hairline: {
+    height: 1,
+    backgroundColor: colors.line,
+    marginTop: 12,
+    marginBottom: 10,
+  },
+
+  // ---- seller cards, unchanged ----
+  sellerMini: {
+    width: 168,
+    borderRadius: radius.card,
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.line,
+    padding: 8,
     ...shadow.soft,
   },
-  wideCover: { width: 80, height: 80, borderRadius: 16 },
+  cover: { height: 64, borderRadius: 14, overflow: "hidden", backgroundColor: colors.soft },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginTop: -20,
+    marginLeft: 6,
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  sellerNums: { flexDirection: "row", gap: 6 },
+  numBox: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: colors.soft,
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  sellerWide: {
+    flexDirection: "row",
+    gap: 12,
+    borderRadius: radius.card,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 10,
+    ...shadow.soft,
+  },
+  wideCover: { width: 96, height: 96, borderRadius: 16, backgroundColor: colors.soft },
 });

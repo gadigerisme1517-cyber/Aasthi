@@ -23,7 +23,11 @@ export default function Gallery() {
   const { id, index } = useLocalSearchParams<{ id: string; index?: string }>();
   const { listings } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
-  const photos = [listing?.img, ...(listing?.g ?? [])].filter(Boolean) as string[];
+  // Same de-dupe as /detail: older listings still store the cover inside `g`.
+  const photos = [
+    listing?.img,
+    ...(listing?.g ?? []).filter((u) => u && u !== listing?.img),
+  ].filter(Boolean) as string[];
   const startIndex = Math.max(0, Math.min(Number(index ?? 0) || 0, photos.length - 1));
   const [activeIndex, setActiveIndex] = useState(startIndex);
 

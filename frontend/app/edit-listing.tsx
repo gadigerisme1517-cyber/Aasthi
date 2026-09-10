@@ -153,8 +153,11 @@ export default function EditListing() {
         beds: beds.trim() || "-",
         baths: baths.trim() || "-",
         desc: desc.trim(),
+        // `g` is everything AFTER the cover — see publishListing. Writing the
+        // full array here duplicated the cover in the gallery and inflated
+        // the photo count.
         img: finalPhotos[0],
-        g: finalPhotos,
+        g: finalPhotos.slice(1),
         saleStatus,
         // Only written when a re-review is actually due, so a description
         // fix never touches an approved listing's status.

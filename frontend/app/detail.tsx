@@ -99,7 +99,13 @@ export default function Detail() {
   const seller = sellerOf(listing ?? ({} as any));
   const saved = listing ? isSaved(listing.id) : false;
   const q = `?id=${listing?.id ?? ""}`;
-  const heroImages = [listing?.img, ...(listing?.g ?? [])].filter(Boolean) as string[];
+  // De-dupe at read time as well as write time: listings published before
+  // `g` stopped including the cover still carry it twice in Firestore, and
+  // this is what made the carousel read "1 / 3" for two photos.
+  const heroImages = [
+    listing?.img,
+    ...(listing?.g ?? []).filter((u) => u && u !== listing?.img),
+  ].filter(Boolean) as string[];
   const [heroIndex, setHeroIndex] = useState(0);
   const buyerIsPremium = !FEATURES.premium || Boolean((user as any)?.premium || (user as any)?.isPremium);
   // The number is earned, not given: it appears only once this buyer has

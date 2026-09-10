@@ -614,8 +614,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       seller: USER_SELLER_ID,
       // No FALLBACK_IMG / FALLBACK_G fallback any more. Reaching this line
       // means every photo the seller chose is in Storage.
+      //
+      // `g` holds the photos AFTER the cover, never the cover itself. It used
+      // to be the whole array while `img` was also urls[0], and /detail and
+      // /gallery both build [img, ...g] — so every user listing showed its
+      // cover twice and reported one photo too many. Seeded listings always
+      // followed this convention; publishing did not.
       img: urls[0],
-      g: urls,
+      g: urls.slice(1),
       desc: draft.desc,
       tourLink: draft.tourLink,
       propertyType: draft.propertyType,
