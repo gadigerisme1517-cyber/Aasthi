@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { Empty, PageHead, Screen, SectionHead, T } from "@/src/components/ui";
+import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
@@ -44,7 +45,7 @@ function whenText(ts: any): string {
 
 export default function MyEnquiries() {
   const router = useRouter();
-  const { myLeads, mySentLeads, listings, myListings } = useApp();
+  const { myLeads, mySentLeads, listings, myListings, markReplied, showToast } = useApp();
 
   // Open on the side that has something to show. A user who has never listed
   // anything is a buyer, and Received would be empty for them forever.
@@ -154,6 +155,36 @@ export default function MyEnquiries() {
                       : "No message — you asked for the seller's contact details."}
                   </T>
                 )}
+
+                {/* Call, seller side only. The number rides on the lead and is
+                    written only when the buyer left "Show contact to sellers"
+                    on, so a missing number is a real answer, not a gap to fill
+                    with a placeholder. The reply stamp is written AFTER the
+                    dialer actually opens — leadReplies/{leadId}, because the
+                    lead itself is immutable by rule. Nothing shows reply time
+                    yet; this only starts recording it. */}
+                {side === "received" ? (
+                  lead.buyerPhone ? (
+                    <Pressable
+                      style={styles.call}
+                      testID={`enquiry-call-${lead.id}`}
+                      onPress={() =>
+                        Linking.openURL(`tel:${String(lead.buyerPhone).replace(/[^+\d]/g, "")}`)
+                          .then(() => markReplied(lead.id))
+                          .catch(() => showToast("Could not open the dialer"))
+                      }
+                    >
+                      <Icon name="phone" size={15} color={colors.white} />
+                      <T weight={900} size={12.5} color={colors.white}>
+                        Call {lead.buyerPhone}
+                      </T>
+                    </Pressable>
+                  ) : (
+                    <T weight={600} size={11.5} color={colors.faint} style={{ marginTop: 10 }}>
+                      No number shared — this buyer keeps their contact details private.
+                    </T>
+                  )
+                ) : null}
               </Pressable>
             );
           })}
@@ -206,6 +237,16 @@ const styles = StyleSheet.create({
     ...shadow.soft,
   },
   rowGone: { backgroundColor: "#fbfbfa" },
+  call: {
+    marginTop: 12,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: colors.black,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   typePill: {
     height: 22,

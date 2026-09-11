@@ -27,7 +27,10 @@ import {
   deleteAuthUser,
   deleteListing as fsDeleteListing,
   deleteUserData,
+  fanOutSellerIdentity,
   getUserDoc,
+  markLeadReplied,
+  type SellerIdentityFields,
   saveUserDoc,
   seedIfEmpty,
   signInExistingUser,
@@ -198,6 +201,7 @@ type Ctx = {
   unreadLeadCount: number;
   isLeadUnread: (lead: any) => boolean;
   markInquiriesSeen: () => void;
+  markReplied: (leadId: string) => void;
   savedSellers: BlockKey[];
   isSellerSaved: (key: BlockKey | undefined) => boolean;
   toggleSaveSeller: (key: BlockKey) => void;
@@ -519,13 +523,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [listings],
   );
 
+  // Identity as it should appear on every listing this user owns.
+  const identityFields = useCallback(
+    (u: User): SellerIdentityFields => ({
+      sellerName: u.name ?? "",
+      sellerAvatar: u.avatar ?? "",
+      sellerCity: u.city ?? "",
+      sellerPhone: (u.phone ?? "").trim(),
+      sellerBio: u.bio ?? "",
+      sellerArea: u.operatingAreas ?? "",
+      sellerVerified: Boolean(u.verified),
+    }),
+    [],
+  );
+
   const updateAccount = useCallback(
     async (data: Partial<User>) => {
       if (!uid) return;
       await saveUserDoc(uid, data);
+      // FAN OUT. Without this, editing your bio leaves every existing listing
+      // carrying the old one, and the storefront renders whichever copy its
+      // newest listing happens to hold. Failure here must not fail the save —
+      // the user document is the source of truth and the backfill script can
+      // repair the copies.
+      try {
+        await fanOutSellerIdentity(uid, identityFields({ ...user, ...data } as User));
+      } catch {
+        showToast("Saved. Your listings will update shortly.");
+      }
     },
-    [uid],
+    [uid, user, identityFields, showToast],
   );
+
+  // Self-heal for the one identity change that does NOT come through
+  // /account: `verified` is set server-side by the admin Cloud Function when
+  // it approves a verification, so no client save ever fires for it. If the
+  // listings disagree with the user document, fix them once.
+  const healedRef = useRef(false);
+  useEffect(() => {
+    if (!uid || healedRef.current) return;
+    // Read off `listings` directly: myListings is declared further down and
+    // referencing it here would be a use-before-declaration.
+    const mine = listings.filter((l: any) => l.sellerUid === uid);
+    if (!mine.length) return;
+    const stale = mine.some((l: any) => Boolean(l.sellerVerified) !== Boolean(user.verified));
+    if (!stale) return;
+    healedRef.current = true;
+    fanOutSellerIdentity(uid, identityFields(user)).catch(() => {
+      healedRef.current = false;
+    });
+  }, [uid, listings, user, identityFields]);
 
   const setSetting = useCallback(
     (k: keyof Settings, v: boolean | string) => {
@@ -705,9 +752,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...(user.name ? { buyerName: user.name } : {}),
         // So a Sent row can name who was contacted once the listing is gone.
         ...(sellerName ? { sellerName } : {}),
+        // The buyer's number, and ONLY when they have left "Show contact to
+        // sellers" on. That toggle has been in Privacy since launch, its own
+        // label says "Phone number visible after enquiry", and nothing read
+        // it until now. Turning it off means the seller gets no number and
+        // cannot call back — which is the point of the switch.
+        ...(settings.showContact && user.phone.trim()
+          ? { buyerPhone: user.phone.trim() }
+          : {}),
       });
     },
-    [uid, listings, user.name, sellerOf],
+    [uid, listings, user.name, user.phone, settings.showContact, sellerOf],
+  );
+
+  // Stamps that the agent responded to a lead. Writes to leadReplies/{leadId},
+  // never to the lead, which stays immutable by rule.
+  const markReplied = useCallback(
+    (leadId: string) => {
+      if (!uid || !leadId) return;
+      markLeadReplied(leadId, uid).catch(() => {});
+    },
+    [uid],
   );
 
   // ---- Seller-side: my listings, my enquiries ----
@@ -861,6 +926,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       unreadLeadCount,
       isLeadUnread,
       markInquiriesSeen,
+      markReplied,
       savedSellers,
       isSellerSaved,
       toggleSaveSeller,
@@ -916,6 +982,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       unreadLeadCount,
       isLeadUnread,
       markInquiriesSeen,
+      markReplied,
       savedSellers,
       isSellerSaved,
       toggleSaveSeller,

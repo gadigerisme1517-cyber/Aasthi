@@ -69,6 +69,27 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Lead replies: the "this one was answered" stamp.
+    //
+    // It is a SEPARATE collection because a lead is immutable above and stays
+    // that way — an agent must not be able to edit the record of what a buyer
+    // asked just to mark it handled. The document id IS the lead id, so there
+    // is exactly one stamp per lead and a second tap overwrites rather than
+    // accumulates.
+    //
+    // The get() proves the writer is the seller ON THAT LEAD, not merely a
+    // signed-in user naming themselves in the payload. One get per write, on a
+    // single-document write, so nowhere near the call budget. Reading is the
+    // seller's only — nothing surfaces reply time to buyers yet, and opening
+    // that up is a product decision, not a side effect of recording it.
+    match /leadReplies/{leadId} {
+      allow read: if signedIn() && resource.data.sellerUid == request.auth.uid;
+      allow create, update: if signedIn()
+        && request.resource.data.sellerUid == request.auth.uid
+        && get(/databases/$(database)/documents/leads/$(leadId)).data.get('sellerUid', '') == request.auth.uid;
+      allow delete: if false;
+    }
+
     // Notifications: created for another user (e.g. seller notified of a
     // buyer's enquiry), so create isn't owner-scoped — only the recipient
     // can read their own notifications.

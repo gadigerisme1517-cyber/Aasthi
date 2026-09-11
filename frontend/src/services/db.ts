@@ -214,6 +214,61 @@ export function countListingView(listingId: string) {
   return updateDoc(doc(db, "listings", listingId), { views: increment(1) }).catch(() => {});
 }
 
+// Firestore caps a writeBatch at 500 operations. 450 leaves headroom.
+const BATCH_LIMIT = 450;
+
+export type SellerIdentityFields = {
+  sellerName: string;
+  sellerAvatar: string;
+  sellerCity: string;
+  sellerPhone: string;
+  sellerBio: string;
+  sellerArea: string;
+  sellerVerified: boolean;
+};
+
+// Push the agent's identity onto every listing they own.
+//
+// These fields are denormalised because firestore.rules restricts
+// users/{uid} to its owner, so a buyer cannot read them at render time. The
+// cost of that is staleness: edit your bio and your store would otherwise
+// show whichever bio your newest listing happened to carry. This is the
+// fan-out that keeps them in step.
+//
+// Chunked rather than capped: an agent with 1,200 listings gets three
+// batches, not a silent truncation. Returns how many documents were touched
+// so the caller can say so.
+export async function fanOutSellerIdentity(
+  uid: string,
+  fields: SellerIdentityFields,
+): Promise<number> {
+  const snap = await getDocs(query(collection(db, "listings"), where("sellerUid", "==", uid)));
+  if (snap.empty) return 0;
+
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + BATCH_LIMIT).forEach((d) => batch.update(d.ref, fields));
+    await batch.commit();
+  }
+  return docs.length;
+}
+
+// Reply stamp, kept OUT of the lead.
+//
+// firestore.rules has `allow update, delete: if false` on leads and that must
+// stay: a lead is an immutable record that someone made contact. So the
+// response lives in its own collection keyed by the lead's id, written by the
+// seller. Nothing renders it yet — it is accumulating so that "typical reply
+// time" can eventually be computed from something real.
+export function markLeadReplied(leadId: string, sellerUid: string) {
+  return setDoc(
+    doc(db, "leadReplies", leadId),
+    { leadId, sellerUid, repliedAt: serverTimestamp() },
+    { merge: true },
+  );
+}
+
 export function boostListing(listingId: string) {
   const expiry = Date.now() + 7 * 24 * 3600 * 1000;
   return updateDoc(doc(db, "listings", listingId), { boosted: true, boostExpiry: expiry });
@@ -240,6 +295,10 @@ export async function addLead(payload: {
   // Stored so a buyer's Sent row can still say who they contacted after the
   // listing itself is deleted.
   sellerName?: string;
+  // Written ONLY when the buyer's "Show contact to sellers" privacy toggle is
+  // on. That switch has existed since launch, promises exactly this on its
+  // own label, and until now was read by nothing.
+  buyerPhone?: string;
 }) {
   await addDoc(collection(db, "leads"), { ...payload, ts: serverTimestamp() });
 

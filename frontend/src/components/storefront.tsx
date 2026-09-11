@@ -140,8 +140,6 @@ export function Storefront({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [owning, storeLeads.length]);
 
-  const firstOpen = audienceListings[0];
-
   const ownerBarFor = (l: Listing): OwnerBar => ({
     onEdit: () => router.push(`/edit-listing?id=${l.id}`),
     hidden: Boolean((l as any).hidden),
@@ -243,17 +241,12 @@ export function Storefront({
         </View>
       ) : (
         <>
+          {/* No "Send inquiry" here, deliberately. There is no listing on this
+              screen for an inquiry to be ABOUT. Pointing it at the newest
+              listing would send the agent a lead about a property the buyer
+              never opened, and the agent has no way to tell that lead from a
+              real one. An inquiry is always raised on a listing, below. */}
           <View style={styles.actions}>
-            <Button
-              label="Send inquiry"
-              onPress={() =>
-                firstOpen
-                  ? router.push(`/enquiry?id=${firstOpen.id}`)
-                  : showToast("This store has no listings to inquire about")
-              }
-              style={{ flex: 1 }}
-              testID="store-inquire"
-            />
             <Button
               label={isSellerSaved(identity.key as any) ? "Saved" : "Save"}
               variant="light"

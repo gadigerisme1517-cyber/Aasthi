@@ -51,8 +51,12 @@ export default function Menu() {
       <SectionLabel>Saved</SectionLabel>
       <MenuRow
         icon="heart"
-        title="Saved properties"
-        sub="Listings you shortlisted"
+        title="Saved"
+        sub={
+          savedSellers.length
+            ? `Listings you shortlisted and ${savedSellers.length} store${savedSellers.length === 1 ? "" : "s"}`
+            : "Listings you shortlisted"
+        }
         onPress={() => router.push("/(tabs)/saved")}
         testID="menu-saved"
       />
@@ -71,7 +75,7 @@ export default function Menu() {
       <MenuRow
         icon="trash"
         title="Blocked users"
-        sub={savedSellers ? "Stores you blocked" : "Stores you blocked"}
+        sub="Stores you blocked"
         onPress={() => router.push("/blocked")}
         testID="menu-blocked"
       />
