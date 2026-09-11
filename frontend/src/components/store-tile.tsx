@@ -19,6 +19,30 @@ import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 
 const PHOTO = 112;
 
+function shortDate(ts: any): string | null {
+  const seconds = ts?.seconds;
+  if (!seconds) return null;
+  return new Date(seconds * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+// The date line, which changes with the state.
+//
+// Hidden and Sold read their own timestamp — written at the moment the owner
+// flipped that switch. A listing hidden or sold BEFORE those fields existed
+// has none, and gets no line at all rather than a date inferred from when it
+// was posted, which would be a different fact wearing the right shape.
+function dateLine(listing: Listing, state?: ListingState): string | null {
+  if (state === "hidden") {
+    const d = shortDate((listing as any).hiddenAt);
+    return d ? `Hidden since ${d}` : null;
+  }
+  if (state === "sold") {
+    const d = shortDate((listing as any).soldAt);
+    return d ? `Sold ${d}` : null;
+  }
+  return postedText(listing);
+}
+
 function postedText(listing: Listing): string | null {
   const seconds = (listing as any).createdAt?.seconds;
   if (!seconds) return null;
@@ -59,8 +83,8 @@ export function StoreTile({
   onToggleSave?: () => void;
   state?: ListingState;
 }) {
-  const posted = postedText(listing);
   const dimmed = state === "hidden" || state === "sold";
+  const posted = dateLine(listing, state);
 
   return (
     <Pressable
@@ -111,13 +135,10 @@ export function StoreTile({
         <T weight={w.label} size={12} numberOfLines={1}>
           {listing.title}
         </T>
-        {/* Rendered only when the listing carries a createdAt. Listings
-            published before that field existed show nothing rather than a
-            date invented from nowhere.
-            NOT SHOWN FOR HIDDEN OR SOLD: when it was posted stops being the
-            useful fact, and when it was hidden or sold is not recorded
-            anywhere — see the report. */}
-        {posted && !dimmed ? (
+        {/* "Posted 3 days ago", or "Hidden since 12 Sep" / "Sold 12 Sep" once
+            the listing carries the stamp. Nothing at all when the date is not
+            recorded — no line beats a wrong one. */}
+        {posted ? (
           <T weight={w.body} size={11} color={colour.ink3} numberOfLines={1} style={{ marginTop: 3 }}>
             {posted}
           </T>

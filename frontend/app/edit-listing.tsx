@@ -20,7 +20,7 @@ import { SelectChips } from "@/src/components/choice";
 import { SALE_STATUS_LABEL, type SaleStatus } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
 import { auth } from "@/src/services/firebase";
-import { uploadImages } from "@/src/services/db";
+import { serverNow, uploadImages } from "@/src/services/db";
 import { colors, radius } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
@@ -66,6 +66,10 @@ export default function EditListing() {
   // listing's settings already are. It is not a new capability and it is not
   // a lost one.
   const [visible, setVisible] = useState<boolean>(!(listing as any)?.hidden);
+  // Captured from the document as it stands, not from the form state, so the
+  // comparison is against what is actually stored.
+  const wasHidden = Boolean((listing as any)?.hidden);
+  const wasSold = ((listing as any)?.saleStatus ?? "live") === "sold";
 
   // The photo list as it was when this screen opened. Captured once so that
   // adding then removing the same photo does not count as a change.
@@ -175,6 +179,12 @@ export default function EditListing() {
         g: finalPhotos.slice(1),
         saleStatus,
         hidden: !visible,
+        // STAMPED ON THE TRANSITION ONLY. Saving any other edit on a listing
+        // that is already hidden or already sold leaves its timestamp alone —
+        // re-stamping here would quietly move the date every time the owner
+        // fixed a typo.
+        ...(!visible && !wasHidden ? { hiddenAt: serverNow() } : {}),
+        ...(saleStatus === "sold" && !wasSold ? { soldAt: serverNow() } : {}),
         ...(floor.trim() !== "" && Number.isFinite(Number(floor))
           ? { floor: Number(floor) }
           : {}),

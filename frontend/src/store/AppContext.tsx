@@ -33,6 +33,7 @@ import {
   markLeadReplied,
   type SellerIdentityFields,
   saveUserDoc,
+  serverNow,
   seedIfEmpty,
   signInExistingUser,
   signOutUser,
@@ -909,18 +910,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Storefront owner-bar actions. Thin wrappers so the screen never has to
   // know the field names.
+  // Both helpers stamp ON THE TRANSITION ONLY. They read the listing as it
+  // is now and write the timestamp solely when the state actually changes.
   const setListingHidden = useCallback(
     async (listingId: string, hidden: boolean) => {
-      await fsUpdateListing(listingId, { hidden });
+      const was = Boolean((listings.find((l) => l.id === listingId) as any)?.hidden);
+      await fsUpdateListing(listingId, {
+        hidden,
+        ...(hidden && !was ? { hiddenAt: serverNow() } : {}),
+      });
     },
-    [],
+    [listings],
   );
 
   const setListingSaleStatus = useCallback(
     async (listingId: string, saleStatus: "live" | "token" | "sold") => {
-      await fsUpdateListing(listingId, { saleStatus });
+      const was =
+        ((listings.find((l) => l.id === listingId) as any)?.saleStatus ?? "live") === "sold";
+      await fsUpdateListing(listingId, {
+        saleStatus,
+        ...(saleStatus === "sold" && !was ? { soldAt: serverNow() } : {}),
+      });
     },
-    [],
+    [listings],
   );
 
   // Unread, PER THREAD. A lead cannot carry a read flag — firestore.rules

@@ -199,6 +199,13 @@ export async function addListing(data: Record<string, any>) {
 // Owner-scoped edit. firestore.rules:27 already allows update when
 // resource.data.sellerUid == request.auth.uid, so no rules change is needed
 // for this one.
+// The server's clock, for callers outside this file. db.ts stays the only
+// module that imports firebase/firestore — a screen should not have to reach
+// past the data layer to stamp a field.
+export function serverNow() {
+  return serverTimestamp();
+}
+
 export function updateListing(listingId: string, data: Record<string, any>) {
   return updateDoc(doc(db, "listings", listingId), data);
 }

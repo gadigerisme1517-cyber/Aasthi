@@ -86,6 +86,15 @@ export type Listing = {
   // AASTHI checked the documents; this is about whether the property is
   // still for sale. A listing can be Verified and Sold at the same time.
   saleStatus?: SaleStatus; // default "live" when absent
+  // Stamped at the MOMENT the owner flips each switch, and only on the
+  // transition — editing a hidden listing's title does not reset hiddenAt,
+  // because that would be a lie about when it was hidden.
+  //
+  // NOT BACKFILLED. Every listing hidden or sold before these existed has
+  // neither, and its tile keeps reading a plain "Hidden" or "Sold" with no
+  // date. A date derived from createdAt would be a date that means nothing.
+  hiddenAt?: any;
+  soldAt?: any;
   // Incremented once per /detail open by anyone who is not the owner.
   // Absent on every listing published before this existed — the UI shows a
   // dash for that, never 0, because "we never counted" is not "nobody looked".
