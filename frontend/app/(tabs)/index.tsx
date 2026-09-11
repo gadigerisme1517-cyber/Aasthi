@@ -74,13 +74,11 @@ export default function Home() {
                   </T>
                 </View>
               </View>
+              {/* The hero pill went with the sliders circle. It showed the
+                  same location and opened the same picker as the chip in the
+                  search row twenty points below it — two controls doing one
+                  job, stacked. The chip is the single entry point now. */}
               <View style={styles.topActions}>
-                <Pressable style={styles.locationPill} onPress={() => router.push("/location")} testID="home-location">
-                  <Icon name="mapPin" size={13} color="#fff" />
-                  <T weight={700} size={11.5} color="#fff" numberOfLines={1} style={{ maxWidth: 116 }}>
-                    {selectedLocation.name}
-                  </T>
-                </Pressable>
                 <Pressable style={styles.bell} onPress={() => router.push("/notifications")} testID="home-bell">
                   <Icon name="bell" size={18} color="#fff" />
                 </Pressable>
@@ -126,20 +124,33 @@ export default function Home() {
             <T weight={700} size={13} color="#202020" numberOfLines={1} style={{ flex: 1 }}>
               Search locality, seller or property
             </T>
-            <View style={styles.filterBtn}>
-              <Icon name="sliders" size={16} color="#fff" />
-            </View>
+            {/* WAS a black circle with a sliders icon that opened the LOCATION
+                list. An icon that promises filters and delivers a city list is
+                a lie about what the control does. It is a location chip now,
+                and it is the ONLY way into the picker — the "Change" link on
+                Featured Properties went with it. */}
+            <Pressable
+              style={styles.locChip}
+              onPress={() => router.push("/location")}
+              testID="home-location-chip"
+              hitSlop={6}
+            >
+              <Icon name="mapPin" size={12} color={colors.ink} />
+              <T weight={600} size={12} color={colors.ink} numberOfLines={1} style={{ maxWidth: 96 }}>
+                {selectedLocation.name}
+              </T>
+              <Icon name="chevDown" size={12} color={colors.muted} />
+            </Pressable>
           </Pressable>
         </View>
 
         <View style={{ paddingHorizontal: 18 }}>
-          {/* The toggle sits at the RIGHT END of the filter row, two icons and
-              no labels. Card is the default; the choice is remembered in
-              AsyncStorage, the same place the selected location lives. */}
-          <View style={styles.filterRow}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
-            </View>
+          {/* The chips get the WHOLE width back. The toggle used to sit in
+              this row and stole about 100pt from Buy/Rent/Plots/Commercial,
+              which is why the chip strip could not scroll cleanly. */}
+          <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
+
+          <View style={styles.toggleRow}>
             <View style={styles.viewToggle}>
               {(["card", "compact", "grid"] as const).map((v) => {
                 const on = browseView === v;
@@ -152,7 +163,7 @@ export default function Home() {
                   >
                     <Icon
                       name={v === "card" ? "square" : v === "compact" ? "rows" : "grid"}
-                      size={14}
+                      size={16}
                       color={on ? colors.white : colors.muted}
                     />
                   </Pressable>
@@ -164,8 +175,6 @@ export default function Home() {
           <SectionHead
             title="Featured Properties"
             sub={`Showing ${selectedLocation.name} properties.`}
-            link="Change"
-            onLink={() => router.push("/location")}
           />
           {visibleListings.length ? (
             <View style={browseView === "grid" ? styles.grid : undefined}>
@@ -304,13 +313,23 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  filterRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  // Right-aligned, on its own line, directly above the first card.
+  toggleRow: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+  locChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    height: 34,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    backgroundColor: colors.soft,
+  },
   viewToggle: { flexDirection: "row", gap: 6 },
   // Two columns with the same 10 gap the storefront grid uses.
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
   viewBtn: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -329,18 +348,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-  },
-  locationPill: {
-    height: 34,
-    maxWidth: 158,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
   },
   bell: {
     width: 36,
@@ -376,14 +383,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.72)",
     ...shadow.strong,
-  },
-  filterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.black,
-    alignItems: "center",
-    justifyContent: "center",
   },
   editorial: {
     borderRadius: 22,

@@ -41,6 +41,7 @@ export type IconName =
   | "grid"
   | "rows"
   | "square"
+  | "chevDown"
   // Overflow on a half-width store tile, where three text buttons will not fit.
   | "more"
   | "close";
@@ -74,6 +75,7 @@ const FEATHER: Partial<Record<IconName, string>> = {
   grid: "grid",
   rows: "list",
   square: "square",
+  chevDown: "chevron-down",
   more: "more-horizontal",
   close: "x",
 };

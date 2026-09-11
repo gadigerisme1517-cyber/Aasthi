@@ -12,6 +12,14 @@ import { useApp } from "@/src/store/AppContext";
 // (src/components/storefront.tsx) and both audiences render it, so the agent's
 // view can never drift into being a different screen from the buyer's.
 
+// Epoch ms for when this account was created. Auth first, then the profile
+// document, then nothing — never a guess.
+function accountCreatedAt(): number | undefined {
+  const fromAuth = auth.currentUser?.metadata?.creationTime;
+  const parsed = fromAuth ? Date.parse(fromAuth) : NaN;
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export default function Profile() {
   const { user, myListings } = useApp();
   const uid = auth.currentUser?.uid;
@@ -33,10 +41,13 @@ export default function Profile() {
         // until that form is filled, and the header falls back to
         // "Property dealer" rather than inventing a trade.
         kind: (user as any).partnerType,
-        // "On AASTHI" reads the account's own createdAt. Accounts made
-        // before that field existed have none, and the cell shows "–"
-        // rather than a joining date invented from nothing.
-        since: (user as any).createdAt,
+        // "On AASTHI". The users document only carries createdAt for accounts
+        // that went through profile-setup AFTER that field was added, which
+        // is why this read "–" on an older account. The Firebase Auth record
+        // always knows when the account was made, is not self-declared, and
+        // cannot be edited by the user — so it is the better source and the
+        // stored value is only a fallback for the same fact.
+        since: accountCreatedAt(),
         // followers is left undefined ON PURPOSE — see the note on the type.
         // Nothing can count it from a client under the current rules.
       }}

@@ -47,7 +47,7 @@ export type StorefrontIdentity = {
   kind?: string;
   // Epoch ms the account was created. OWNER ONLY — users/{uid} is readable by
   // its owner alone, so a buyer cannot see when someone else joined.
-  since?: number;
+  since?: number | { seconds?: number } | string;
   // Accounts following this store. NOT READABLE TODAY: savedSellers lives on
   // each user's own document and the rules keep that private, so no client
   // query can count it. Left undefined, and the cell renders "–" rather than
@@ -55,7 +55,19 @@ export type StorefrontIdentity = {
   followers?: number;
 };
 
-function monthYear(ms?: number): string | null {
+// Accepts epoch ms, a Firestore Timestamp, or an ISO string, because
+// "createdAt" has been written in more than one shape over this project's
+// life and a cell that silently reads "–" for a real date is worse than one
+// extra branch here.
+function monthYear(value?: number | { seconds?: number } | string): string | null {
+  let ms: number | null = null;
+  if (typeof value === "number") ms = value;
+  else if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    ms = Number.isFinite(parsed) ? parsed : null;
+  } else if (value && typeof value === "object" && typeof value.seconds === "number") {
+    ms = value.seconds * 1000;
+  }
   if (!ms || !Number.isFinite(ms)) return null;
   return new Date(ms).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
