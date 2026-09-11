@@ -45,7 +45,8 @@ function whenText(ts: any): string {
 
 export default function MyEnquiries() {
   const router = useRouter();
-  const { myLeads, mySentLeads, listings, myListings, markReplied, showToast } = useApp();
+  const { myLeads, mySentLeads, listings, myListings, markReplied, showToast, isLeadUnread, isThreadUnread } =
+    useApp();
 
   // Open on the side that has something to show. A user who has never listed
   // anything is a buyer, and Received would be empty for them forever.
@@ -101,6 +102,13 @@ export default function MyEnquiries() {
               side === "received"
                 ? lead.buyerName?.trim() || "AASTHI buyer"
                 : lead.sellerName?.trim() || listing?.sellerName || "";
+            // Unread lived only on the Profile strip, which shows three rows.
+            // A fourth unread inquiry could not be seen anywhere in the app.
+            // Received: the inquiry itself or a reply is newer than the last
+            // time this thread was opened. Sent: only a reply counts — the
+            // inquiry was this user's own doing.
+            const unread =
+              side === "received" ? isLeadUnread(lead) : isThreadUnread(lead.id);
 
             return (
               <Pressable
@@ -110,10 +118,13 @@ export default function MyEnquiries() {
                 onPress={() => router.push(`/thread?id=${lead.id}`)}
               >
                 <View style={styles.top}>
-                  <View style={styles.typePill}>
-                    <T weight={900} size={9.5} color={colors.white}>
-                      {label}
-                    </T>
+                  <View style={styles.typeWrap}>
+                    <View style={styles.typePill}>
+                      <T weight={900} size={9.5} color={colors.white}>
+                        {label}
+                      </T>
+                    </View>
+                    {unread ? <View style={styles.dot} testID={`enquiry-unread-${lead.id}`} /> : null}
                   </View>
                   <T weight={700} size={10.5} color={colors.faint}>
                     {whenText(lead.ts)}
@@ -248,6 +259,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  typeWrap: { flexDirection: "row", alignItems: "center", gap: 7 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.red },
   typePill: {
     height: 22,
     borderRadius: 999,

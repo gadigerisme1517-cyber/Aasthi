@@ -207,6 +207,9 @@ type Ctx = {
   setListingSaleStatus: (listingId: string, s: "live" | "token" | "sold") => Promise<void>;
   unreadLeadCount: number;
   isLeadUnread: (lead: any) => boolean;
+  // Unread because a MESSAGE arrived. Used on the Sent side, where the
+  // inquiry itself was the user's own action.
+  isThreadUnread: (leadId: string) => boolean;
   markInquiriesSeen: () => void;
   markReplied: (leadId: string) => void;
   // One inquiry thread, from either side.
@@ -875,10 +878,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [threadsSeenAt, user.inquiriesSeenAt, lastMessageAtByLead],
   );
 
-  const unreadLeadCount = useMemo(
-    () => myLeads.filter((l: any) => isLeadUnread(l)).length,
-    [myLeads, isLeadUnread],
+  // Message-only unread, for a lead I SENT. The inquiry itself is my own
+  // doing, so it must not mark my own Sent row unread the moment I send it —
+  // only a reply counts there.
+  const isThreadUnread = useCallback(
+    (leadId: string) => {
+      if (!leadId) return false;
+      const seen = threadsSeenAt[leadId] ?? user.inquiriesSeenAt ?? 0;
+      return (lastMessageAtByLead[leadId] ?? 0) > seen;
+    },
+    [threadsSeenAt, user.inquiriesSeenAt, lastMessageAtByLead],
   );
+
+  // BOTH sides, de-duplicated. A lead where the same account is buyer and
+  // seller — which is exactly the case while testing with one login —
+  // appears in both lists and must count once.
+  const unreadLeadCount = useMemo(() => {
+    const ids = new Set<string>();
+    (myLeads as any[]).forEach((l) => {
+      if (isLeadUnread(l)) ids.add(l.id);
+    });
+    (myBuyerLeads as any[]).forEach((l) => {
+      if (isThreadUnread(l.id)) ids.add(l.id);
+    });
+    return ids.size;
+  }, [myLeads, myBuyerLeads, isLeadUnread, isThreadUnread]);
 
   const leadById = useCallback(
     (leadId: string) =>
@@ -1020,6 +1044,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setListingSaleStatus,
       unreadLeadCount,
       isLeadUnread,
+      isThreadUnread,
       markInquiriesSeen,
       markReplied,
       leadById,
@@ -1079,6 +1104,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setListingSaleStatus,
       unreadLeadCount,
       isLeadUnread,
+      isThreadUnread,
       markInquiriesSeen,
       markReplied,
       leadById,

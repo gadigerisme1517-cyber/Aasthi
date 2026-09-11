@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { T } from "@/src/components/ui";
 import { Icon, IconName } from "@/src/icons";
 import { colors, shadow } from "@/src/theme";
+import { useApp } from "@/src/store/AppContext";
 
 // Real tab routes only. "saved" is deliberately still a Tabs.Screen below —
 // it lost its slot in the bar, NOT its route. It is reached from the Saved
@@ -19,6 +20,10 @@ const TABS: { name: string; label: string; icon: IconName }[] = [
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  // Computed since the day unread existed and rendered nowhere. Counts both
+  // sides — an inquiry you received and have not opened, and a thread you
+  // started where the other side has replied.
+  const { unreadLeadCount } = useApp();
 
   const routeIndex = (n: string) => state.routes.findIndex((r) => r.name === n);
   const isActive = (n: string) => state.index === routeIndex(n);
@@ -59,14 +64,25 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     label,
     href,
     testID,
+    badge = 0,
   }: {
     icon: IconName;
     label: string;
     href: string;
     testID: string;
+    badge?: number;
   }) => (
     <Pressable style={styles.item} onPress={() => router.push(href as any)} testID={testID}>
-      <Icon name={icon} size={19} color="#7e7e7e" />
+      <View>
+        <Icon name={icon} size={19} color="#7e7e7e" />
+        {badge > 0 ? (
+          <View style={styles.badge} testID={`${testID}-badge`}>
+            <T weight={900} size={9} color={colors.white}>
+              {badge > 9 ? "9+" : String(badge)}
+            </T>
+          </View>
+        ) : null}
+      </View>
       <T weight={850} size={9.5} color="#7e7e7e" style={{ marginTop: 3 }}>
         {label}
       </T>
@@ -87,7 +103,13 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
       </Pressable>
       {/* Was Saved. Labelled "Enquiries", not "Chat": there are no threads
           here, only a record of contact. */}
-      <PushItem icon="inbox" label="Inquiries" href="/my-enquiries" testID="tab-enquiries" />
+      <PushItem
+        icon="inbox"
+        label="Inquiries"
+        href="/my-enquiries"
+        testID="tab-enquiries"
+        badge={unreadLeadCount}
+      />
       <Item tab={TABS[2]} />
     </View>
   );
@@ -132,6 +154,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   itemActive: { backgroundColor: "#f2f2ef" },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -9,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    backgroundColor: colors.red,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.white,
+  },
   post: {
     flex: 1,
     alignItems: "center",
