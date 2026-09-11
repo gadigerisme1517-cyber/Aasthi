@@ -19,7 +19,9 @@ import {
   getDoc,
   getDocs,
   increment,
+  limit,
   onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -387,6 +389,23 @@ export function watchThread(leadId: string, cb: (items: any[]) => void) {
       cb(arr);
     },
     () => cb([]),
+  );
+}
+
+// The newest message in a thread, for the conversation list. ONE document
+// per thread rather than the whole conversation: the list only needs the last
+// line. Descending order puts a message that is still being written — null
+// sentAt until the server stamps it — at the END, not the front.
+export function watchLastMessage(leadId: string, cb: (m: any | null) => void) {
+  const qy = query(
+    collection(db, "messages", leadId, "items"),
+    orderBy("sentAt", "desc"),
+    limit(1),
+  );
+  return onSnapshot(
+    qy,
+    (snap) => cb(snap.docs[0] ? { id: snap.docs[0].id, ...(snap.docs[0].data() as any) } : null),
+    () => cb(null),
   );
 }
 

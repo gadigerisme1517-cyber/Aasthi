@@ -1,52 +1,33 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
+import { ThreadRow, threadRowStyles } from "@/src/components/thread-row";
 import { Empty, PageHead, Screen, SectionHead, T } from "@/src/components/ui";
-import { Icon } from "@/src/icons";
-import { colors, radius, shadow } from "@/src/theme";
+import { colors } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
-// Both sides of a lead, on one screen.
+// A CONVERSATION LIST, not a stack of filed inquiries.
 //
-// RECEIVED is the seller's view — enquiries on listings you own. SENT is the
-// buyer's view, and it is why this screen can carry a nav slot at all: most
-// users never publish anything, so a received-only screen would be a
-// permanently empty tab for the majority.
+// Every row used to be a bordered card with a type pill, a quoted message
+// block and a Call button — a document ABOUT a conversation rather than the
+// conversation. It is now one row per thread: who, what was last said, when.
+// The row component is shared with the storefront's inquiry strip so the two
+// surfaces cannot drift into looking like different products.
 //
-// Both reads are permitted by the deployed rules, which allow a lead to be
-// read by either party to it (firebase/firestore.rules, leads block).
+// RECEIVED is the seller's side, SENT is the buyer's, and that split is why
+// this screen earns a nav slot: most users never publish anything, so a
+// received-only screen would be permanently empty for the majority.
+//
+// THE CALL BUTTON MOVED INTO THE THREAD. It was not dropped — a number a
+// buyer chose to share has to stay one tap from the agent, and the reply
+// stamp still rides on it.
 
 type Side = "received" | "sent";
 
-const TYPE_LABEL: Record<string, string> = {
-  enquiry: "Inquiry",
-  visit: "Visit request",
-  contact: "Contact request",
-};
-
-function whenText(ts: any): string {
-  const seconds = ts?.seconds;
-  if (!seconds) return "Just now";
-  const then = seconds * 1000;
-  const mins = Math.floor((Date.now() - then) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
-  return new Date(then).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export default function MyEnquiries() {
   const router = useRouter();
-  const { myLeads, mySentLeads, listings, myListings, markReplied, showToast, isLeadUnread, isThreadUnread } =
-    useApp();
+  const { myLeads, mySentLeads, listings, myListings, isLeadUnread, isThreadUnread } = useApp();
 
   // Open on the side that has something to show. A user who has never listed
   // anything is a buyer, and Received would be empty for them forever.
@@ -86,117 +67,34 @@ export default function MyEnquiries() {
       />
 
       {rows.length ? (
-        <View style={{ gap: 12 }}>
-          {rows.map((lead: any) => {
+        // Full-bleed: the hairlines run edge to edge, so the list is pulled
+        // out of the screen's horizontal padding and each row puts it back.
+        <View style={styles.list}>
+          {rows.map((lead: any, i: number) => {
             const listing = listings.find((l) => l.id === lead.listingId);
-            // A lead outlives its listing on purpose: the row still renders
-            // from the title stored on the lead.
-            // The listing can be gone; the CONVERSATION cannot. The row used
-            // to be disabled when the property was deleted because there was
-            // nowhere to navigate. Now it always opens the thread, and it is
-            // the property strip inside the thread that degrades.
-            const gone = !listing;
-            const title = lead.listingTitle || listing?.title || "A listing";
-            const label = TYPE_LABEL[lead.type] ?? "Inquiry";
-            const who =
-              side === "received"
-                ? lead.buyerName?.trim() || "AASTHI buyer"
-                : lead.sellerName?.trim() || listing?.sellerName || "";
-            // Unread lived only on the Profile strip, which shows three rows.
-            // A fourth unread inquiry could not be seen anywhere in the app.
-            // Received: the inquiry itself or a reply is newer than the last
-            // time this thread was opened. Sent: only a reply counts — the
-            // inquiry was this user's own doing.
-            const unread =
-              side === "received" ? isLeadUnread(lead) : isThreadUnread(lead.id);
-
+            const received = side === "received";
+            const name = received
+              ? lead.buyerName?.trim() || "AASTHI buyer"
+              : lead.sellerName?.trim() || (listing as any)?.sellerName?.trim() || "AASTHI seller";
             return (
-              <Pressable
-                key={lead.id}
-                style={[styles.row, gone && styles.rowGone]}
-                testID={`enquiry-${lead.id}`}
-                onPress={() => router.push(`/thread?id=${lead.id}`)}
-              >
-                <View style={styles.top}>
-                  <View style={styles.typeWrap}>
-                    <View style={styles.typePill}>
-                      <T weight={900} size={9.5} color={colors.white}>
-                        {label}
-                      </T>
-                    </View>
-                    {unread ? <View style={styles.dot} testID={`enquiry-unread-${lead.id}`} /> : null}
-                  </View>
-                  <T weight={700} size={10.5} color={colors.faint}>
-                    {whenText(lead.ts)}
-                  </T>
+              <View key={lead.id}>
+                {i > 0 ? <View style={threadRowStyles.divider} /> : null}
+                <View style={styles.rowPad}>
+                  <ThreadRow
+                    lead={lead}
+                    // Which side of this lead this row is rendering, so the
+                    // preview can say "You:" when the last word was ours.
+                    meUid={received ? lead.sellerUid : lead.buyerUid}
+                    unread={received ? isLeadUnread(lead) : isThreadUnread(lead.id)}
+                    name={name}
+                    // Only the Sent side has a picture to show: a lead carries
+                    // no avatar for the buyer who sent it.
+                    avatar={received ? undefined : (listing as any)?.sellerAvatar}
+                    onPress={() => router.push(`/thread?id=${lead.id}`)}
+                    testID={`enquiry-${lead.id}`}
+                  />
                 </View>
-
-                {side === "received" ? (
-                  <T weight={800} size={15} style={{ marginTop: 10 }} numberOfLines={1}>
-                    {who}
-                  </T>
-                ) : null}
-
-                <T
-                  weight={side === "received" ? 500 : 800}
-                  size={side === "received" ? 12 : 15}
-                  color={side === "received" ? colors.muted : colors.ink}
-                  style={{ marginTop: side === "received" ? 3 : 10 }}
-                  numberOfLines={2}
-                >
-                  {side === "received" ? `About: ${title}` : title}
-                </T>
-
-                {gone ? (
-                  <T weight={700} size={11} color={colors.faint} style={{ marginTop: 5 }}>
-                    This listing has been removed.
-                  </T>
-                ) : null}
-
-                {lead.message?.trim() ? (
-                  <View style={styles.quote}>
-                    <T weight={500} size={13.5} color="#383838" style={{ lineHeight: 20 }}>
-                      {lead.message.trim()}
-                    </T>
-                  </View>
-                ) : (
-                  <T weight={500} size={12.5} color={colors.faint} style={{ marginTop: 10 }}>
-                    {side === "received"
-                      ? "No message — the buyer asked for your contact details."
-                      : "No message — you asked for the seller's contact details."}
-                  </T>
-                )}
-
-                {/* Call, seller side only. The number rides on the lead and is
-                    written only when the buyer left "Show contact to sellers"
-                    on, so a missing number is a real answer, not a gap to fill
-                    with a placeholder. The reply stamp is written AFTER the
-                    dialer actually opens — leadReplies/{leadId}, because the
-                    lead itself is immutable by rule. Nothing shows reply time
-                    yet; this only starts recording it. */}
-                {side === "received" ? (
-                  lead.buyerPhone ? (
-                    <Pressable
-                      style={styles.call}
-                      testID={`enquiry-call-${lead.id}`}
-                      onPress={() =>
-                        Linking.openURL(`tel:${String(lead.buyerPhone).replace(/[^+\d]/g, "")}`)
-                          .then(() => markReplied(lead.id))
-                          .catch(() => showToast("Could not open the dialer"))
-                      }
-                    >
-                      <Icon name="phone" size={15} color={colors.white} />
-                      <T weight={900} size={12.5} color={colors.white}>
-                        Call {lead.buyerPhone}
-                      </T>
-                    </Pressable>
-                  ) : (
-                    <T weight={600} size={11.5} color={colors.faint} style={{ marginTop: 10 }}>
-                      No number shared — this buyer keeps their contact details private.
-                    </T>
-                  )
-                ) : null}
-              </Pressable>
+              </View>
             );
           })}
         </View>
@@ -239,40 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   switchBtnOn: { backgroundColor: colors.black },
-  row: {
-    borderRadius: radius.card,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 15,
-    ...shadow.soft,
-  },
-  rowGone: { backgroundColor: "#fbfbfa" },
-  call: {
-    marginTop: 12,
-    height: 42,
-    borderRadius: 999,
-    backgroundColor: colors.black,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  typeWrap: { flexDirection: "row", alignItems: "center", gap: 7 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.red },
-  typePill: {
-    height: 22,
-    borderRadius: 999,
-    backgroundColor: colors.black,
-    paddingHorizontal: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quote: {
-    marginTop: 10,
-    borderRadius: 16,
-    backgroundColor: colors.soft,
-    padding: 12,
-  },
+  list: { marginHorizontal: -18 },
+  rowPad: { paddingHorizontal: 18 },
 });

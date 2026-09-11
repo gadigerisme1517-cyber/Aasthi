@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { FeatureCard, type OwnerBar } from "@/src/components/cards";
+import { ThreadRow, threadRowStyles } from "@/src/components/thread-row";
 import { Button, Empty, PageHead, Screen, T } from "@/src/components/ui";
 import { Listing } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
@@ -33,25 +34,6 @@ export type StorefrontIdentity = {
   city?: string;
   area?: string;
   bio?: string;
-};
-
-function whenText(ts: any): string {
-  const seconds = ts?.seconds;
-  if (!seconds) return "now";
-  const mins = Math.floor((Date.now() - seconds * 1000) / 60000);
-  if (mins < 1) return "now";
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-  return new Date(seconds * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
-
-const ASK: Record<string, string> = {
-  enquiry: "sent an inquiry",
-  visit: "asked to visit",
-  contact: "asked for your number",
 };
 
 export function Storefront({
@@ -277,26 +259,24 @@ export function Storefront({
         <View style={styles.strip} testID="store-inquiry-strip">
           {storeLeads.length ? (
             <>
+              {/* THE SAME ROW /my-enquiries uses. The strip used to draw its
+                  own smaller version of the same idea, which is how two
+                  surfaces showing one thing end up looking like two
+                  products. */}
               {storeLeads.slice(0, 3).map((lead: any, i: number) => (
-                <Pressable
-                  key={lead.id}
-                  style={[styles.leadRow, i > 0 && styles.leadDivider]}
-                  onPress={() => router.push(`/thread?id=${lead.id}`)}
-                  testID={`store-lead-${lead.id}`}
-                >
-                  <View style={[styles.dot, !isLeadUnread(lead) && styles.dotRead]} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <T weight={700} size={14.5} numberOfLines={1}>
-                      {lead.buyerName?.trim() || "AASTHI buyer"}
-                    </T>
-                    <T weight={500} size={12.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
-                      {(lead.listingTitle || "A listing") + " · " + (ASK[lead.type] ?? "got in touch")}
-                    </T>
+                <View key={lead.id}>
+                  {i > 0 ? <View style={threadRowStyles.divider} /> : null}
+                  <View style={styles.leadPad}>
+                    <ThreadRow
+                      lead={lead}
+                      meUid={lead.sellerUid}
+                      unread={isLeadUnread(lead)}
+                      name={lead.buyerName?.trim() || "AASTHI buyer"}
+                      onPress={() => router.push(`/thread?id=${lead.id}`)}
+                      testID={`store-lead-${lead.id}`}
+                    />
                   </View>
-                  <T weight={600} size={11.5} color={colors.faint}>
-                    {whenText(lead.ts)}
-                  </T>
-                </Pressable>
+                </View>
               ))}
               {storeLeads.length > 3 ? (
                 <Pressable
@@ -416,6 +396,9 @@ const styles = StyleSheet.create({
     ...shadow.soft,
   },
   leadRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14 },
+  // The shared row brings its own vertical rhythm; the strip only supplies
+  // the horizontal inset so the hairlines still run the full width of it.
+  leadPad: { paddingHorizontal: 14 },
   leadDivider: { borderTopWidth: 1, borderTopColor: colors.line },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: VERIFIED_GREEN },
   dotRead: { backgroundColor: "transparent" },

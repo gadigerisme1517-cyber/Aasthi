@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Empty, PageHead, Screen, T } from "@/src/components/ui";
@@ -48,7 +48,8 @@ export default function Thread() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { leadById, myLeads, sendMessage, markThreadSeen, listings, showToast } = useApp();
+  const { leadById, myLeads, sendMessage, markThreadSeen, markReplied, listings, showToast } =
+    useApp();
 
   const lead = id ? leadById(id) : null;
   const listing = useMemo(
@@ -206,6 +207,36 @@ export default function Thread() {
         {gone ? null : <Icon name="chev" size={16} color={colors.muted} />}
       </Pressable>
 
+      {/* CALL. Moved here from the inquiry list when that list became a
+          conversation list — a card affordance had no place on a chat row,
+          but the capability had to keep a home. Seller side only, and only
+          when the buyer's number actually rode in on the lead, which happens
+          only when they left "Show contact to sellers" on. The reply stamp is
+          written AFTER the dialer opens: leadReplies/{leadId}, because the
+          lead itself is immutable by rule. */}
+      {iAmSeller ? (
+        lead.buyerPhone ? (
+          <Pressable
+            style={styles.call}
+            testID="thread-call"
+            onPress={() =>
+              Linking.openURL(`tel:${String(lead.buyerPhone).replace(/[^+\d]/g, "")}`)
+                .then(() => markReplied(lead.id))
+                .catch(() => showToast("Could not open the dialer"))
+            }
+          >
+            <Icon name="phone" size={15} color={colors.white} />
+            <T weight={900} size={12.5} color={colors.white}>
+              Call {lead.buyerPhone}
+            </T>
+          </Pressable>
+        ) : (
+          <T weight={600} size={11.5} color={colors.faint} style={{ marginTop: 10 }}>
+            No number shared — this buyer keeps their contact details private.
+          </T>
+        )
+      ) : null}
+
       {/* ---------- CONVERSATION ---------- */}
       <ScrollView
         ref={scroller}
@@ -295,6 +326,16 @@ const styles = StyleSheet.create({
     ...shadow.soft,
   },
   stripGone: { backgroundColor: "#fbfbfa" },
+  call: {
+    marginTop: 12,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: colors.black,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   stripImg: { width: 52, height: 52, borderRadius: 14 },
   bubble: {
     maxWidth: "86%",
