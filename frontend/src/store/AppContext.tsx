@@ -1,4 +1,4 @@
-﻿import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   useCallback,
@@ -245,6 +245,11 @@ type Ctx = {
   // TRUE when the signed-in user published this listing. The one owner test
   // in the app — every screen asks this, none re-derives it.
   iOwn: (l: any) => boolean;
+  // Browse density. Stored with AsyncStorage, the same local-preference
+  // pattern the selected location already uses, so it survives a force-stop
+  // and does not need a round trip to Firestore to render the first frame.
+  browseView: "card" | "compact";
+  setBrowseView: (v: "card" | "compact") => void;
   updateAccount: (data: Partial<User>) => Promise<void>;
   setSetting: (k: keyof Settings, v: boolean | string) => void;
   setDraft: (patch: Partial<Draft>) => void;
@@ -272,6 +277,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
 
   const [sellers, setSellers] = useState<Seller[]>([]);
+  // Card is the default, and stays the default until the user says otherwise.
+  const [browseView, setBrowseViewState] = useState<"card" | "compact">("card");
   const [listings, setListings] = useState<Listing[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   // Leads where I am the seller (My enquiries) and where I am the buyer
@@ -283,6 +290,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [selectedLocationState, setSelectedLocationState] = useState<LocationOption>(() => locationById(DEFAULT_LOCATION_ID));
 
   useEffect(() => {
+    AsyncStorage.getItem("browse-view")
+      .then((v) => {
+        if (v === "card" || v === "compact") setBrowseViewState(v);
+      })
+      .catch(() => {});
     AsyncStorage.getItem("selected-location-id")
       .then((id) => {
         if (id) setSelectedLocationState(locationById(id));
@@ -502,6 +514,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // preview switch, not a change of identity — a guard hung off it evaporates
   // the moment the agent taps preview, which is exactly the bug that let an
   // owner heart their own listing on their own storefront.
+  const setBrowseView = useCallback((v: "card" | "compact") => {
+    setBrowseViewState(v);
+    AsyncStorage.setItem("browse-view", v).catch(() => {});
+  }, []);
+
   const iOwn = useCallback(
     (l: any) => Boolean(l?.sellerUid) && l.sellerUid === uid,
     [uid],
@@ -1121,6 +1138,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       listingsBySeller,
       sellerOf,
       iOwn,
+      browseView,
+      setBrowseView,
       updateAccount,
       setSetting,
       setDraft,
@@ -1182,6 +1201,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       listingsBySeller,
       sellerOf,
       iOwn,
+      browseView,
+      setBrowseView,
       updateAccount,
       setSetting,
       setDraft,

@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeatureCard, ResultCard, SellerRailCard } from "@/src/components/cards";
+import { CompactRow } from "@/src/components/compact-row";
 import { Chips, Empty, SectionHead, T } from "@/src/components/ui";
 import { CATEGORIES } from "@/src/data/seed";
 import { listingMatchesLocation } from "@/src/data/locations";
@@ -21,8 +22,17 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   // browseListings, not listings: blocked sellers' properties must not appear.
   // sellerOf is no longer needed here: the browse card carries no seller strip.
-  const { browseListings, sellers, listingsBySeller, isSaved, toggleSave, iOwn, selectedLocation } =
-    useApp();
+  const {
+    browseListings,
+    sellers,
+    listingsBySeller,
+    isSaved,
+    toggleSave,
+    iOwn,
+    browseView,
+    setBrowseView,
+    selectedLocation,
+  } = useApp();
   const [cat, setCat] = useState<string>("All");
 
   // Both guard the same thing from two places: the seller rail and the hero
@@ -122,7 +132,33 @@ export default function Home() {
         </View>
 
         <View style={{ paddingHorizontal: 18 }}>
-          <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
+          {/* The toggle sits at the RIGHT END of the filter row, two icons and
+              no labels. Card is the default; the choice is remembered in
+              AsyncStorage, the same place the selected location lives. */}
+          <View style={styles.filterRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
+            </View>
+            <View style={styles.viewToggle}>
+              {(["card", "compact"] as const).map((v) => {
+                const on = browseView === v;
+                return (
+                  <Pressable
+                    key={v}
+                    style={[styles.viewBtn, on && styles.viewBtnOn]}
+                    onPress={() => setBrowseView(v)}
+                    testID={`view-${v}`}
+                  >
+                    <Icon
+                      name={v === "card" ? "grid" : "rows"}
+                      size={15}
+                      color={on ? colors.white : colors.muted}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
           <SectionHead
             title="Featured Properties"
@@ -131,16 +167,27 @@ export default function Home() {
             onLink={() => router.push("/location")}
           />
           {visibleListings.length ? (
-            featured.map((l) => (
-              <FeatureCard
-                key={l.id}
-                listing={l}
-                saved={isSaved(l.id)}
-                onPress={() => router.push(`/detail?id=${l.id}`)}
-                // No heart on a property you published. Ownership, not mode.
-                onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
-              />
-            ))
+            featured.map((l) =>
+              // ONE save handler and ONE ownership guard, whichever view is on.
+              browseView === "compact" ? (
+                <CompactRow
+                  key={l.id}
+                  listing={l}
+                  saved={isSaved(l.id)}
+                  onPress={() => router.push(`/detail?id=${l.id}`)}
+                  onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                />
+              ) : (
+                <FeatureCard
+                  key={l.id}
+                  listing={l}
+                  saved={isSaved(l.id)}
+                  onPress={() => router.push(`/detail?id=${l.id}`)}
+                  // No heart on a property you published. Ownership, not mode.
+                  onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                />
+              ),
+            )
           ) : (
             <Empty title="No properties here yet" body={emptyCopy} />
           )}
@@ -209,10 +256,26 @@ export default function Home() {
 
           <SectionHead title="New Properties" sub={`Recently added in ${selectedLocation.name}.`} />
           {recent.length ? (
-            <View style={{ gap: 10 }}>
-              {recent.map((l) => (
-                <ResultCard key={l.id} listing={l} onPress={() => router.push(`/detail?id=${l.id}`)} />
-              ))}
+            <View style={browseView === "compact" ? undefined : { gap: 10 }}>
+              {recent.map((l) =>
+                browseView === "compact" ? (
+                  <CompactRow
+                    key={l.id}
+                    listing={l}
+                    saved={isSaved(l.id)}
+                    onPress={() => router.push(`/detail?id=${l.id}`)}
+                    onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                  />
+                ) : (
+                  <ResultCard
+                    key={l.id}
+                    listing={l}
+                    saved={isSaved(l.id)}
+                    onPress={() => router.push(`/detail?id=${l.id}`)}
+                    onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                  />
+                ),
+              )}
             </View>
           ) : visibleListings.length ? null : null}
         </View>
@@ -222,6 +285,17 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  filterRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  viewToggle: { flexDirection: "row", gap: 6 },
+  viewBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.soft,
+  },
+  viewBtnOn: { backgroundColor: colors.black },
   hero: { minHeight: 330, backgroundColor: "#111" },
   heroInner: { flex: 1, paddingHorizontal: 18, paddingBottom: 34 },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },

@@ -287,7 +287,7 @@ export function Chips({
             ]}
           >
             <T
-              weight={850}
+              weight={600}
               size={12}
               color={on ? (dark ? colors.ink : colors.white) : dark ? colors.white : colors.ink}
             >

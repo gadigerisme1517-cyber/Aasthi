@@ -4,6 +4,14 @@ import { Listing } from "@/src/data/seed";
 // here, so the columns can never disagree between the two views. Nothing in
 // this file renders; it decides what a listing HAS to say.
 
+// The photo list, de-duplicated. `img` is the cover and `g` holds the REST,
+// but listings written before that was settled still carry the cover twice.
+// Both views call THIS, so a count badge can never disagree between them.
+export function photosOf(listing: Listing): string[] {
+  const rest = (listing.g ?? []).filter((u) => u && u !== listing.img);
+  return [listing.img, ...rest].filter(Boolean) as string[];
+}
+
 export type Fact = { value: string; label: string };
 export type Kind = "home" | "land" | "other";
 
@@ -61,7 +69,6 @@ export function plaqueLine(listing: Listing): string {
 // column at 360px, which is the narrowest phone this ships to.
 export function factsFor(listing: Listing): Fact[] {
   const kind = kindOf(listing);
-  const anyL = listing as any;
 
   if (kind === "home") {
     // floor only when there is no facing. A number, so 0 is ground floor and

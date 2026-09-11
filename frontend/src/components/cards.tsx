@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 import { Listing, Seller } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
-import { factsFor, plaqueLine, showsTypePill, trustFact } from "@/src/lib/listing-facts";
+import { factsFor, photosOf, plaqueLine, showsTypePill, trustFact } from "@/src/lib/listing-facts";
 import { colors, radius, shadow } from "@/src/theme";
 import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 import { T } from "@/src/components/ui";
@@ -22,14 +22,6 @@ import { T } from "@/src/components/ui";
 // on /detail and the seller shop. Status is stated once, beside the price.
 
 const VERIFIED_GREEN = "#12a05e";
-
-function photosOf(listing: Listing): string[] {
-  // Same convention as /detail and /gallery: `img` is the cover and `g` holds
-  // the REST. If g still contains the cover (listings written before that was
-  // fixed) the duplicate is dropped here too, so the count badge cannot lie.
-  const rest = (listing.g ?? []).filter((u) => u && u !== listing.img);
-  return [listing.img, ...rest].filter(Boolean) as string[];
-}
 
 // ONE browse card. Price and locality sit ON the photo in a plaque; the
 // facts sit BELOW it in ruled columns. The old white panel that overlapped

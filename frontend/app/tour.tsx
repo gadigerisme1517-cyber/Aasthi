@@ -148,7 +148,7 @@ export default function Tour() {
             Tour intelligence
           </T>
           <T weight={500} size={13} color="#bfbfbf" style={{ lineHeight: 20 }}>
-            A panning preview of this property's photo, with tappable room labels for reference. Contact the seller to arrange a full in-person or video walkthrough.
+            A panning preview of this property&apos;s photo, with tappable room labels for reference. Contact the seller to arrange a full in-person or video walkthrough.
           </T>
         </View>
 

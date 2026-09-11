@@ -49,7 +49,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         testID={`tab-${tab.label.toLowerCase()}`}
       >
         <Icon name={tab.icon} size={19} color={active ? colors.ink : "#7e7e7e"} filled={tab.icon === "heart" && active} />
-        <T weight={850} size={9.5} color={active ? colors.ink : "#7e7e7e"} style={{ marginTop: 3 }}>
+        <T weight={600} size={9.5} color={active ? colors.ink : "#7e7e7e"} style={{ marginTop: 3 }}>
           {tab.label}
         </T>
       </Pressable>
@@ -83,7 +83,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           </View>
         ) : null}
       </View>
-      <T weight={850} size={9.5} color="#7e7e7e" style={{ marginTop: 3 }}>
+      <T weight={600} size={9.5} color="#7e7e7e" style={{ marginTop: 3 }}>
         {label}
       </T>
     </Pressable>
@@ -97,7 +97,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         <View style={styles.postCircle}>
           <Icon name="plus" size={21} color={colors.white} />
         </View>
-        <T weight={850} size={9.5} color="#7e7e7e" style={{ marginTop: 1 }}>
+        <T weight={600} size={9.5} color="#7e7e7e" style={{ marginTop: 1 }}>
           List
         </T>
       </Pressable>
