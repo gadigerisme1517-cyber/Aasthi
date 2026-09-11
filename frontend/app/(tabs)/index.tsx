@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeatureCard, ResultCard, SellerRailCard } from "@/src/components/cards";
 import { CompactRow } from "@/src/components/compact-row";
+import { GridTile } from "@/src/components/grid-tile";
 import { Chips, Empty, SectionHead, T } from "@/src/components/ui";
 import { CATEGORIES } from "@/src/data/seed";
 import { listingMatchesLocation } from "@/src/data/locations";
@@ -140,7 +141,7 @@ export default function Home() {
               <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
             </View>
             <View style={styles.viewToggle}>
-              {(["card", "compact"] as const).map((v) => {
+              {(["card", "compact", "grid"] as const).map((v) => {
                 const on = browseView === v;
                 return (
                   <Pressable
@@ -150,8 +151,8 @@ export default function Home() {
                     testID={`view-${v}`}
                   >
                     <Icon
-                      name={v === "card" ? "grid" : "rows"}
-                      size={15}
+                      name={v === "card" ? "square" : v === "compact" ? "rows" : "grid"}
+                      size={14}
                       color={on ? colors.white : colors.muted}
                     />
                   </Pressable>
@@ -167,9 +168,18 @@ export default function Home() {
             onLink={() => router.push("/location")}
           />
           {visibleListings.length ? (
-            featured.map((l) =>
+            <View style={browseView === "grid" ? styles.grid : undefined}>
+            {featured.map((l) =>
               // ONE save handler and ONE ownership guard, whichever view is on.
-              browseView === "compact" ? (
+              browseView === "grid" ? (
+                <GridTile
+                  key={l.id}
+                  listing={l}
+                  saved={isSaved(l.id)}
+                  onPress={() => router.push(`/detail?id=${l.id}`)}
+                  onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                />
+              ) : browseView === "compact" ? (
                 <CompactRow
                   key={l.id}
                   listing={l}
@@ -187,7 +197,8 @@ export default function Home() {
                   onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
                 />
               ),
-            )
+            )}
+            </View>
           ) : (
             <Empty title="No properties here yet" body={emptyCopy} />
           )}
@@ -256,9 +267,17 @@ export default function Home() {
 
           <SectionHead title="New Properties" sub={`Recently added in ${selectedLocation.name}.`} />
           {recent.length ? (
-            <View style={browseView === "compact" ? undefined : { gap: 10 }}>
+            <View style={browseView === "grid" ? styles.grid : browseView === "compact" ? undefined : { gap: 10 }}>
               {recent.map((l) =>
-                browseView === "compact" ? (
+                browseView === "grid" ? (
+                  <GridTile
+                    key={l.id}
+                    listing={l}
+                    saved={isSaved(l.id)}
+                    onPress={() => router.push(`/detail?id=${l.id}`)}
+                    onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
+                  />
+                ) : browseView === "compact" ? (
                   <CompactRow
                     key={l.id}
                     listing={l}
@@ -287,9 +306,11 @@ export default function Home() {
 const styles = StyleSheet.create({
   filterRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   viewToggle: { flexDirection: "row", gap: 6 },
+  // Two columns with the same 10 gap the storefront grid uses.
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
   viewBtn: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",

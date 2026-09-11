@@ -9,6 +9,7 @@ import { InitialAvatar } from "@/src/components/initial-avatar";
 import { StoreTile } from "@/src/components/store-tile";
 import { Empty, Screen, T } from "@/src/components/ui";
 import { Listing } from "@/src/data/seed";
+import { statusOf } from "@/src/lib/listing-facts";
 import { Icon } from "@/src/icons";
 import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 import { useApp } from "@/src/store/AppContext";
@@ -111,51 +112,68 @@ export function Storefront({
 
   const [chip, setChip] = useState("All");
 
+  // WHAT EACH AUDIENCE MAY EVER SEE.
+  //
+  // A buyer never receives a hidden listing, on any tab. Sold ones survive
+  // this filter because the Sold tab needs them; the live grid excludes them
+  // separately, below.
   const visible = useMemo(
-    () =>
-      isOwner
-        ? listings
-        : listings.filter(
-            (l) => !(l as any).hidden && ((l as any).saleStatus ?? "live") !== "sold",
-          ),
+    () => (isOwner ? listings : listings.filter((l) => !(l as any).hidden)),
     [listings, isOwner],
   );
 
+  // In buyer preview the agent must see exactly what a buyer sees, so preview
+  // re-applies the buyer filter over their own full list.
   const audienceListings = useMemo(
-    () =>
-      owning
-        ? visible
-        : visible.filter(
-            (l) => !(l as any).hidden && ((l as any).saleStatus ?? "live") !== "sold",
-          ),
+    () => (owning ? visible : visible.filter((l) => !(l as any).hidden)),
     [visible, owning],
+  );
+
+  // The live grid: everything that is neither sold nor hidden. This is what
+  // "All" and every type tab count and show.
+  const liveListings = useMemo(
+    () => audienceListings.filter((l) => statusOf(l) !== "sold" && statusOf(l) !== "hidden"),
+    [audienceListings],
+  );
+
+  const soldListings = useMemo(
+    () => audienceListings.filter((l) => statusOf(l) === "sold"),
+    [audienceListings],
   );
 
   const TYPES = ["Buy", "Rent", "Plots", "Commercial"] as const;
   const chips = useMemo(() => {
     const base = [
-      { key: "All", count: audienceListings.length },
+      { key: "All", count: liveListings.length },
       ...TYPES.map((t) => ({
         key: t,
-        count: audienceListings.filter((l) => l.type === t).length,
+        count: liveListings.filter((l) => l.type === t).length,
       })),
     ].filter((c) => c.key === "All" || c.count > 0);
+    // Sold gets its own tab for BOTH audiences — a shop that has sold things
+    // is worth saying so, and it keeps sold stock out of the live grid.
+    if (soldListings.length) base.push({ key: "Sold", count: soldListings.length });
     if (owning) {
       const hidden = listings.filter((l) => (l as any).hidden).length;
       if (hidden) base.push({ key: "Hidden", count: hidden });
     }
     return base;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audienceListings, listings, owning]);
+  }, [liveListings, soldListings, listings, owning]);
 
   const shown = useMemo(() => {
-    if (chip === "Hidden") return listings.filter((l) => (l as any).hidden);
-    if (chip === "All") return audienceListings;
-    return audienceListings.filter((l) => l.type === chip);
-  }, [chip, audienceListings, listings]);
+    // GATED ON `owning`, not merely on the chip being rendered. The Hidden
+    // chip is only drawn for an owner, but `chip` is state: selecting Hidden
+    // and then tapping "View as buyer" left the selection behind and showed
+    // hidden listings inside the preview that claims to be the buyer's view.
+    if (chip === "Hidden") return owning ? listings.filter((l) => (l as any).hidden) : liveListings;
+    if (chip === "Sold") return soldListings;
+    if (chip === "All") return liveListings;
+    return liveListings.filter((l) => l.type === chip);
+  }, [chip, liveListings, soldListings, listings, owning]);
 
   const storeLeads = useMemo(() => (isOwner ? myLeads : []), [isOwner, myLeads]);
-  const thisWeek = useMemo(() => postedThisWeek(audienceListings), [audienceListings]);
+  const thisWeek = useMemo(() => postedThisWeek(liveListings), [liveListings]);
   const since = monthYear(identity.since);
   const following = isSellerSaved(identity.key as any);
 
@@ -253,8 +271,8 @@ export function Storefront({
         {/* EXACTLY THREE, and not one of them is a claim about quality. */}
         <View style={styles.stats}>
           <Stat
-            value={String(audienceListings.length)}
-            label={audienceListings.length === 1 ? "Listing" : "Listings"}
+            value={String(liveListings.length)}
+            label={liveListings.length === 1 ? "Listing" : "Listings"}
           />
           <Stat
             value={typeof identity.followers === "number" ? String(identity.followers) : "–"}
@@ -410,8 +428,12 @@ export function Storefront({
                 onManage={owning ? () => router.push(`/edit-listing?id=${l.id}`) : undefined}
                 saved={isSaved(l.id)}
                 onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
-                hidden={owning ? Boolean((l as any).hidden) : false}
-                sold={owning ? (l as any).saleStatus === "sold" : false}
+                // STATE IS OWNER-ONLY. A buyer gets no status word at all:
+                // hidden never reaches them, sold only under its own tab, and
+                // "Pending verification" on a stranger's tile reads as a
+                // fault in the property rather than in the paperwork — the
+                // missing tick already says what there is to say.
+                state={owning ? statusOf(l) : undefined}
               />
             ))}
           </View>

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { T } from "@/src/components/ui";
 import { Listing } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
+import { STATE_LABEL, type ListingState } from "@/src/lib/listing-facts";
 import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 
 // The tile in a storefront catalogue. Two columns, and deliberately quieter
@@ -30,14 +31,24 @@ function postedText(listing: Listing): string | null {
   return `Posted ${Math.floor(days / 30)} months ago`;
 }
 
+// Four states, four colours, and only two of them are ever drawn as a badge.
+const STATE_COLOUR: Record<ListingState, string> = {
+  active: colour.green,
+  pending: "#9A6B12",
+  hidden: colour.ink3,
+  sold: colour.accent,
+};
+
 export function StoreTile({
   listing,
   onPress,
   onManage,
   saved,
   onToggleSave,
-  hidden,
-  sold,
+  // Owner view only. A buyer never receives a state: hidden listings do not
+  // reach them at all, sold ones only under the Sold tab, and "Pending" reads
+  // as a fault in the property rather than in the paperwork.
+  state,
 }: {
   listing: Listing;
   onPress: () => void;
@@ -46,15 +57,24 @@ export function StoreTile({
   onManage?: () => void;
   saved?: boolean;
   onToggleSave?: () => void;
-  hidden?: boolean;
-  sold?: boolean;
+  state?: ListingState;
 }) {
   const posted = postedText(listing);
+  const dimmed = state === "hidden" || state === "sold";
 
   return (
-    <Pressable style={styles.tile} onPress={onPress} testID={`store-tile-${listing.id}`}>
+    <Pressable
+      style={[styles.tile, dimmed && styles.tileDim]}
+      onPress={onPress}
+      testID={`store-tile-${listing.id}`}
+    >
       <View style={styles.photoWrap}>
-        <Image source={{ uri: listing.img }} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} />
+        <Image
+          source={{ uri: listing.img }}
+          style={[StyleSheet.absoluteFill, dimmed && { opacity: 0.42 }]}
+          contentFit="cover"
+          transition={160}
+        />
         <LinearGradient
           colors={["transparent", "rgba(12,10,8,0.72)"]}
           style={styles.scrim}
@@ -71,11 +91,13 @@ export function StoreTile({
           </Pressable>
         ) : null}
 
-        {/* Owner-only states. A buyer never receives these listings at all. */}
-        {hidden || sold ? (
-          <View style={styles.state}>
-            <T weight={w.label} size={10} color={colour.paper}>
-              {hidden ? "Hidden" : "Sold"}
+        {/* THE DIM IS THE SIGNAL. Only the two states that take a listing out
+            of circulation get a stamp; marking every tile would mean marking
+            none of them. */}
+        {dimmed ? (
+          <View style={[styles.stamp, state === "sold" && styles.stampSold]}>
+            <T weight={w.title} size={10.5} color={state === "sold" ? colour.paper : colour.ink}>
+              {state === "sold" ? "Sold" : "Hidden"}
             </T>
           </View>
         ) : null}
@@ -91,11 +113,23 @@ export function StoreTile({
         </T>
         {/* Rendered only when the listing carries a createdAt. Listings
             published before that field existed show nothing rather than a
-            date invented from nowhere. */}
-        {posted ? (
+            date invented from nowhere.
+            NOT SHOWN FOR HIDDEN OR SOLD: when it was posted stops being the
+            useful fact, and when it was hidden or sold is not recorded
+            anywhere — see the report. */}
+        {posted && !dimmed ? (
           <T weight={w.body} size={11} color={colour.ink3} numberOfLines={1} style={{ marginTop: 3 }}>
             {posted}
           </T>
+        ) : null}
+
+        {state ? (
+          <View style={styles.stateRow}>
+            <View style={[styles.stateDot, { backgroundColor: STATE_COLOUR[state] }]} />
+            <T weight={w.title} size={11} color={STATE_COLOUR[state]} numberOfLines={1}>
+              {STATE_LABEL[state]}
+            </T>
+          </View>
         ) : null}
       </View>
     </Pressable>
@@ -124,15 +158,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  state: {
+  tileDim: { backgroundColor: "#FAF9F7" },
+  stamp: {
     position: "absolute",
     top: 7,
     left: 7,
-    borderRadius: 4,
-    backgroundColor: colour.scrim,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    borderRadius: 5,
+    backgroundColor: colour.paper,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
+  stampSold: { backgroundColor: colour.accent },
+  stateRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
+  stateDot: { width: 6, height: 6, borderRadius: 3 },
   price: { position: "absolute", left: 9, bottom: 8 },
   body: { paddingVertical: 9, paddingHorizontal: 10 },
 });

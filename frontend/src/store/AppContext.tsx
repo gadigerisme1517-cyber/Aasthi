@@ -178,6 +178,14 @@ function freshDraft(): Draft {
 }
 
 
+// Three browse densities. CARD IS THE DEFAULT and a fresh install opens on
+// it; see the read in the boot effect for what happens to an unknown value.
+export type BrowseView = "card" | "compact" | "grid";
+const BROWSE_VIEWS: BrowseView[] = ["card", "compact", "grid"];
+function isBrowseView(v: unknown): v is BrowseView {
+  return typeof v === "string" && (BROWSE_VIEWS as string[]).includes(v);
+}
+
 type Ctx = {
   booted: boolean;
   authed: boolean;
@@ -246,8 +254,8 @@ type Ctx = {
   // Browse density. Stored with AsyncStorage, the same local-preference
   // pattern the selected location already uses, so it survives a force-stop
   // and does not need a round trip to Firestore to render the first frame.
-  browseView: "card" | "compact";
-  setBrowseView: (v: "card" | "compact") => void;
+  browseView: BrowseView;
+  setBrowseView: (v: BrowseView) => void;
   updateAccount: (data: Partial<User>) => Promise<void>;
   setSetting: (k: keyof Settings, v: boolean | string) => void;
   setDraft: (patch: Partial<Draft>) => void;
@@ -276,7 +284,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [sellers, setSellers] = useState<Seller[]>([]);
   // Card is the default, and stays the default until the user says otherwise.
-  const [browseView, setBrowseViewState] = useState<"card" | "compact">("card");
+  const [browseView, setBrowseViewState] = useState<BrowseView>("card");
   const [listings, setListings] = useState<Listing[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   // Leads where I am the seller (My enquiries) and where I am the buyer
@@ -290,7 +298,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem("browse-view")
       .then((v) => {
-        if (v === "card" || v === "compact") setBrowseViewState(v);
+        // THE ONLY PLACE A STORED VIEW IS TRUSTED. Anything that is not one
+        // of the three known strings — missing, empty, an older build's
+        // value, junk — leaves the state at its "card" default. It never
+        // falls back to whichever view was added most recently.
+        if (isBrowseView(v)) setBrowseViewState(v);
       })
       .catch(() => {});
     AsyncStorage.getItem("selected-location-id")
@@ -516,7 +528,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // preview switch, not a change of identity — a guard hung off it evaporates
   // the moment the agent taps preview, which is exactly the bug that let an
   // owner heart their own listing on their own storefront.
-  const setBrowseView = useCallback((v: "card" | "compact") => {
+  const setBrowseView = useCallback((v: BrowseView) => {
     setBrowseViewState(v);
     AsyncStorage.setItem("browse-view", v).catch(() => {});
   }, []);

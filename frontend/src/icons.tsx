@@ -40,6 +40,7 @@ export type IconName =
   // The browse view toggle.
   | "grid"
   | "rows"
+  | "square"
   // Overflow on a half-width store tile, where three text buttons will not fit.
   | "more"
   | "close";
@@ -72,6 +73,7 @@ const FEATHER: Partial<Record<IconName, string>> = {
   share: "share-2",
   grid: "grid",
   rows: "list",
+  square: "square",
   more: "more-horizontal",
   close: "x",
 };

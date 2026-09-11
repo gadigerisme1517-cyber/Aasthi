@@ -112,6 +112,28 @@ export function factsFor(listing: Listing): Fact[] {
   return out;
 }
 
+// LISTING STATE, derived. No status field was added and none is needed: all
+// four states already exist in the data, they were simply never read
+// together. Precedence is deliberate — a sold listing that was never
+// verified reads Sold, because sold is the end of the story and the
+// paperwork no longer matters.
+export type ListingState = "sold" | "hidden" | "pending" | "active";
+
+export function statusOf(listing: Listing): ListingState {
+  const anyL = listing as any;
+  if ((anyL.saleStatus ?? "live") === "sold") return "sold";
+  if (anyL.hidden) return "hidden";
+  if (anyL.verificationStatus !== "verified") return "pending";
+  return "active";
+}
+
+export const STATE_LABEL: Record<ListingState, string> = {
+  sold: "Sold",
+  hidden: "Hidden",
+  pending: "Pending verification",
+  active: "Active",
+};
+
 // Column 4, always. A claim about whether AASTHI checked the documents.
 export function trustFact(listing: Listing): { value: string; label: string; verified: boolean } {
   const verified = (listing as any).verificationStatus === "verified";
