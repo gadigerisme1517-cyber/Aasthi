@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Pressable, Share, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -209,6 +210,11 @@ export function Storefront({
 
   return (
     <Screen scroll contentStyle={{ paddingHorizontal: 0 }}>
+      {/* The app sets a dark status bar globally in app/_layout.tsx, which is
+          right everywhere except here: this screen puts a black slab directly
+          under it, and dark icons on black cannot be read. Scoped to this
+          screen, restored on the way out. */}
+      <StatusBar style="light" />
       {/* ================= HEADER SLAB ================= */}
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.topBar}>
