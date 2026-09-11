@@ -31,7 +31,11 @@ export default function Blocked() {
       return {
         key,
         name: seeded?.name ?? `Seller ${key}`,
-        meta: seeded?.meta ?? "This seller is no longer listed on AASTHI.",
+        // City only. The old line fell back to `seeded.meta`, which carried a
+        // blurb or an invented statistic; when the seller was gone entirely it
+        // printed a sentence in the same slot. The "no live listings" line
+        // below already covers that case.
+        city: seeded?.city ?? "",
         img: seeded?.img ?? DEFAULT_AVATAR,
         count: theirListings.length,
         openable: Boolean(seeded),
@@ -46,7 +50,7 @@ export default function Blocked() {
     return {
       key,
       name: resolved?.name ?? "Private seller",
-      meta: resolved?.meta ?? "No listings left to show their details.",
+      city: resolved?.city ?? "",
       img: resolved?.img ?? DEFAULT_AVATAR,
       count: theirListings.length,
       openable: Boolean(anyListing),
@@ -70,9 +74,11 @@ export default function Blocked() {
                 <T weight={800} size={14.5} numberOfLines={1}>
                   {row.name}
                 </T>
-                <T weight={500} size={11.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
-                  {row.meta}
-                </T>
+                {row.city ? (
+                  <T weight={500} size={11.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
+                    {row.city}
+                  </T>
+                ) : null}
                 <T weight={700} size={11} color={colors.faint} style={{ marginTop: 4 }}>
                   {row.count === 0
                     ? "No live listings"

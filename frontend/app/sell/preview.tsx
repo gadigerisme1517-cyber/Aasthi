@@ -42,7 +42,7 @@ export default function Preview() {
   const previewSeller: Seller = {
     id: USER_SELLER_ID,
     name: user.name || "AASTHI member",
-    meta: user.city || "Private seller",
+    city: user.city || "",
     trust: "Private seller",
     verified: Boolean(user.verified),
     img: user.avatar,
@@ -108,10 +108,13 @@ export default function Preview() {
         <T weight={700} size={15} style={{ marginTop: 4 }} numberOfLines={1}>
           {previewSeller.name}
         </T>
-        <T weight={500} size={12.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
-          {previewSeller.meta}
-          {user.phone.trim() ? ` · ${user.phone.trim()}` : ""}
-        </T>
+        {/* City and number, whichever of them exists. Neither is padded: the
+            line disappears rather than printing a placeholder. */}
+        {previewSeller.city || user.phone.trim() ? (
+          <T weight={500} size={12.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
+            {[previewSeller.city, user.phone.trim()].filter(Boolean).join(" · ")}
+          </T>
+        ) : null}
       </View>
       {!user.phone.trim() ? (
         <View style={styles.warn} testID="preview-no-phone">

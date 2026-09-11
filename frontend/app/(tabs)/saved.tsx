@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { ResultCard } from "@/src/components/cards";
+import { CountPill, ResultCard } from "@/src/components/cards";
 import { Empty, PageHead, Screen, SectionHead, T } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
@@ -22,11 +22,14 @@ type Tab = "properties" | "stores";
 
 // A saved store key is a uid for a real agent and a numeric id for a seeded
 // seller (BlockKey). Both are resolved to the same shape here.
+//
+// Three things only, all of them checkable: the name, the verified check
+// AASTHI itself sets, and how many listings are live right now. The row used
+// to carry a free-text line off `Seller.meta`, which is gone.
 type StoreRow = {
   key: string | number;
   name: string;
   avatar?: string;
-  meta: string;
   verified: boolean;
   count: number;
   href?: string;
@@ -49,13 +52,12 @@ export default function Saved() {
           if (!s) {
             // Saved, but the seeded seller is no longer in the data. Say so
             // rather than inventing a name; Remove still works.
-            return { key, name: "Store unavailable", meta: "This store is no longer on AASTHI", verified: false, count: 0 };
+            return { key, name: "Store unavailable", verified: false, count: 0 };
           }
           return {
             key,
             name: s.name,
             avatar: s.img,
-            meta: s.meta,
             verified: Boolean(s.verified),
             count,
             href: `/seller?id=${s.id}`,
@@ -67,19 +69,14 @@ export default function Saved() {
         const mine = listings.filter((l: any) => l.sellerUid === key);
         const first = mine[0] as any;
         if (!first) {
-          return {
-            key,
-            name: "AASTHI member",
-            meta: "No listings right now",
-            verified: false,
-            count: 0,
-          };
+          // Nothing left to read a name off. The count pill says "No listings
+          // yet", which is the whole story.
+          return { key, name: "AASTHI member", verified: false, count: 0 };
         }
         return {
           key,
           name: first.sellerName?.trim() || "AASTHI member",
           avatar: first.sellerAvatar,
-          meta: (first.sellerCity || "").split(",")[0] || "",
           verified: Boolean(first.sellerVerified),
           count: mine.length,
           href: `/seller?uid=${key}`,
@@ -148,11 +145,9 @@ export default function Saved() {
                         </T>
                         {row.verified ? <Icon name="check" size={15} color="#12a05e" /> : null}
                       </View>
-                      <T weight={500} size={12} color={colors.muted} numberOfLines={1} style={{ marginTop: 3 }}>
-                        {[row.meta, row.count ? `${row.count} listing${row.count === 1 ? "" : "s"}` : null]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </T>
+                      {/* The same pill the seller cards use, not a lookalike
+                          that can drift away from it. */}
+                      <CountPill n={row.count} style={{ alignSelf: "flex-start", marginTop: 5, paddingHorizontal: 10 }} />
                     </View>
                   </Pressable>
                   {/* Without this a store you can no longer open would be

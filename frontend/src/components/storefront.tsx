@@ -197,11 +197,18 @@ export function Storefront({
               <Icon name="check" size={17} color={VERIFIED_GREEN} />
             ) : null}
           </View>
-          <T weight={500} size={13.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 3 }}>
-            {[identity.city, identity.area ? `Works in ${identity.area}` : null]
-              .filter(Boolean)
-              .join(" · ")}
-          </T>
+          {/* "City · Works in <area>", either half alone, or the line is not
+              rendered at all. It must never fall back to anything else: this
+              slot is where a buyer reads where the seller is, and it used to
+              receive `meta`, which on a seeded seller was a blurb or an
+              invented response rate. */}
+          {identity.city || identity.area ? (
+            <T weight={500} size={13.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 3 }}>
+              {[identity.city, identity.area ? `Works in ${identity.area}` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </T>
+          ) : null}
         </View>
       </View>
 

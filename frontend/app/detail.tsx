@@ -288,9 +288,15 @@ export default function Detail() {
                 <T weight={800} size={14} numberOfLines={1}>
                   {seller.name}
                 </T>
-                <T weight={500} size={11} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
-                  {seller.meta}
-                </T>
+                {/* The city, or nothing at all. This line used to print
+                    `seller.meta`, which on a seeded seller was a marketing
+                    blurb or an invented response rate sitting where a buyer
+                    reads a location. */}
+                {seller.city ? (
+                  <T weight={500} size={11} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
+                    {seller.city}
+                  </T>
+                ) : null}
               </View>
               <TrustTag label={seller.trust} />
             </Pressable>

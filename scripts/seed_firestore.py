@@ -28,13 +28,13 @@ import datetime
 import urllib.request
 
 SELLERS = [
-    {"id": 0, "name": "Sri Homes Realty", "meta": "98% response · 42 listings", "trust": "Top seller", "verified": True,
+    {"id": 0, "name": "Sri Homes Realty", "trust": "Top seller", "verified": True,
      "img": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80",
      "cover": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=500&q=80"},
-    {"id": 1, "name": "Kurnool Estates", "meta": "Fast reply · plots specialist", "trust": "Verified", "verified": True,
+    {"id": 1, "name": "Kurnool Estates", "trust": "Verified", "verified": True,
      "img": "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=300&q=80",
      "cover": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=500&q=80"},
-    {"id": 2, "name": "Urban Nest", "meta": "Rentals and villas", "trust": "Verified", "verified": True,
+    {"id": 2, "name": "Urban Nest", "trust": "Verified", "verified": True,
      "img": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
      "cover": "https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=500&q=80"},
 ]

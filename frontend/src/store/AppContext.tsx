@@ -496,7 +496,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           id: USER_SELLER_ID,
           uid: anyL.sellerUid,
           name: anyL.sellerName || "AASTHI member",
-          meta: anyL.sellerCity || "Private seller",
+          // The city, and only the city. It used to be `sellerCity ||
+          // "Private seller"`, which put the word "Private seller" into the
+          // slot every screen reads as a location — and `trust` below already
+          // says exactly that, two lines away.
+          city: anyL.sellerCity || "",
           trust: "Private seller",
           // The listing carries the publisher's verified flag; this was
           // hardcoded false, so an agent AASTHI had actually verified showed

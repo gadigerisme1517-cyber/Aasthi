@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 import { Listing, Seller } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
@@ -343,6 +343,19 @@ function countLabel(n: number): string {
   return `${n} listing${n === 1 ? "" : "s"}`;
 }
 
+// The one figure a seller card can honestly show, in one pill, on one line.
+// Exported so the Saved > Stores rows use the identical component rather than
+// a lookalike that can drift away from it.
+export function CountPill({ n, style }: { n: number; style?: ViewStyle }) {
+  return (
+    <View style={[styles.countPill, style]}>
+      <T weight={800} size={11}>
+        {countLabel(n)}
+      </T>
+    </View>
+  );
+}
+
 export function SellerRailCard({
   seller,
   listings,
@@ -376,11 +389,7 @@ export function SellerRailCard({
       )}
       {/* ONE figure, on one line. A lone stacked value-over-label box reads as
           half of a broken pair, which is exactly what it would have been. */}
-      <View style={styles.countPill}>
-        <T weight={800} size={11}>
-          {countLabel(listings.length)}
-        </T>
-      </View>
+      <CountPill n={listings.length} />
     </Pressable>
   );
 }
@@ -410,11 +419,7 @@ export function SellerWideCard({
             {where}
           </T>
         ) : null}
-        <View style={[styles.countPill, { alignSelf: "flex-start", paddingHorizontal: 12 }]}>
-          <T weight={800} size={11}>
-            {countLabel(listings.length)}
-          </T>
-        </View>
+        <CountPill n={listings.length} style={{ alignSelf: "flex-start", paddingHorizontal: 12 }} />
       </View>
     </Pressable>
   );

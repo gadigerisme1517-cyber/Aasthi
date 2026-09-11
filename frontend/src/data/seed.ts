@@ -5,7 +5,18 @@
 export type Seller = {
   id: number;
   name: string;
-  meta: string;
+  // `meta` used to sit here: one free-text line that was a marketing blurb on
+  // one seller ("Rentals and villas"), an unsourced statistic on another
+  // ("98% response"), and the seller's CITY when the object was built from a
+  // real user. Four screens rendered it in a slot that meant "where this
+  // seller is", so the statistic was being read as a location. It is deleted,
+  // not renamed: what those screens actually wanted is below, as a fact with
+  // one meaning.
+  //
+  // Optional because it is genuinely unknown for the three seeded sellers —
+  // they have never had a city recorded anywhere. Absent means the line is not
+  // rendered. It is never filled from a guess or from a listing's address.
+  city?: string;
   trust: string; // "Top seller" | "Verified"
   verified: boolean;
   img: string;
@@ -88,7 +99,6 @@ export const SELLERS: Seller[] = [
   {
     id: 0,
     name: "Sri Homes Realty",
-    meta: "98% response · Independent houses",
     trust: "Top seller",
     verified: true,
     img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80",
@@ -98,7 +108,6 @@ export const SELLERS: Seller[] = [
   {
     id: 1,
     name: "Kurnool Estates",
-    meta: "Fast reply · plots specialist",
     trust: "Verified",
     verified: true,
     img: "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=300&q=80",
@@ -108,7 +117,6 @@ export const SELLERS: Seller[] = [
   {
     id: 2,
     name: "Urban Nest",
-    meta: "Rentals and villas",
     trust: "Verified",
     verified: true,
     img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",

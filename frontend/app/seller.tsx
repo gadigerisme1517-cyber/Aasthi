@@ -47,7 +47,10 @@ export default function SellerStore() {
       name: s.name,
       avatar: s.img,
       verified: s.verified,
-      city: s.meta,
+      // Was `s.meta`, so this storefront's location line read "98% response ·
+      // Independent houses". Seeded sellers have no city on record, so the
+      // line simply does not render for them until one is written.
+      city: s.city ?? "",
       area: "",
       // Seeded sellers have no bio field; the block simply does not render.
       bio: "",
