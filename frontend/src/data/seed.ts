@@ -159,11 +159,12 @@ export const LISTINGS: Listing[] = [
     facing: "East",
     dist: "2.1 km",
     seller: 0,
-    img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=90",
+    // Independent house, Virudhunagar. Three real Indian houses rather than
+    // one western villa shot from a drone.
+    img: "https://images.pexels.com/photos/35289099/pexels-photo-35289099.jpeg?auto=compress&cs=tinysrgb&w=800",
     g: [
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=88",
+      "https://images.pexels.com/photos/34968154/pexels-photo-34968154.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://images.pexels.com/photos/31959779/pexels-photo-31959779.jpeg?auto=compress&cs=tinysrgb&w=800",
     ],
     desc: "A premium independent villa with wide road access, bright interiors, elegant finishes and a guided 360° tour that lets serious buyers understand the space before visiting.",
   },
@@ -179,12 +180,10 @@ export const LISTINGS: Listing[] = [
     facing: "North",
     dist: "1.4 km",
     seller: 2,
-    img: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1400&q=90",
-    g: [
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=88",
-    ],
+    // Apartment interiors, Hyderabad. A rental is let on what the rooms
+    // look like, so both photos are inside.
+    img: "https://images.pexels.com/photos/7672058/pexels-photo-7672058.jpeg?auto=compress&cs=tinysrgb&w=800",
+    g: ["https://images.pexels.com/photos/7672060/pexels-photo-7672060.jpeg?auto=compress&cs=tinysrgb&w=800"],
     desc: "A calm, fully furnished rental with strong natural light, lift access, parking and close access to daily essentials.",
   },
   {
@@ -199,11 +198,11 @@ export const LISTINGS: Listing[] = [
     facing: "East",
     dist: "4.8 km",
     seller: 1,
-    img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=90",
-    g: [
-      "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=900&q=88",
-    ],
+    // Open plot. ONE photo, because there is exactly one plot picture in the
+    // approved set and a plot listing with a single photograph is what a real
+    // one looks like anyway.
+    img: "https://images.pexels.com/photos/34359456/pexels-photo-34359456.jpeg?auto=compress&cs=tinysrgb&w=800",
+    g: [],
     desc: "Clear-title residential plot with strong road visibility, clean layout access and a calm developing neighbourhood.",
   },
   {
@@ -218,11 +217,12 @@ export const LISTINGS: Listing[] = [
     facing: "West",
     dist: "0.8 km",
     seller: 1,
-    img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=90",
-    g: [
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=88",
-      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=88",
-    ],
+    // THE WEAKEST MATCH IN THE SET, and it is named as such in the report:
+    // there is no shopfront among the approved photos, so this is a street
+    // exterior in Bhubaneswar and rooftops in Tanda. Both are Indian and
+    // neither is a shop.
+    img: "https://images.pexels.com/photos/29547315/pexels-photo-29547315.jpeg?auto=compress&cs=tinysrgb&w=800",
+    g: ["https://images.pexels.com/photos/17499591/pexels-photo-17499591.jpeg?auto=compress&cs=tinysrgb&w=800"],
     desc: "Compact commercial frontage with high visibility, clean access and practical fit-out potential for local business use.",
   },
 ];

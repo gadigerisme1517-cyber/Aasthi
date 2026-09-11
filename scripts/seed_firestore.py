@@ -41,20 +41,20 @@ SELLERS = [
 
 LISTINGS = [
     {"seedId": "1", "type": "Buy", "price": "₹1.34 Cr", "title": "Quiet luxury villa with 360° walkthrough", "addr": "Nandyal Road, Kurnool", "beds": "4", "baths": "4", "area": "3,200", "facing": "East", "dist": "2.1 km", "seller": 0,
-     "img": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=90",
-     "g": ["https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=88"],
+     "img": "https://images.pexels.com/photos/35289099/pexels-photo-35289099.jpeg?auto=compress&cs=tinysrgb&w=800",
+     "g": ["https://images.pexels.com/photos/34968154/pexels-photo-34968154.jpeg?auto=compress&cs=tinysrgb&w=800", "https://images.pexels.com/photos/31959779/pexels-photo-31959779.jpeg?auto=compress&cs=tinysrgb&w=800"],
      "desc": "A premium independent villa with wide road access, bright interiors, elegant finishes and a guided 360° tour.", "verificationStatus": "verified"},
     {"seedId": "2", "type": "Rent", "price": "₹42,000/mo", "title": "Fully furnished apartment near city centre", "addr": "Ashok Nagar, Kurnool", "beds": "3", "baths": "3", "area": "1,740", "facing": "North", "dist": "1.4 km", "seller": 2,
-     "img": "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1400&q=90",
-     "g": ["https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=88"],
+     "img": "https://images.pexels.com/photos/7672058/pexels-photo-7672058.jpeg?auto=compress&cs=tinysrgb&w=800",
+     "g": ["https://images.pexels.com/photos/7672060/pexels-photo-7672060.jpeg?auto=compress&cs=tinysrgb&w=800"],
      "desc": "A calm, fully furnished rental with strong natural light, lift access, parking and daily essentials nearby.", "verificationStatus": "verified"},
     {"seedId": "3", "type": "Plots", "price": "₹68 L", "title": "Premium east-facing residential plot", "addr": "Panchalingala Road, Kurnool", "beds": "-", "baths": "-", "area": "266 yd", "facing": "East", "dist": "4.8 km", "seller": 1,
-     "img": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=90",
-     "g": ["https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=900&q=88"],
+     "img": "https://images.pexels.com/photos/34359456/pexels-photo-34359456.jpeg?auto=compress&cs=tinysrgb&w=800",
+     "g": [],
      "desc": "Clear-title residential plot with strong road visibility and a calm developing neighbourhood.", "verificationStatus": "verified"},
     {"seedId": "4", "type": "Commercial", "price": "₹96 L", "title": "Main road commercial shop frontage", "addr": "Bellary Chowrasta, Kurnool", "beds": "-", "baths": "1", "area": "820", "facing": "West", "dist": "0.8 km", "seller": 1,
-     "img": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=90",
-     "g": ["https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=88", "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=88"],
+     "img": "https://images.pexels.com/photos/29547315/pexels-photo-29547315.jpeg?auto=compress&cs=tinysrgb&w=800",
+     "g": ["https://images.pexels.com/photos/17499591/pexels-photo-17499591.jpeg?auto=compress&cs=tinysrgb&w=800"],
      "desc": "Compact commercial frontage with high visibility and practical fit-out potential.", "verificationStatus": "verified"},
 ]
 
