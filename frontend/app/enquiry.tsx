@@ -26,9 +26,17 @@ export default function Enquiry() {
   // easy to tap Send twice and create two identical leads.
   const onSend = async () => {
     if (sending || sent) return;
+    // Null means this listing has no seller anything can reach: no sellerUid,
+    // and its numeric seller matches nobody. Sending would write a lead into a
+    // collection no account can read and then say "Inquiry sent".
+    const seller = sellerOf(listing);
+    if (!seller) {
+      showToast("This listing has no seller on record. Nothing was sent.");
+      return;
+    }
     setSending(true);
     try {
-      await addLead(listing.id, sellerOf(listing).id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
+      await addLead(listing.id, seller.id, "enquiry", `${subject.trim()}: ${msg.trim()}`);
       showToast("Inquiry sent");
       setSent(true);
     } catch {

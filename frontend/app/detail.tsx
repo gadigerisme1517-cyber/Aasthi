@@ -269,38 +269,44 @@ export default function Detail() {
             <Icon name="chev" size={17} color="rgba(255,255,255,0.7)" />
           </Pressable>
 
-          <Section title="Listed by">
-            <Pressable
-              style={styles.sellerRow}
-              onPress={() =>
-                router.push(
-                  // A seller identity built from a user document has no
-                  // numeric id, so route it by uid instead.
-                  (seller as any).uid
-                    ? `/seller?uid=${(seller as any).uid}`
-                    : `/seller?id=${seller.id}`,
-                )
-              }
-              testID="detail-seller"
-            >
-              <Image source={{ uri: seller.img }} style={styles.sellerImg} />
-              <View style={{ flex: 1 }}>
-                <T weight={800} size={14} numberOfLines={1}>
-                  {seller.name}
-                </T>
-                {/* The city, or nothing at all. This line used to print
-                    `seller.meta`, which on a seeded seller was a marketing
-                    blurb or an invented response rate sitting where a buyer
-                    reads a location. */}
-                {seller.city ? (
-                  <T weight={500} size={11} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
-                    {seller.city}
+          {/* THE WHOLE SECTION GOES when the seller cannot be resolved.
+              sellerOf returns null for a listing with no sellerUid whose
+              numeric `seller` matches nothing, and a "Listed by" heading over
+              a blank avatar and an empty name is worse than no heading. */}
+          {seller ? (
+            <Section title="Listed by">
+              <Pressable
+                style={styles.sellerRow}
+                onPress={() =>
+                  router.push(
+                    // A seller identity built from a user document has no
+                    // numeric id, so route it by uid instead.
+                    seller.uid
+                      ? `/seller?uid=${seller.uid}`
+                      : `/seller?id=${seller.id}`,
+                  )
+                }
+                testID="detail-seller"
+              >
+                <Image source={{ uri: seller.img }} style={styles.sellerImg} />
+                <View style={{ flex: 1 }}>
+                  <T weight={800} size={14} numberOfLines={1}>
+                    {seller.name}
                   </T>
-                ) : null}
-              </View>
-              <TrustTag label={seller.trust} />
-            </Pressable>
-          </Section>
+                  {/* The city, or nothing at all. This line used to print
+                      `seller.meta`, which on a seeded seller was a marketing
+                      blurb or an invented response rate sitting where a buyer
+                      reads a location. */}
+                  {seller.city ? (
+                    <T weight={500} size={11} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
+                      {seller.city}
+                    </T>
+                  ) : null}
+                </View>
+                <TrustTag label={seller.trust} />
+              </Pressable>
+            </Section>
+          ) : null}
 
           <Section title="Location">
             <View style={styles.locationNote}>
@@ -388,7 +394,7 @@ export default function Detail() {
               {numberRevealed ? sellerPhone : "Contact number"}
             </T>
             <T weight={700} size={9.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 1 }}>
-              {numberRevealed ? `${seller.name}` : contactNumberHint}
+              {numberRevealed ? seller?.name ?? "" : contactNumberHint}
             </T>
           </View>
           <View style={styles.numberAction}>

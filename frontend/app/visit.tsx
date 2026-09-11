@@ -41,10 +41,16 @@ export default function Visit() {
   // Same reason as enquiry.tsx: confirm only after the write lands.
   const onRequest = async () => {
     if (sending) return;
+    // Same guard as enquiry.tsx: no resolvable seller, no request.
+    const seller = sellerOf(listing);
+    if (!seller) {
+      showToast("This listing has no seller on record. Nothing was sent.");
+      return;
+    }
     setSending(true);
     const chosen = SLOTS[slot];
     try {
-      await addLead(listing.id, sellerOf(listing).id, "visit", `${chosen.title}, ${chosen.sub}`);
+      await addLead(listing.id, seller.id, "visit", `${chosen.title}, ${chosen.sub}`);
       showToast("Visit request sent");
       router.replace(`/request-sent?type=visit&id=${listing.id}`);
     } catch {

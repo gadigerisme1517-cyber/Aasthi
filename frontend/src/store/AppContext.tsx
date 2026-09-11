@@ -218,7 +218,9 @@ type Ctx = {
   isSaved: (id: string) => boolean;
   savedListings: () => Listing[];
   listingsBySeller: (sellerId: number) => Listing[];
-  sellerOf: (l: Listing) => Seller;
+  // Null when the listing has no sellerUid and its numeric `seller` matches
+  // nothing. Callers render the seller block not at all rather than blank.
+  sellerOf: (l: Listing) => Seller | null;
   updateAccount: (data: Partial<User>) => Promise<void>;
   setSetting: (k: keyof Settings, v: boolean | string) => void;
   setDraft: (patch: Partial<Draft>) => void;
@@ -489,7 +491,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   //     firestore.rules:32 restricts users/{uid} to its owner, so there is no
   //     way to read another publisher's profile document at render time.
   const sellerOf = useCallback(
-    (l: Listing): Seller => {
+    (l: Listing): Seller | null => {
       const anyL = l as any;
       if (anyL?.sellerUid && (anyL.sellerName || anyL.seller === USER_SELLER_ID)) {
         return {
@@ -512,7 +514,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           phone: anyL.sellerPhone || "",
         };
       }
-      return sellers.find((s) => s.id === l.seller) ?? sellers[0] ?? ({} as Seller);
+      // NULL when the seller cannot be resolved, and callers render nothing.
+      //
+      // This used to end `?? sellers[0] ?? ({} as Seller)`. Both fallbacks
+      // were wrong in different ways. `sellers[0]` attributed an orphaned
+      // listing to whichever seeded company happened to sort first —
+      // "Sri Homes Realty" — on a property they have never seen. The empty
+      // object was worse: it satisfied the type and then rendered an
+      // undefined name, an <Image> with an undefined uri, a TrustTag with an
+      // undefined label and a link to /seller?id=undefined.
+      //
+      // Unresolvable means exactly one thing: the listing has no sellerUid
+      // AND its numeric `seller` matches nothing in the sellers collection.
+      return sellers.find((s) => s.id === l.seller) ?? null;
     },
     [sellers],
   );

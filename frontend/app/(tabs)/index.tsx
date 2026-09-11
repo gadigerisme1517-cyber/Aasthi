@@ -25,6 +25,11 @@ export default function Home() {
     useApp();
   const [cat, setCat] = useState<string>("All");
 
+  // Both guard the same thing from two places: the seller rail and the hero
+  // stat must not render an empty strip or a zero.
+  const hasSellers = sellers.length > 0;
+  const verifiedSellerCount = sellers.filter((s) => s.verified).length;
+
   const locationFiltered = browseListings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
   const filtered = locationFiltered.filter((l) => cat === "All" || l.type === cat);
   const visibleListings = filtered.length ? filtered : locationFiltered;
@@ -81,10 +86,16 @@ export default function Home() {
               <T weight={600} size={13} color="rgba(255,255,255,0.8)" style={{ lineHeight: 18, maxWidth: 315 }}>
                 Clear photos, price, seller details and location-based listings in one place.
               </T>
+              {/* A stat is shown only when it has something to say. "0 verified
+                  sellers" next to a live listing count is the first thing on
+                  Home and reads as a broken app, so the tile is dropped
+                  instead of printing a zero. */}
               <View style={styles.heroStats}>
                 {[
                   { b: String(browseListings.length), s: "Listings" },
-                  { b: String(sellers.filter((s) => s.verified).length), s: "Verified sellers" },
+                  ...(verifiedSellerCount
+                    ? [{ b: String(verifiedSellerCount), s: "Verified sellers" }]
+                    : []),
                 ].map((x) => (
                   <View key={x.s} style={styles.stat}>
                     <T weight={800} size={15} color="#fff">{x.b}</T>
@@ -145,30 +156,39 @@ export default function Home() {
             </T>
           </View>
 
-          {/* Title kept: every card in this rail still carries the verified
-              check, so it describes what is there. The sub said "quick
-              response", which nothing in this app measures. */}
-          <SectionHead
-            title="Verified Sellers"
-            sub="Verified sellers and what they have listed."
-            link="View all"
-            onLink={() => router.push("/sellers")}
-          />
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 10, paddingHorizontal: 18, paddingBottom: 6 }}
-        >
-          {sellers.map((s) => (
-            <SellerRailCard
-              key={s.id}
-              seller={s}
-              listings={listingsBySeller(s.id)}
-              onPress={() => router.push(`/seller?id=${s.id}`)}
+          {/* THE WHOLE SECTION GOES when there are no sellers - heading,
+              sub and the "View all" link with it. A header over an empty
+              strip advertises a screen with nothing on it.
+              Title kept otherwise: every card in this rail carries the
+              verified check, so it describes what is there. The sub said
+              "quick response", which nothing in this app measures. */}
+          {hasSellers ? (
+            <SectionHead
+              title="Verified Sellers"
+              sub="Verified sellers and what they have listed."
+              link="View all"
+              onLink={() => router.push("/sellers")}
             />
-          ))}
-        </ScrollView>
+          ) : null}
+        </View>
+        {/* Same condition, second time only because the rail scrolls edge to
+            edge and so cannot sit inside the padded View above. */}
+        {hasSellers ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10, paddingHorizontal: 18, paddingBottom: 6 }}
+          >
+            {sellers.map((s) => (
+              <SellerRailCard
+                key={s.id}
+                seller={s}
+                listings={listingsBySeller(s.id)}
+                onPress={() => router.push(`/seller?id=${s.id}`)}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
 
         <View style={{ paddingHorizontal: 18 }}>
           <Pressable style={styles.nativeSpot} onPress={() => router.push("/sell/boost")} testID="home-promoted">

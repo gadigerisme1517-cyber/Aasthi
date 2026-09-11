@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 
 import { SellerWideCard } from "@/src/components/cards";
-import { PageHead, Screen, SectionHead } from "@/src/components/ui";
+import { Empty, PageHead, Screen, SectionHead } from "@/src/components/ui";
 import { useApp } from "@/src/store/AppContext";
 
 export default function Sellers() {
@@ -19,16 +19,25 @@ export default function Sellers() {
         title="Local seller network"
         sub="Sellers verified by AASTHI, and what they have listed."
       />
-      <View style={{ gap: 14 }}>
-        {sellers.map((s) => (
-          <SellerWideCard
-            key={s.id}
-            seller={s}
-            listings={listingsBySeller(s.id)}
-            onPress={() => router.push(`/seller?id=${s.id}`)}
-          />
-        ))}
-      </View>
+      {/* This screen had no empty state at all: with no sellers it rendered a
+          heading over a blank page. */}
+      {sellers.length ? (
+        <View style={{ gap: 14 }}>
+          {sellers.map((s) => (
+            <SellerWideCard
+              key={s.id}
+              seller={s}
+              listings={listingsBySeller(s.id)}
+              onPress={() => router.push(`/seller?id=${s.id}`)}
+            />
+          ))}
+        </View>
+      ) : (
+        <Empty
+          title="No verified sellers yet"
+          body="Sellers appear here once AASTHI has checked their documents. Until then, every listing still names who published it."
+        />
+      )}
     </Screen>
   );
 }

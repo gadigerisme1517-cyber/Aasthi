@@ -10,7 +10,7 @@ export default function Contact() {
   const { listings, sellerOf, addLead, showToast } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const logged = useRef(false);
-  const [state, setState] = useState<"sending" | "sent" | "failed">("sending");
+  const [state, setState] = useState<"sending" | "sent" | "failed" | "noseller">("sending");
 
   // This screen writes its lead on mount, so it cannot ask the user to wait
   // before it renders. It reports the real outcome instead of always claiming
@@ -19,14 +19,27 @@ export default function Contact() {
   useEffect(() => {
     if (logged.current) return;
     logged.current = true;
-    addLead(listing.id, sellerOf(listing).id, "contact")
+    // sellerOf is null when this listing has no owner anything can reach.
+    // Writing the lead anyway would put a request into a collection nobody
+    // can read and then tell the buyer their number is on its way.
+    const seller = sellerOf(listing);
+    if (!seller) {
+      setState("noseller");
+      return;
+    }
+    addLead(listing.id, seller.id, "contact")
       .then(() => setState("sent"))
       .catch(() => setState("failed"));
   }, [listing, sellerOf, addLead]);
 
   const retry = () => {
+    const seller = sellerOf(listing);
+    if (!seller) {
+      setState("noseller");
+      return;
+    }
     setState("sending");
-    addLead(listing.id, sellerOf(listing).id, "contact")
+    addLead(listing.id, seller.id, "contact")
       .then(() => {
         setState("sent");
         showToast("Contact request sent");
@@ -35,7 +48,12 @@ export default function Contact() {
   };
 
   const copy =
-    state === "failed"
+    state === "noseller"
+      ? {
+          title: "No seller on this listing",
+          body: "This listing has no seller account behind it, so a contact request would reach nobody. Nothing was sent.",
+        }
+      : state === "failed"
       ? {
           title: "Contact request not sent",
           body: "We could not reach AASTHI. Check your connection and try again — the seller has not been notified.",
