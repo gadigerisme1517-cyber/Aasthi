@@ -335,7 +335,16 @@ export function SectionHead({
           </T>
         </Pressable>
       ) : null}
-      {right}
+      {/* CENTRED ON THE TITLE'S CAP HEIGHT, not on the row.
+          The row is alignItems flex-end so the "View all" link sits on the
+          sub-line's baseline; a 32pt control hung off that lands well below
+          the heading. So the slot pins itself to the top of the row instead
+          and lifts by 4.
+          The arithmetic, at title size 20 Inter: line box ~24.2, ascent 19.4,
+          cap 14.5, so the cap band runs 4.9 to 19.4 from the top and its
+          centre is 12.15. A 32 box centred there starts at 12.15 - 16 =
+          -3.85, which rounds to -4. */}
+      {right ? <View style={styles.sectionRight}>{right}</View> : null}
     </View>
   );
 }
@@ -691,6 +700,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     marginBottom: 11,
   },
+  sectionRight: { alignSelf: "flex-start", marginTop: -4 },
   block: {
     borderRadius: radius.block,
     backgroundColor: colors.white,
