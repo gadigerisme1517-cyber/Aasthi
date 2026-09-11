@@ -99,6 +99,7 @@ export const SELLERS: Seller[] = [
   {
     id: 0,
     name: "Sri Homes Realty",
+    city: "Kurnool",
     trust: "Top seller",
     verified: true,
     img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80",
@@ -108,6 +109,7 @@ export const SELLERS: Seller[] = [
   {
     id: 1,
     name: "Kurnool Estates",
+    city: "Kurnool",
     trust: "Verified",
     verified: true,
     img: "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=300&q=80",
@@ -117,6 +119,7 @@ export const SELLERS: Seller[] = [
   {
     id: 2,
     name: "Urban Nest",
+    city: "Kurnool",
     trust: "Verified",
     verified: true,
     img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
