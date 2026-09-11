@@ -49,7 +49,20 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: { backgroundColor: "#ffffff" },
             }}
-          />
+          >
+            {/* The inquiry sheet needs the screen BEHIND it to stay visible,
+                so this one route opts out of the opaque white background and
+                fades in over the property. transparentModal is an expo-router
+                option — no native module, no blur. */}
+            <Stack.Screen
+              name="enquiry"
+              options={{
+                presentation: "transparentModal",
+                animation: "fade",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
+          </Stack>
           <ToastHost />
         </AppProvider>
       </SafeAreaProvider>

@@ -39,6 +39,9 @@ export default function SellerStore() {
         uid,
         name: any.sellerName || "AASTHI member",
         avatar: any.sellerAvatar,
+        // The cover falls back to their newest listing's photo. A store with
+        // no cover of its own shows its own stock, never a stock photograph.
+        cover: any.img,
         verified: Boolean(any.sellerVerified),
         city: (any.sellerCity || "").split(",")[0],
         area: any.sellerArea || "",
@@ -51,6 +54,7 @@ export default function SellerStore() {
       key: s.id,
       name: s.name,
       avatar: s.img,
+      cover: s.cover,
       verified: s.verified,
       // Was `s.meta`, so this storefront's location line read "98% response ·
       // Independent houses". Seeded sellers have no city on record, so the

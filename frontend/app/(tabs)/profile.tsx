@@ -24,6 +24,7 @@ export default function Profile() {
         uid,
         name: user.businessName?.trim() || user.name || "AASTHI member",
         avatar: user.avatar,
+        cover: user.cover,
         verified: user.verified,
         city: user.city?.split(",")[0],
         area: user.operatingAreas,
@@ -32,6 +33,12 @@ export default function Profile() {
         // until that form is filled, and the header falls back to
         // "Property dealer" rather than inventing a trade.
         kind: (user as any).partnerType,
+        // "On AASTHI" reads the account's own createdAt. Accounts made
+        // before that field existed have none, and the cell shows "–"
+        // rather than a joining date invented from nothing.
+        since: (user as any).createdAt,
+        // followers is left undefined ON PURPOSE — see the note on the type.
+        // Nothing can count it from a client under the current rules.
       }}
       listings={myListings}
     />

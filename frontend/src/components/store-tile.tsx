@@ -1,92 +1,33 @@
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { T } from "@/src/components/ui";
 import { Listing } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
-import { colors } from "@/src/theme";
+import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 
-// The HALF-WIDTH tile used only inside a storefront catalogue.
+// The tile in a storefront catalogue. Two columns, and deliberately quieter
+// than the browse card: someone already inside a shop is comparing that
+// shop's stock, not deciding whether to walk in.
 //
-// FeatureCard is untouched and still owns Home and Search. A store is a shop
-// and a shop shows a grid; one full-width card per row reads as a timeline of
-// things posted, which is what a profile does.
-//
-// OWNER CONTROLS ARE AN OVERFLOW BUTTON, NOT A BAR. Edit / Hide / Mark sold
-// as three text buttons need about 150pt of panel; this panel is ~150pt wide
-// in total, so the row would wrap or truncate on the first narrow phone. The
-// button opens /edit-listing, which now carries all four controls including
-// the visibility toggle that used to live only on the bar — so nothing was
-// lost, it moved somewhere it fits.
+// THE TOP-RIGHT CONTROL BRANCHES ON OWNERSHIP, NEVER ON VIEW MODE. The heart
+// and the overflow are mutually exclusive because the two audiences are, and
+// the caller decides which by asking iOwn — not by asking which mode it is
+// rendering.
 
-const PHOTO = 128;
-const VERIFIED_GREEN = "#12a05e";
+const PHOTO = 112;
 
-function photosOf(listing: Listing): string[] {
-  const rest = (listing.g ?? []).filter((u) => u && u !== listing.img);
-  return [listing.img, ...rest].filter(Boolean) as string[];
-}
-
-// "2 BHK · 1,740" — numbers in ink, words muted, one line, no boxes.
-function Spec({ listing }: { listing: Listing }) {
-  const bits: { n?: string; w: string }[] = [];
-  if (listing.beds && listing.beds !== "-") bits.push({ n: listing.beds, w: "BHK" });
-  if (listing.area) {
-    const [n, ...unit] = String(listing.area).trim().split(" ");
-    bits.push({ n, w: unit.join(" ") });
-  }
-  if (!bits.length && listing.facing) bits.push({ w: listing.facing });
-  if (!bits.length) return null;
-  return (
-    <T weight={500} size={11} color={colors.muted} numberOfLines={1} style={{ marginTop: 4 }}>
-      {bits.map((b, i) => (
-        <T key={i} weight={500} size={11} color={colors.muted}>
-          {i > 0 ? " · " : ""}
-          {b.n ? (
-            <T weight={700} size={11} color={colors.ink}>
-              {b.n}
-            </T>
-          ) : null}
-          {b.n ? " " : ""}
-          {b.w}
-        </T>
-      ))}
-    </T>
-  );
-}
-
-function Marker({ status }: { status?: string }) {
-  if (status === "verified") {
-    return (
-      <View style={styles.marker}>
-        <Icon name="check" size={11} color={VERIFIED_GREEN} />
-        <T weight={700} size={10.5} color={VERIFIED_GREEN}>
-          Verified
-        </T>
-      </View>
-    );
-  }
-  if (status === "pending") {
-    return (
-      <View style={styles.marker}>
-        <View style={styles.hollow} />
-        <T weight={700} size={10.5} color={colors.muted}>
-          Pending
-        </T>
-      </View>
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <View style={styles.marker}>
-        <View style={[styles.hollow, { borderColor: colors.red }]} />
-        <T weight={700} size={10.5} color={colors.red}>
-          Rejected
-        </T>
-      </View>
-    );
-  }
-  return null;
+function postedText(listing: Listing): string | null {
+  const seconds = (listing as any).createdAt?.seconds;
+  if (!seconds) return null;
+  const days = Math.floor((Date.now() - seconds * 1000) / 86400000);
+  if (days <= 0) return "Posted today";
+  if (days === 1) return "Posted yesterday";
+  if (days < 7) return `Posted ${days} days ago`;
+  if (days < 14) return "Posted last week";
+  if (days < 60) return `Posted ${Math.floor(days / 7)} weeks ago`;
+  return `Posted ${Math.floor(days / 30)} months ago`;
 }
 
 export function StoreTile({
@@ -103,95 +44,59 @@ export function StoreTile({
   // Owner only. Opens /edit-listing, which holds edit, visibility, sale
   // status and delete.
   onManage?: () => void;
-  // Buyer only. The heart that used to sit on the full-width card here —
-  // shortlisting from a store must not disappear because the card got
-  // smaller. Owner and buyer never both occupy this corner.
   saved?: boolean;
   onToggleSave?: () => void;
   hidden?: boolean;
   sold?: boolean;
 }) {
-  const photos = photosOf(listing);
-  const isRent = listing.type === "Rent";
-  const isTokenPaid = (listing as any).saleStatus === "token";
+  const posted = postedText(listing);
 
   return (
     <Pressable style={styles.tile} onPress={onPress} testID={`store-tile-${listing.id}`}>
       <View style={styles.photoWrap}>
         <Image source={{ uri: listing.img }} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} />
-
-        <View style={styles.typePill}>
-          <T weight={700} size={9.5} ls={0.5} color={colors.ink} style={styles.upper}>
-            {listing.type}
-          </T>
-        </View>
+        <LinearGradient
+          colors={["transparent", "rgba(12,10,8,0.72)"]}
+          style={styles.scrim}
+          pointerEvents="none"
+        />
 
         {onManage ? (
-          <Pressable style={styles.manage} onPress={onManage} hitSlop={8} testID={`store-tile-manage-${listing.id}`}>
-            <Icon name="more" size={15} color={colors.ink} />
+          <Pressable style={styles.corner} onPress={onManage} hitSlop={8} testID={`store-tile-manage-${listing.id}`}>
+            <Icon name="more" size={15} color={colour.paper} />
           </Pressable>
         ) : onToggleSave ? (
-          <Pressable style={styles.manage} onPress={onToggleSave} hitSlop={8} testID={`store-tile-save-${listing.id}`}>
-            <Icon name="heart" size={14} color={saved ? colors.red : colors.ink} filled={saved} />
+          <Pressable style={styles.corner} onPress={onToggleSave} hitSlop={8} testID={`store-tile-save-${listing.id}`}>
+            <Icon name="heart" size={14} color={saved ? colour.accent : colour.paper} filled={saved} />
           </Pressable>
         ) : null}
 
-        <View style={styles.photoTags}>
-          {photos.length > 1 ? (
-            <View style={styles.darkPill}>
-              <Icon name="camera" size={10} color="#fff" />
-              <T weight={600} size={10} color="#fff">
-                {photos.length}
-              </T>
-            </View>
-          ) : null}
-          {isTokenPaid ? (
-            <View style={styles.darkPill}>
-              <T weight={600} size={10} color="#fff">
-                Token paid
-              </T>
-            </View>
-          ) : null}
-          {/* Owner-only states, shown so the owner can see them without
-              opening anything. A buyer never receives these listings. */}
-          {hidden ? (
-            <View style={styles.darkPill}>
-              <T weight={600} size={10} color="#fff">
-                Hidden
-              </T>
-            </View>
-          ) : null}
-          {sold ? (
-            <View style={styles.darkPill}>
-              <T weight={600} size={10} color="#fff">
-                Sold
-              </T>
-            </View>
-          ) : null}
-        </View>
+        {/* Owner-only states. A buyer never receives these listings at all. */}
+        {hidden || sold ? (
+          <View style={styles.state}>
+            <T weight={w.label} size={10} color={colour.paper}>
+              {hidden ? "Hidden" : "Sold"}
+            </T>
+          </View>
+        ) : null}
+
+        <T weight={w.title} size={14} color={colour.paper} numberOfLines={1} style={styles.price}>
+          {listing.price}
+        </T>
       </View>
 
-      <View style={styles.panel}>
-        <View style={styles.priceRow}>
-          <T weight={700} size={16.5} ls={-0.4} numberOfLines={1}>
-            {listing.price}
-          </T>
-          {isRent ? (
-            <T weight={600} size={10.5} color={colors.muted} style={{ marginLeft: 3 }}>
-              /mo
-            </T>
-          ) : null}
-        </View>
-        <T weight={700} size={12.5} numberOfLines={1} style={{ marginTop: 3 }}>
+      <View style={styles.body}>
+        <T weight={w.label} size={12} numberOfLines={1}>
           {listing.title}
         </T>
-        <T weight={500} size={11.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 2 }}>
-          {listing.addr}
-        </T>
-        <Spec listing={listing} />
-        <View style={{ marginTop: 6 }}>
-          <Marker status={(listing as any).verificationStatus} />
-        </View>
+        {/* Rendered only when the listing carries a createdAt. Listings
+            published before that field existed show nothing rather than a
+            date invented from nowhere. */}
+        {posted ? (
+          <T weight={w.body} size={11} color={colour.ink3} numberOfLines={1} style={{ marginTop: 3 }}>
+            {posted}
+          </T>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -200,67 +105,34 @@ export function StoreTile({
 const styles = StyleSheet.create({
   tile: {
     width: "48%",
-    borderRadius: 20,
-    backgroundColor: colors.black,
+    borderRadius: 12,
+    backgroundColor: colour.paper,
+    borderWidth: 1,
+    borderColor: colour.line,
     overflow: "hidden",
   },
-  photoWrap: { height: PHOTO, backgroundColor: colors.soft2 },
-  typePill: {
+  photoWrap: { height: PHOTO, backgroundColor: colour.shell },
+  scrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: 56 },
+  corner: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    height: 22,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.94)",
-    paddingHorizontal: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  upper: { textTransform: "uppercase" },
-  manage: {
-    position: "absolute",
-    top: 8,
-    right: 8,
+    top: 7,
+    right: 7,
     width: 26,
     height: 26,
-    borderRadius: 13,
-    backgroundColor: "rgba(255,255,255,0.94)",
+    borderRadius: r.pill,
+    backgroundColor: colour.scrim,
     alignItems: "center",
     justifyContent: "center",
   },
-  photoTags: {
+  state: {
     position: "absolute",
-    left: 8,
-    bottom: 22,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 5,
-    maxWidth: "88%",
+    top: 7,
+    left: 7,
+    borderRadius: 4,
+    backgroundColor: colour.scrim,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
   },
-  darkPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: "rgba(17,17,17,0.78)",
-    paddingHorizontal: 7,
-  },
-  panel: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    marginTop: -14,
-    marginHorizontal: 6,
-    marginBottom: 6,
-    padding: 11,
-  },
-  priceRow: { flexDirection: "row", alignItems: "baseline" },
-  marker: { flexDirection: "row", alignItems: "center", gap: 4 },
-  hollow: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    borderWidth: 1.4,
-    borderColor: colors.muted,
-  },
+  price: { position: "absolute", left: 9, bottom: 8 },
+  body: { paddingVertical: 9, paddingHorizontal: 10 },
 });

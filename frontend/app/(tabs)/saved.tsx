@@ -1,9 +1,9 @@
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { CountPill, ResultCard } from "@/src/components/cards";
+import { InitialAvatar } from "@/src/components/initial-avatar";
 import { Empty, PageHead, Screen, SectionHead, T } from "@/src/components/ui";
 import { Icon } from "@/src/icons";
 import { colors, radius, shadow } from "@/src/theme";
@@ -133,11 +133,7 @@ export default function Saved() {
                     onPress={() => row.href && router.push(row.href as any)}
                     testID={`saved-store-${row.key}`}
                   >
-                    {row.avatar ? (
-                      <Image source={{ uri: row.avatar }} style={styles.avatar} contentFit="cover" />
-                    ) : (
-                      <View style={[styles.avatar, { backgroundColor: colors.soft2 }]} />
-                    )}
+                    <InitialAvatar uri={row.avatar} name={row.name} size={46} radius={23} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <View style={styles.nameRow}>
                         <T weight={700} size={15} numberOfLines={1} style={{ flexShrink: 1 }}>

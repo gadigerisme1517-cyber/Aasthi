@@ -1,7 +1,7 @@
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { InitialAvatar } from "@/src/components/initial-avatar";
 import { Empty, PageHead, Screen, SectionHead, T } from "@/src/components/ui";
 import { colors, radius, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
@@ -12,9 +12,6 @@ import { useApp } from "@/src/store/AppContext";
 // meant a blocked seller holding zero live listings appeared nowhere here and
 // could never be unblocked. It also could not show a private publisher at
 // all, because blocked only held seeded numeric ids.
-
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80";
 
 export default function Blocked() {
   const router = useRouter();
@@ -36,7 +33,7 @@ export default function Blocked() {
         // printed a sentence in the same slot. The "no live listings" line
         // below already covers that case.
         city: seeded?.city ?? "",
-        img: seeded?.img ?? DEFAULT_AVATAR,
+        img: seeded?.img ?? "",
         count: theirListings.length,
         openable: Boolean(seeded),
         href: `/seller?id=${key}`,
@@ -51,7 +48,7 @@ export default function Blocked() {
       key,
       name: resolved?.name ?? "Private seller",
       city: resolved?.city ?? "",
-      img: resolved?.img ?? DEFAULT_AVATAR,
+      img: resolved?.img ?? "",
       count: theirListings.length,
       openable: Boolean(anyListing),
       href: `/seller?uid=${key}`,
@@ -69,7 +66,7 @@ export default function Blocked() {
         <View style={{ gap: 12 }}>
           {rows.map((row) => (
             <View key={String(row.key)} style={styles.row} testID={`blocked-${row.key}`}>
-              <Image source={{ uri: row.img }} style={styles.avatar} />
+              <InitialAvatar uri={row.img || undefined} name={row.name} size={46} radius={23} />
               <View style={{ flex: 1 }}>
                 <T weight={700} size={14.5} numberOfLines={1}>
                   {row.name}
@@ -124,7 +121,6 @@ const styles = StyleSheet.create({
     padding: 12,
     ...shadow.soft,
   },
-  avatar: { width: 46, height: 46, borderRadius: 23 },
   unblock: {
     height: 34,
     borderRadius: 999,

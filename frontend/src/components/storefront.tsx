@@ -1,42 +1,41 @@
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Pressable, Share, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { InitialAvatar } from "@/src/components/initial-avatar";
 import { StoreTile } from "@/src/components/store-tile";
-import { ThreadRow, threadRowStyles } from "@/src/components/thread-row";
 import { Empty, Screen, T } from "@/src/components/ui";
 import { Listing } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
-import { colors } from "@/src/theme";
+import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 import { useApp } from "@/src/store/AppContext";
 
-// ONE storefront template. There is no second agent page in the app.
+// ONE storefront template, for a buyer and for its owner.
 //
-// It reads as a SHOP now, not a profile: a black header slab carrying the
-// identity and a three-cell store bar, then a two-column catalogue. A
-// profile lists what someone posted, in order, forever. A shop states what it
-// is, what it has and what it costs, and shows the goods in a grid.
+// SOCIAL, NOT CORPORATE. A cover strip, a face, three numbers a person can
+// actually check, Follow and Message. The full-width black slab is gone: a
+// black header is a brochure, and this is a shop someone follows.
 //
-// The same component still renders both audiences. The agent's version ADDS
-// controls — the edit line, the gear, the inquiry strip and the per-tile
-// overflow button — and reorders nothing, so "View as buyer" is the identical
-// screen minus the owner's own controls. That switch is local state, not a
-// route.
+// THE PRICE RANGE IS DELETED, not hidden. It capped the agent — a store
+// reading "₹18L – ₹1.3Cr" tells a buyer with three crore to spend to go
+// somewhere else — and no shopkeeper would choose to advertise a ceiling.
+//
+// NOT HERE, AND NOT UNTIL THERE IS DATA: rating, stars, review count, years
+// in market, response rate, response time. There is no reviews collection,
+// and a self-declared number is the same unverifiable claim as the hardcoded
+// 4.9 this app already deleted once.
 
-const VERIFIED_GREEN = "#12a05e";
-const WHITE_25 = "rgba(255,255,255,0.25)";
-const WHITE_18 = "rgba(255,255,255,0.18)";
-const WHITE_55 = "rgba(255,255,255,0.55)";
-const WHITE_50 = "rgba(255,255,255,0.5)";
+const GREEN = colour.green;
 
 export type StorefrontIdentity = {
   key: string | number | undefined; // uid for a real agent, numeric id for a seeded one
   uid?: string;
   name: string;
   avatar?: string;
+  cover?: string;
   verified?: boolean;
   city?: string;
   area?: string;
@@ -45,64 +44,36 @@ export type StorefrontIdentity = {
   // store can supply it: a buyer reads a store off the fields denormalised
   // onto its listings, and the partner type is not one of them.
   kind?: string;
+  // Epoch ms the account was created. OWNER ONLY — users/{uid} is readable by
+  // its owner alone, so a buyer cannot see when someone else joined.
+  since?: number;
+  // Accounts following this store. NOT READABLE TODAY: savedSellers lives on
+  // each user's own document and the rules keep that private, so no client
+  // query can count it. Left undefined, and the cell renders "–" rather than
+  // a number nobody can stand behind.
+  followers?: number;
 };
 
-// ---- Price range, the most shop-like thing on the screen -------------------
-//
-// Parsed from the listing's own price STRING, because that is the only price
-// this app stores. "₹1.34 Cr", "₹68 L" and "₹86,00,000" are all in use.
-//
-// RENT IS EXCLUDED ON PURPOSE. A store with a ₹42,000/mo flat and a ₹1.34 Cr
-// villa has no single price range; putting them in one min–max would print a
-// number that means nothing. If a store has only rentals the cell is dropped
-// rather than filled with a mixed-unit lie.
-function parsePrice(raw?: string): number | null {
-  if (!raw) return null;
-  const t = raw.toLowerCase().replace(/[₹,\s]/g, "");
-  if (t.includes("/mo") || t.includes("month")) return null;
-  const m = t.match(/^([\d.]+)(cr|l|k)?/);
-  if (!m) return null;
-  const n = parseFloat(m[1]);
-  if (!isFinite(n)) return null;
-  if (m[2] === "cr") return n * 1e7;
-  if (m[2] === "l") return n * 1e5;
-  if (m[2] === "k") return n * 1e3;
-  return n;
+function monthYear(ms?: number): string | null {
+  if (!ms || !Number.isFinite(ms)) return null;
+  return new Date(ms).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
 
-function shortPrice(n: number): string {
-  const trim = (x: number) => String(Math.round(x * 10) / 10).replace(/\.0$/, "");
-  if (n >= 1e7) return `₹${trim(n / 1e7)}Cr`;
-  if (n >= 1e5) return `₹${trim(n / 1e5)}L`;
-  if (n >= 1e3) return `₹${Math.round(n / 1e3)}K`;
-  return `₹${Math.round(n)}`;
+function postedThisWeek(items: Listing[]): number {
+  const cutoff = Date.now() - 7 * 86400000;
+  return items.filter((l) => {
+    const seconds = (l as any).createdAt?.seconds;
+    return seconds ? seconds * 1000 >= cutoff : false;
+  }).length;
 }
 
-function priceRangeOf(items: Listing[]): string | null {
-  const nums = items.map((l) => parsePrice(l.price)).filter((n): n is number => n !== null);
-  if (!nums.length) return null;
-  const lo = Math.min(...nums);
-  const hi = Math.max(...nums);
-  return lo === hi ? shortPrice(lo) : `${shortPrice(lo)} – ${shortPrice(hi)}`;
-}
-
-// Where the store works, off its own listings, when it has not declared a
-// service area. Same basis as the seller cards on Home.
-function localityOf(items: Listing[]): string | null {
-  for (const l of items) {
-    const first = (l.addr || "").split(",")[0].trim();
-    if (first) return first;
-  }
-  return null;
-}
-
-function Cell({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <View style={styles.cell}>
-      <T weight={700} size={16} color={colors.white} numberOfLines={1}>
+    <View>
+      <T weight={w.title} size={16}>
         {value}
       </T>
-      <T weight={700} size={10.5} ls={0.74} color={WHITE_50} numberOfLines={1} style={styles.cellLabel}>
+      <T weight={w.body} size={11.5} color={colour.ink3} style={{ marginTop: 2 }}>
         {label}
       </T>
     </View>
@@ -124,11 +95,13 @@ export function Storefront({
   const insets = useSafeAreaInsets();
   const {
     myLeads,
-    isLeadUnread,
+    mySentLeads,
+    unreadLeadCount,
     isSellerSaved,
     toggleSaveSeller,
     isSaved,
     toggleSave,
+    iOwn,
     showToast,
   } = useApp();
 
@@ -138,7 +111,6 @@ export function Storefront({
 
   const [chip, setChip] = useState("All");
 
-  // What each audience may see.
   const visible = useMemo(
     () =>
       isOwner
@@ -149,7 +121,6 @@ export function Storefront({
     [listings, isOwner],
   );
 
-  // In buyer preview the agent must see exactly what a buyer sees.
   const audienceListings = useMemo(
     () =>
       owning
@@ -183,21 +154,12 @@ export function Storefront({
     return audienceListings.filter((l) => l.type === chip);
   }, [chip, audienceListings, listings]);
 
-  // Leads for THIS store, newest first. Only ever the agent's own — myLeads is
-  // scoped to the signed-in user by the rules.
   const storeLeads = useMemo(() => (isOwner ? myLeads : []), [isOwner, myLeads]);
-
-  // Opening the store does not mark anything read. Unread is per THREAD
-  // (users.threadsSeenAt); reading happens in app/thread.tsx, one
-  // conversation at a time.
-
-  const range = useMemo(() => priceRangeOf(audienceListings), [audienceListings]);
-  const worksIn = identity.area?.trim() || localityOf(audienceListings) || null;
+  const thisWeek = useMemo(() => postedThisWeek(audienceListings), [audienceListings]);
+  const since = monthYear(identity.since);
+  const following = isSellerSaved(identity.key as any);
 
   const onShare = () => {
-    // A deep link, because AASTHI has no public web page for a store yet.
-    // It opens the store for anyone who has the app; for anyone who does not
-    // it is just text, which is honest — it does not pretend to be a URL.
     const link = identity.uid
       ? `aasthi:///seller?uid=${identity.uid}`
       : `aasthi:///seller?id=${identity.key}`;
@@ -206,130 +168,143 @@ export function Storefront({
     );
   };
 
-  const initial = (identity.name.trim()[0] || "A").toUpperCase();
+  // MESSAGE opens the conversation that already exists with this seller. It
+  // does NOT start one: a thread hangs off a lead, a lead is about a
+  // property, and inventing one here would send the agent an inquiry about a
+  // listing the buyer never opened — the exact thing "Send inquiry" was
+  // removed from this screen for.
+  const onMessage = () => {
+    const key = identity.uid;
+    const existing = (mySentLeads as any[]).find((l) => (key ? l.sellerUid === key : false));
+    if (existing) {
+      router.push(`/thread?id=${existing.id}`);
+      return;
+    }
+    showToast("Open one of their properties and send an inquiry to start a conversation.");
+  };
 
   return (
     <Screen scroll contentStyle={{ paddingHorizontal: 0 }}>
-      {/* The app sets a dark status bar globally in app/_layout.tsx, which is
-          right everywhere except here: this screen puts a black slab directly
-          under it, and dark icons on black cannot be read. Scoped to this
-          screen, restored on the way out. */}
-      <StatusBar style="light" />
-      {/* ================= HEADER SLAB ================= */}
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <View style={styles.topBar}>
+      {/* ---------- COVER ---------- */}
+      <View style={[styles.cover, { paddingTop: insets.top + 8 }]}>
+        {identity.cover ? (
+          <Image source={{ uri: identity.cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colour.shell }]} />
+        )}
+        <LinearGradient
+          colors={["rgba(12,10,8,0.35)", "rgba(12,10,8,0.55)"]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+        <View style={styles.coverBar}>
           <Pressable
-            style={styles.circle}
+            style={styles.round}
             onPress={() => (viewAsBuyer ? setViewAsBuyer(false) : router.back())}
             testID="store-back"
           >
-            <Icon name="arrowLeft" size={17} color={colors.white} />
+            <Icon name="arrowLeft" size={16} color={colour.paper} />
           </Pressable>
-          <View style={styles.topRight}>
-            {/* Owner keeps the gear here. Buyer preview shows share only —
-                a preview that keeps an owner control is not the screen a
-                buyer sees. */}
+          <View style={{ flexDirection: "row", gap: 8 }}>
             {owning ? (
-              <Pressable style={styles.circle} onPress={() => router.push("/menu")} testID="store-gear">
-                <Icon name="gear" size={17} color={colors.white} />
+              <Pressable style={styles.round} onPress={() => router.push("/menu")} testID="store-gear">
+                <Icon name="gear" size={15} color={colour.paper} />
               </Pressable>
             ) : null}
-            <Pressable style={styles.circle} onPress={onShare} testID="store-share">
-              <Icon name="share" size={16} color={colors.white} />
+            <Pressable style={styles.round} onPress={onShare} testID="store-share">
+              <Icon name="share" size={14} color={colour.paper} />
             </Pressable>
           </View>
         </View>
+      </View>
 
-        {/* ---- identity ---- */}
-        <View style={styles.idRow}>
-          {identity.avatar ? (
-            <Image source={{ uri: identity.avatar }} style={styles.avatar} contentFit="cover" />
-          ) : (
-            <View style={[styles.avatar, styles.avatarLetter]}>
-              <T weight={700} size={26} color={colors.ink}>
-                {initial}
-              </T>
+      {/* ---------- IDENTITY ---------- */}
+      <View style={styles.identity}>
+        <InitialAvatar
+          uri={identity.avatar}
+          name={identity.name}
+          size={64}
+          radius={16}
+          fontSize={24}
+          style={styles.avatar}
+        />
+        <View style={styles.nameRow}>
+          <T weight={w.title} size={19} ls={-0.3} numberOfLines={1} style={{ flexShrink: 1 }}>
+            {identity.name}
+          </T>
+          {identity.verified ? (
+            <View style={styles.tick}>
+              <Icon name="check" size={11} color={colour.paper} />
             </View>
-          )}
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={styles.nameRow}>
-              <T weight={700} size={22} ls={-0.7} color={colors.white} numberOfLines={1} style={{ flexShrink: 1 }}>
-                {identity.name}
-              </T>
-              {identity.verified ? (
-                // Inverted for the dark slab: the check sits on a white disc
-                // instead of being drawn green on white. Same green, so this
-                // introduces no new colour.
-                <View style={styles.checkDisc}>
-                  <Icon name="check" size={12} color={VERIFIED_GREEN} />
-                </View>
-              ) : null}
-            </View>
-            <T weight={700} size={11} ls={1.1} color={WHITE_55} numberOfLines={1} style={styles.kindLine}>
-              {[identity.kind?.trim() || "Property dealer", identity.city?.trim()]
-                .filter(Boolean)
-                .join(" · ")
-                .toUpperCase()}
-            </T>
-          </View>
+          ) : null}
         </View>
 
-        {/* ---- store bar. A cell with nothing behind it is DROPPED and the
-             rest split the width; there are no placeholders here. ---- */}
-        <View style={styles.storeBar}>
-          {[
-            {
-              key: "listings",
-              value: String(audienceListings.length),
-              label: audienceListings.length === 1 ? "LISTING" : "LISTINGS",
-            },
-            ...(range ? [{ key: "range", value: range, label: "PRICE RANGE" }] : []),
-            ...(worksIn ? [{ key: "area", value: worksIn, label: "WORKS IN" }] : []),
-          ].map((c, i) => (
-            <View key={c.key} style={[styles.cellWrap, i > 0 && styles.cellDivider]}>
-              <Cell value={c.value} label={c.label} />
-            </View>
-          ))}
+        {/* "Property dealer in Kurnool". RENDERS NOTHING when there is no
+            city — the seeded sellers have never had one, and both "Property
+            dealer in" and a stand-in city would be worse than silence. The
+            moment a city exists on the record this line appears, with no
+            further change to this file. */}
+        {identity.city?.trim() ? (
+          <T weight={w.body} size={12.5} color={colour.ink2} numberOfLines={1} style={{ marginTop: 3 }}>
+            {`${identity.kind?.trim() || "Property dealer"} in ${identity.city.trim()}`}
+          </T>
+        ) : null}
+
+        {/* EXACTLY THREE, and not one of them is a claim about quality. */}
+        <View style={styles.stats}>
+          <Stat
+            value={String(audienceListings.length)}
+            label={audienceListings.length === 1 ? "Listing" : "Listings"}
+          />
+          <Stat
+            value={typeof identity.followers === "number" ? String(identity.followers) : "–"}
+            label="Followers"
+          />
+          <Stat value={since ?? "–"} label="On AASTHI" />
         </View>
 
-        {/* ---- actions ---- */}
+        {identity.bio?.trim() ? (
+          <T weight={w.body} size={13} color={colour.ink2} numberOfLines={3} style={styles.bio}>
+            {identity.bio.trim()}
+          </T>
+        ) : null}
+
         <View style={styles.actions}>
           {owning ? (
             <>
-              <Pressable style={[styles.btn, styles.btnSolid]} onPress={() => router.push("/sell")} testID="store-add">
-                <T weight={700} size={13} color={colors.ink}>
+              <Pressable style={[styles.btn, styles.btnInk]} onPress={() => router.push("/sell")} testID="store-add">
+                <T weight={w.title} size={14.5} color={colour.paper}>
                   Add a property
                 </T>
               </Pressable>
               <Pressable
-                style={[styles.btn, styles.btnOutline]}
+                style={[styles.btn, styles.btnGhost]}
                 onPress={() => setViewAsBuyer(true)}
                 testID="store-view-as-buyer"
               >
-                <T weight={700} size={13} color={colors.white}>
+                <T weight={w.title} size={14.5} color={colour.ink2}>
                   View as buyer
                 </T>
               </Pressable>
             </>
           ) : (
             <>
-              {/* Not on your own store. isOwner covers the Profile tab and the
-                  owner route; this also covers buyer PREVIEW of your own
-                  store, where isOwner is true but `owning` is false. */}
+              {/* Follow IS savedSellers. Same field, same write — the control
+                  was called Save, and what it does is follow a shop. */}
               {isOwner ? null : (
                 <Pressable
-                  style={[styles.btn, styles.btnSolid]}
+                  style={[styles.btn, following ? styles.btnGhost : styles.btnInk]}
                   onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
-                  testID="store-save"
+                  testID="store-follow"
                 >
-                  <T weight={700} size={13} color={colors.ink}>
-                    {isSellerSaved(identity.key as any) ? "Saved" : "Save store"}
+                  <T weight={w.title} size={14.5} color={following ? colour.ink2 : colour.paper}>
+                    {following ? "Following" : "Follow"}
                   </T>
                 </Pressable>
               )}
-              <Pressable style={[styles.btn, styles.btnOutline]} onPress={onShare} testID="store-share-action">
-                <T weight={700} size={13} color={colors.white}>
-                  Share
+              <Pressable style={[styles.btn, styles.btnGhost]} onPress={onMessage} testID="store-message">
+                <T weight={w.title} size={14.5} color={colour.ink2}>
+                  Message
                 </T>
               </Pressable>
             </>
@@ -337,17 +312,20 @@ export function Storefront({
         </View>
       </View>
 
-      {/* ================= BODY ================= */}
-      <View style={styles.body}>
-        {identity.bio?.trim() ? (
-          <T weight={400} size={14} numberOfLines={3} style={styles.bio}>
-            {identity.bio.trim()}
+      {/* ---------- ACTIVITY, buyer side, and only when it is true ---------- */}
+      {!owning && thisWeek > 0 ? (
+        <View style={styles.activity} testID="store-activity">
+          <View style={styles.dot} />
+          <T weight={w.body} size={12.5} color={colour.ink2}>
+            {`Posted ${thisWeek} listing${thisWeek === 1 ? "" : "s"} this week`}
           </T>
-        ) : null}
+        </View>
+      ) : null}
 
+      <View style={styles.body}>
         {owning ? (
           <Pressable onPress={() => router.push("/account")} testID="store-edit-identity">
-            <T weight={600} size={13} color={colors.muted} style={{ marginTop: 10 }}>
+            <T weight={w.label} size={13} color={colour.ink3}>
               Edit photo, name, area and bio
             </T>
           </Pressable>
@@ -355,59 +333,35 @@ export function Storefront({
           // The number is NOT on this screen in any form — not masked, not
           // partial, not behind a tap. It unlocks on the listing, through the
           // same inquiry gate /detail already uses.
-          <T weight={500} size={12} color={colors.muted} style={{ marginTop: 12, lineHeight: 17 }}>
+          <T weight={w.body} size={12} color={colour.ink3} style={{ lineHeight: 17 }}>
             The phone number appears once you send an inquiry.
           </T>
         )}
 
-        {/* ---------- INQUIRIES, above the catalogue, owner only ----------
-
-            THE ZERO STATE IS NOT A BOX. A bordered container with three
-            lines in it made having no inquiries the loudest thing on an
-            agent's own shop. Nothing is a heading and one muted line; the
-            bordered strip appears only once there is something in it.
-
-            The heading is rendered in BOTH states, not just the empty one:
-            the strip had no label at all before, and giving one only to the
-            empty case would mean the section names itself when it is empty
-            and goes anonymous when it fills up. */}
+        {/* ---------- INQUIRIES, owner only, above the catalogue ---------- */}
         {owning ? (
-          <View style={{ marginTop: 18 }}>
-            <T weight={700} size={19} ls={-0.5}>
+          <View style={{ marginTop: 16 }}>
+            <T weight={w.title} size={19} ls={-0.5}>
               Inquiries
             </T>
             {storeLeads.length ? (
-              <View style={styles.strip} testID="store-inquiry-strip">
-                {storeLeads.slice(0, 3).map((lead: any, i: number) => (
-                  <View key={lead.id}>
-                    {i > 0 ? <View style={threadRowStyles.divider} /> : null}
-                    <View style={styles.leadPad}>
-                      <ThreadRow
-                        lead={lead}
-                        meUid={lead.sellerUid}
-                        unread={isLeadUnread(lead)}
-                        name={lead.buyerName?.trim() || "AASTHI buyer"}
-                        onPress={() => router.push(`/thread?id=${lead.id}`)}
-                        testID={`store-lead-${lead.id}`}
-                      />
-                    </View>
-                  </View>
-                ))}
-                {storeLeads.length > 3 ? (
-                  <Pressable
-                    style={[styles.leadRow, styles.leadDivider, { justifyContent: "center" }]}
-                    onPress={() => router.push("/my-enquiries")}
-                    testID="store-lead-seeall"
-                  >
-                    <T weight={700} size={13}>
-                      See all {storeLeads.length}
-                    </T>
-                  </Pressable>
-                ) : null}
-              </View>
+              <Pressable
+                style={styles.strip}
+                onPress={() => router.push("/my-enquiries")}
+                testID="store-inquiry-strip"
+              >
+                <T weight={w.title} size={14} color={colour.paper}>
+                  {unreadLeadCount > 0
+                    ? `${unreadLeadCount} New ${unreadLeadCount === 1 ? "inquiry" : "inquiries"}`
+                    : `${storeLeads.length} ${storeLeads.length === 1 ? "inquiry" : "inquiries"}`}
+                </T>
+                <T weight={w.title} size={13} color={colour.paper}>
+                  Open
+                </T>
+              </Pressable>
             ) : (
               <View testID="store-inquiry-empty">
-                <T weight={500} size={13.5} color={colors.muted} style={{ marginTop: 6, lineHeight: 19 }}>
+                <T weight={w.body} size={13} color={colour.ink3} style={{ marginTop: 6, lineHeight: 19 }}>
                   Buyers who contact you will show up here.
                 </T>
               </View>
@@ -417,10 +371,10 @@ export function Storefront({
 
         {/* ---------- CATALOGUE ---------- */}
         <View style={styles.sectionHead}>
-          <T weight={700} size={19} ls={-0.5}>
+          <T weight={w.title} size={19} ls={-0.5}>
             All properties
           </T>
-          <T weight={600} size={12} color={colors.muted}>
+          <T weight={w.label} size={12} color={colour.ink3}>
             Newest first
           </T>
         </View>
@@ -435,7 +389,7 @@ export function Storefront({
                 onPress={() => setChip(c.key)}
                 testID={`store-chip-${c.key}`}
               >
-                <T weight={700} size={12.5} color={on ? colors.white : colors.ink}>
+                <T weight={w.label} size={12.5} color={on ? colour.paper : colour.ink}>
                   {c.key} {c.count}
                 </T>
               </Pressable>
@@ -450,9 +404,12 @@ export function Storefront({
                 key={l.id}
                 listing={l}
                 onPress={() => router.push(`/detail?id=${l.id}`)}
+                // OWNERSHIP, never mode. In buyer preview of your own store
+                // neither control appears, which is correct: you are not a
+                // buyer of your own property.
                 onManage={owning ? () => router.push(`/edit-listing?id=${l.id}`) : undefined}
                 saved={isSaved(l.id)}
-                onToggleSave={owning ? undefined : () => toggleSave(l.id)}
+                onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
                 hidden={owning ? Boolean((l as any).hidden) : false}
                 sold={owning ? (l as any).saleStatus === "sold" : false}
               />
@@ -476,75 +433,58 @@ export function Storefront({
 }
 
 const styles = StyleSheet.create({
-  // ---- header ----
-  header: {
-    backgroundColor: colors.black,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  topRight: { flexDirection: "row", gap: 8 },
-  circle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: WHITE_25,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  idRow: { flexDirection: "row", alignItems: "center", gap: 13, marginTop: 18 },
-  avatar: { width: 62, height: 62, borderRadius: 20, backgroundColor: colors.white },
-  avatarLetter: { alignItems: "center", justifyContent: "center" },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  checkDisc: {
-    width: 19,
-    height: 19,
-    borderRadius: 10,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kindLine: { marginTop: 5 },
-  storeBar: {
+  cover: { height: 88, justifyContent: "flex-start" },
+  coverBar: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: WHITE_18,
-    borderRadius: 18,
-    marginTop: 18,
-    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
   },
-  cellWrap: { flex: 1 },
-  cellDivider: { borderLeftWidth: 1, borderLeftColor: WHITE_18 },
-  cell: { alignItems: "center", paddingHorizontal: 8 },
-  cellLabel: { marginTop: 4, textTransform: "uppercase" },
-  actions: { flexDirection: "row", gap: 10, marginTop: 16 },
-  btn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 999,
+  round: {
+    width: 30,
+    height: 30,
+    borderRadius: r.pill,
+    backgroundColor: colour.scrim,
     alignItems: "center",
     justifyContent: "center",
   },
-  btnSolid: { backgroundColor: colors.white },
-  btnOutline: { borderWidth: 1, borderColor: WHITE_25 },
-
-  // ---- body ----
-  body: { paddingHorizontal: 18, paddingTop: 16 },
-  bio: { lineHeight: 20, color: "#2f2f2f" },
+  identity: { backgroundColor: colour.paper, paddingHorizontal: 16, paddingBottom: 14 },
+  avatar: { marginTop: -26, borderWidth: 3, borderColor: colour.paper },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  tick: {
+    width: 16,
+    height: 16,
+    borderRadius: r.pill,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stats: { flexDirection: "row", gap: 20, marginTop: 14 },
+  bio: { marginTop: 12, lineHeight: 19 },
+  actions: { flexDirection: "row", gap: 10, marginTop: 14 },
+  btn: { flex: 1, borderRadius: r.md, paddingVertical: 14, alignItems: "center" },
+  btnInk: { backgroundColor: colour.ink },
+  btnGhost: { borderWidth: 1, borderColor: colour.line },
+  activity: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colour.paper,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN },
+  body: { paddingHorizontal: 16, paddingTop: 14 },
   strip: {
     marginTop: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.white,
-    overflow: "hidden",
+    backgroundColor: colour.ink,
+    borderRadius: r.md,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  leadRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14 },
-  leadDivider: { borderTopWidth: 1, borderTopColor: colors.line },
-  leadPad: { paddingHorizontal: 14 },
   sectionHead: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -553,19 +493,17 @@ const styles = StyleSheet.create({
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   chip: {
-    height: 34,
-    borderRadius: 999,
+    borderRadius: r.pill,
+    paddingVertical: 8,
     paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.soft,
+    backgroundColor: colour.shell,
   },
-  chipOn: { backgroundColor: colors.black },
+  chipOn: { backgroundColor: colour.ink },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 14,
+    rowGap: 10,
     marginTop: 14,
   },
 });

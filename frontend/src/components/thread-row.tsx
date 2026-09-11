@@ -1,7 +1,7 @@
-import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { InitialAvatar } from "@/src/components/initial-avatar";
 import { T } from "@/src/components/ui";
 import { watchLastMessage } from "@/src/services/db";
 import { colors } from "@/src/theme";
@@ -46,21 +46,6 @@ const ASK: Record<string, string> = {
   contact: "asked for your number",
 };
 
-// A letter, not a stock photograph. The old default avatar was a photo of a
-// specific real person, which every account without a picture wore — so two
-// different people appeared as the same face.
-function Avatar({ uri, name }: { uri?: string; name: string }) {
-  if (uri) return <Image source={{ uri }} style={styles.avatar} contentFit="cover" />;
-  const letter = (name.trim()[0] || "A").toUpperCase();
-  return (
-    <View style={[styles.avatar, styles.avatarLetter]}>
-      <T weight={700} size={17} color={colors.muted}>
-        {letter}
-      </T>
-    </View>
-  );
-}
-
 export function ThreadRow({
   lead,
   meUid,
@@ -98,7 +83,7 @@ export function ThreadRow({
 
   return (
     <Pressable style={styles.row} onPress={onPress} testID={testID}>
-      <Avatar uri={avatar} name={name} />
+      <InitialAvatar uri={avatar} name={name} size={AVATAR} radius={AVATAR / 2} />
       <View style={styles.middle}>
         <T weight={700} size={15.5} numberOfLines={1}>
           {name}

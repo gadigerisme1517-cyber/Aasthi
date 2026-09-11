@@ -177,8 +177,6 @@ function freshDraft(): Draft {
   };
 }
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80";
 
 type Ctx = {
   booted: boolean;
@@ -387,7 +385,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       email: profile?.email ?? "",
       city: profile?.city ?? "Kurnool, Andhra Pradesh",
       type: profile?.type ?? "AASTHI member",
-      avatar: profile?.avatar ?? DEFAULT_AVATAR,
+      // No default photograph. An account without a picture has an empty
+      // avatar, and every surface draws an initial block instead — the old
+      // default was a photograph of a real, identifiable stranger that every
+      // photoless account wore.
+      avatar: profile?.avatar ?? "",
       verified: profile?.verified ?? false,
       premium: profile?.premium ?? false,
       premiumPlan: profile?.premiumPlan ?? "Free",
@@ -570,7 +572,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // as unverified on /detail while the seeded companies showed a
           // check they were simply given in seed data.
           verified: Boolean(anyL.sellerVerified),
-          img: anyL.sellerAvatar || DEFAULT_AVATAR,
+          img: anyL.sellerAvatar || "",
           cover: anyL.img || FALLBACK_IMG,
           phone: anyL.sellerPhone || "",
         };
