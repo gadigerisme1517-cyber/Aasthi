@@ -318,42 +318,68 @@ export function ResultCard({
   );
 }
 
+// Both seller cards below show ONLY what the app can actually compute:
+// the seller's own name and photos, the verified flag AASTHI itself sets, how
+// many listings they have live right now, and where those listings are. The
+// old "87 sold / 4.9 rating" pair was hardcoded in seed.ts with no reviews
+// collection and no sale ledger behind either number, and a real agent got
+// "0 sold / - rating" in the same slots. Both are gone.
+
+
+// Where a seller actually works, read off their listings rather than claimed.
+// Up to two localities, because the rail card is 168 wide.
+export function localityLine(items: Listing[]): string {
+  const parts: string[] = [];
+  for (const l of items) {
+    const first = (l.addr || "").split(",")[0].trim();
+    if (first && !parts.includes(first)) parts.push(first);
+    if (parts.length === 2) break;
+  }
+  return parts.join(" · ");
+}
+
+function countLabel(n: number): string {
+  if (!n) return "No listings yet";
+  return `${n} listing${n === 1 ? "" : "s"}`;
+}
+
 export function SellerRailCard({
   seller,
+  listings,
   onPress,
 }: {
   seller: Seller;
+  // This seller's listings. The card derives the count and the locality line
+  // from them, so there is no way to pass it a number that is not real.
+  listings: Listing[];
   onPress?: () => void;
 }) {
+  const where = localityLine(listings);
   return (
     <Pressable style={styles.sellerMini} onPress={onPress} testID={`seller-mini-${seller.id}`}>
       <View style={styles.cover}>
         <Image source={{ uri: seller.cover }} style={{ flex: 1 }} contentFit="cover" />
       </View>
       <Image source={{ uri: seller.img }} style={styles.avatar} />
-      <T weight={700} size={12.5} ls={-0.2} style={{ marginTop: 6, marginBottom: 2, marginHorizontal: 3 }}>
-        {seller.name}
-      </T>
-      <T weight={500} size={10.5} color={colors.muted} numberOfLines={1} style={{ marginHorizontal: 3, marginBottom: 6 }}>
-        {seller.meta}
-      </T>
-      <View style={styles.sellerNums}>
-        <View style={styles.numBox}>
-          <T weight={800} size={12}>
-            {seller.sold}
-          </T>
-          <T weight={800} size={9} color={colors.muted}>
-            sold
-          </T>
-        </View>
-        <View style={styles.numBox}>
-          <T weight={800} size={12}>
-            {seller.rating}
-          </T>
-          <T weight={800} size={9} color={colors.muted}>
-            rating
-          </T>
-        </View>
+      <View style={styles.nameRow}>
+        <T weight={700} size={12.5} ls={-0.2} numberOfLines={1} style={{ flexShrink: 1 }}>
+          {seller.name}
+        </T>
+        {seller.verified ? <Icon name="check" size={13} color={VERIFIED_GREEN} /> : null}
+      </View>
+      {where ? (
+        <T weight={500} size={10.5} color={colors.muted} numberOfLines={1} style={{ marginHorizontal: 3, marginBottom: 6 }}>
+          {where}
+        </T>
+      ) : (
+        <View style={{ marginBottom: 6 }} />
+      )}
+      {/* ONE figure, on one line. A lone stacked value-over-label box reads as
+          half of a broken pair, which is exactly what it would have been. */}
+      <View style={styles.countPill}>
+        <T weight={800} size={11}>
+          {countLabel(listings.length)}
+        </T>
       </View>
     </Pressable>
   );
@@ -361,40 +387,33 @@ export function SellerRailCard({
 
 export function SellerWideCard({
   seller,
-  count,
+  listings,
   onPress,
 }: {
   seller: Seller;
-  count: number;
+  listings: Listing[];
   onPress?: () => void;
 }) {
+  const where = localityLine(listings);
   return (
     <Pressable style={styles.sellerWide} onPress={onPress} testID={`seller-wide-${seller.id}`}>
       <Image source={{ uri: seller.cover }} style={styles.wideCover} contentFit="cover" />
-      <View style={{ flex: 1 }}>
-        <T weight={700} size={13.5} ls={-0.2}>
-          {seller.name}
-        </T>
-        <T weight={500} size={11} color={colors.muted} numberOfLines={1} style={{ marginVertical: 4 }}>
-          {seller.meta}
-        </T>
-        <View style={styles.sellerNums}>
-          <View style={styles.numBox}>
-            <T weight={800} size={12}>
-              {seller.sold}
-            </T>
-            <T weight={800} size={9} color={colors.muted}>
-              sold
-            </T>
-          </View>
-          <View style={styles.numBox}>
-            <T weight={800} size={12}>
-              {count}
-            </T>
-            <T weight={800} size={9} color={colors.muted}>
-              listings
-            </T>
-          </View>
+      <View style={{ flex: 1, justifyContent: "center" }}>
+        <View style={[styles.nameRow, { marginTop: 0 }]}>
+          <T weight={700} size={13.5} ls={-0.2} numberOfLines={1} style={{ flexShrink: 1 }}>
+            {seller.name}
+          </T>
+          {seller.verified ? <Icon name="check" size={14} color={VERIFIED_GREEN} /> : null}
+        </View>
+        {where ? (
+          <T weight={500} size={11} color={colors.muted} numberOfLines={1} style={{ marginVertical: 4, marginHorizontal: 3 }}>
+            {where}
+          </T>
+        ) : null}
+        <View style={[styles.countPill, { alignSelf: "flex-start", paddingHorizontal: 12 }]}>
+          <T weight={800} size={11}>
+            {countLabel(listings.length)}
+          </T>
         </View>
       </View>
     </Pressable>
@@ -509,13 +528,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.white,
   },
-  sellerNums: { flexDirection: "row", gap: 6 },
-  numBox: {
-    flex: 1,
-    borderRadius: 12,
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+    marginBottom: 2,
+    marginHorizontal: 3,
+  },
+  countPill: {
+    borderRadius: 999,
     backgroundColor: colors.soft,
     alignItems: "center",
-    paddingVertical: 6,
+    justifyContent: "center",
+    paddingVertical: 7,
+    paddingHorizontal: 10,
   },
   sellerWide: {
     flexDirection: "row",

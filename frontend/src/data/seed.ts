@@ -10,8 +10,13 @@ export type Seller = {
   verified: boolean;
   img: string;
   cover: string;
-  sold: number;
-  rating: string;
+  // `sold` and `rating` used to live here. Both were hardcoded below with
+  // nothing behind them — there is no reviews collection and no record of a
+  // completed sale anywhere in this project — while a real seller was handed
+  // `0` and `"-"` in the same slots. Deleted rather than left unset: an unset
+  // field invites someone to fill it with a plausible number later. When
+  // ratings become real they arrive with the collection that backs them.
+  //
   // Set only for a seller identity built from a real user's own listing
   // (see sellerOf in AppContext). Seeded sellers leave both undefined and
   // keep using the numeric `id`. USER_SELLER_ID marks the synthetic case.
@@ -89,8 +94,6 @@ export const SELLERS: Seller[] = [
     img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80",
     cover:
       "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=500&q=80",
-    sold: 87,
-    rating: "4.9",
   },
   {
     id: 1,
@@ -101,8 +104,6 @@ export const SELLERS: Seller[] = [
     img: "https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&w=300&q=80",
     cover:
       "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=500&q=80",
-    sold: 63,
-    rating: "4.8",
   },
   {
     id: 2,
@@ -113,8 +114,6 @@ export const SELLERS: Seller[] = [
     img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
     cover:
       "https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?auto=format&fit=crop&w=500&q=80",
-    sold: 51,
-    rating: "4.7",
   },
 ];
 

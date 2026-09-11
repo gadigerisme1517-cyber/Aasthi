@@ -47,8 +47,6 @@ export default function Preview() {
     verified: Boolean(user.verified),
     img: user.avatar,
     cover: preview.img,
-    sold: 0,
-    rating: "-",
     phone: user.phone,
   };
 

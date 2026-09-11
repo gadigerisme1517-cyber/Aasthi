@@ -21,7 +21,8 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   // browseListings, not listings: blocked sellers' properties must not appear.
   // sellerOf is no longer needed here: the browse card carries no seller strip.
-  const { browseListings, sellers, isSaved, toggleSave, selectedLocation } = useApp();
+  const { browseListings, sellers, listingsBySeller, isSaved, toggleSave, selectedLocation } =
+    useApp();
   const [cat, setCat] = useState<string>("All");
 
   const locationFiltered = browseListings.filter((l) => listingMatchesLocation(l as any, selectedLocation));
@@ -144,9 +145,12 @@ export default function Home() {
             </T>
           </View>
 
+          {/* Title kept: every card in this rail still carries the verified
+              check, so it describes what is there. The sub said "quick
+              response", which nothing in this app measures. */}
           <SectionHead
             title="Verified Sellers"
-            sub="Local sellers with clear details and quick response."
+            sub="Verified sellers and what they have listed."
             link="View all"
             onLink={() => router.push("/sellers")}
           />
@@ -157,7 +161,12 @@ export default function Home() {
           contentContainerStyle={{ gap: 10, paddingHorizontal: 18, paddingBottom: 6 }}
         >
           {sellers.map((s) => (
-            <SellerRailCard key={s.id} seller={s} onPress={() => router.push(`/seller?id=${s.id}`)} />
+            <SellerRailCard
+              key={s.id}
+              seller={s}
+              listings={listingsBySeller(s.id)}
+              onPress={() => router.push(`/seller?id=${s.id}`)}
+            />
           ))}
         </ScrollView>
 

@@ -498,11 +498,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           name: anyL.sellerName || "AASTHI member",
           meta: anyL.sellerCity || "Private seller",
           trust: "Private seller",
-          verified: false,
+          // The listing carries the publisher's verified flag; this was
+          // hardcoded false, so an agent AASTHI had actually verified showed
+          // as unverified on /detail while the seeded companies showed a
+          // check they were simply given in seed data.
+          verified: Boolean(anyL.sellerVerified),
           img: anyL.sellerAvatar || DEFAULT_AVATAR,
           cover: anyL.img || FALLBACK_IMG,
-          sold: 0,
-          rating: "-",
           phone: anyL.sellerPhone || "",
         };
       }
