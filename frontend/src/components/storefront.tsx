@@ -172,7 +172,10 @@ export function Storefront({
           title={owning ? "My store" : "Store"}
           onBack={() => (viewAsBuyer ? setViewAsBuyer(false) : router.back())}
           right={
-            isOwner ? (
+            // `owning`, not `isOwner`: in buyer preview the gear has to go
+            // too. A preview that keeps one owner control is not the screen a
+            // buyer sees, which is the only thing the preview is for.
+            owning ? (
               <Pressable onPress={() => router.push("/menu")} testID="store-gear" hitSlop={8}>
                 <Icon name="gear" size={20} color={colors.ink} />
               </Pressable>
@@ -368,13 +371,20 @@ export function Storefront({
   );
 }
 
+// Value and label on ONE line, and the band centres what it holds.
+//
+// It used to stack the value over the label in a box pinned to the left of a
+// full-width band, which was fine while there were three figures and absurd
+// once rating and sold were deleted and only the listing count was left: one
+// small box against an empty right half. Same reasoning as the count pill on
+// the seller cards — a lone stacked box reads as half of a broken pair.
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.stat}>
       <T weight={800} size={17}>
         {value}
       </T>
-      <T weight={500} size={12} color={colors.muted} style={{ marginTop: 2 }}>
+      <T weight={500} size={13} color={colors.muted} style={{ marginLeft: 6 }}>
         {label}
       </T>
     </View>
@@ -388,6 +398,7 @@ const styles = StyleSheet.create({
   bio: { marginTop: 12, lineHeight: 20.3 }, // 14 * 1.45
   standing: {
     flexDirection: "row",
+    justifyContent: "center",
     gap: 26,
     marginTop: 16,
     paddingVertical: 12,
@@ -395,7 +406,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.line,
   },
-  stat: {},
+  stat: { flexDirection: "row", alignItems: "baseline" },
   actions: { flexDirection: "row", gap: 10, marginTop: 16 },
   strip: {
     marginTop: 16,

@@ -327,13 +327,16 @@ export function ResultCard({
 
 
 // Where a seller actually works, read off their listings rather than claimed.
-// Up to two localities, because the rail card is 168 wide.
-export function localityLine(items: Listing[]): string {
+//
+// `max` exists because the rail card is 168 wide and two localities truncated
+// mid-word there on a real device ("Bellary Chowrasta · Panchalingala …"). The
+// rail asks for one, the wide card on /sellers has the room for two.
+export function localityLine(items: Listing[], max = 2): string {
   const parts: string[] = [];
   for (const l of items) {
     const first = (l.addr || "").split(",")[0].trim();
     if (first && !parts.includes(first)) parts.push(first);
-    if (parts.length === 2) break;
+    if (parts.length === max) break;
   }
   return parts.join(" · ");
 }
@@ -367,7 +370,7 @@ export function SellerRailCard({
   listings: Listing[];
   onPress?: () => void;
 }) {
-  const where = localityLine(listings);
+  const where = localityLine(listings, 1); // 168 wide: one locality only
   return (
     <Pressable style={styles.sellerMini} onPress={onPress} testID={`seller-mini-${seller.id}`}>
       <View style={styles.cover}>
