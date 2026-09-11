@@ -1,5 +1,3 @@
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, Share, StyleSheet, View } from "react-native";
@@ -82,7 +80,7 @@ function postedThisWeek(items: Listing[]): number {
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <View>
+    <View style={{ flex: 1, alignItems: "center" }}>
       <T weight={w.title} size={16}>
         {value}
       </T>
@@ -215,130 +213,122 @@ export function Storefront({
 
   return (
     <Screen scroll contentStyle={{ paddingHorizontal: 0 }}>
-      {/* ---------- COVER ---------- */}
-      <View style={[styles.cover, { paddingTop: insets.top + 8 }]}>
-        {identity.cover ? (
-          <Image source={{ uri: identity.cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colour.shell }]} />
-        )}
-        <LinearGradient
-          colors={["rgba(12,10,8,0.35)", "rgba(12,10,8,0.55)"]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-        <View style={styles.coverBar}>
+      {/* ---------- IDENTITY, CENTRED, NO COVER ----------
+
+          THE COVER STRIP IS GONE. Most agents have never uploaded one, so it
+          fell back to a flat grey band — a decorative element that is empty
+          for the majority is worse than no element at all. What identifies an
+          agent is a face and a name, so the face goes in the middle and
+          everything else hangs beneath it.
+
+          A circle, not the 16-radius square: a square photo reads as a logo,
+          and almost all of these are a person. */}
+      <View style={[styles.top, { paddingTop: insets.top + 6 }]}>
+        <View style={styles.topBar}>
           <Pressable
             style={styles.round}
             onPress={() => (viewAsBuyer ? setViewAsBuyer(false) : router.back())}
             testID="store-back"
           >
-            <Icon name="arrowLeft" size={16} color={colour.paper} />
+            <Icon name="arrowLeft" size={16} color={colour.ink} />
           </Pressable>
           <View style={{ flexDirection: "row", gap: 8 }}>
             {owning ? (
               <Pressable style={styles.round} onPress={() => router.push("/menu")} testID="store-gear">
-                <Icon name="gear" size={15} color={colour.paper} />
+                <Icon name="gear" size={15} color={colour.ink} />
               </Pressable>
             ) : null}
             <Pressable style={styles.round} onPress={onShare} testID="store-share">
-              <Icon name="share" size={14} color={colour.paper} />
+              <Icon name="share" size={14} color={colour.ink} />
             </Pressable>
           </View>
         </View>
-      </View>
 
-      {/* ---------- IDENTITY ---------- */}
-      <View style={styles.identity}>
-        <InitialAvatar
-          uri={identity.avatar}
-          name={identity.name}
-          size={64}
-          radius={16}
-          fontSize={24}
-          style={styles.avatar}
-        />
-        <View style={styles.nameRow}>
-          <T weight={w.title} size={19} ls={-0.3} numberOfLines={1} style={{ flexShrink: 1 }}>
-            {identity.name}
-          </T>
-          {identity.verified ? (
-            <View style={styles.tick}>
-              <Icon name="check" size={11} color={colour.paper} />
-            </View>
+        <View style={styles.identity}>
+          <InitialAvatar
+            uri={identity.avatar}
+            name={identity.name}
+            size={88}
+            radius={44}
+            fontSize={32}
+          />
+
+          <View style={styles.nameRow}>
+            <T weight={w.title} size={20} ls={-0.3} numberOfLines={1} style={{ flexShrink: 1 }}>
+              {identity.name}
+            </T>
+            {identity.verified ? (
+              <View style={styles.tick}>
+                <Icon name="check" size={11} color={colour.paper} />
+              </View>
+            ) : null}
+          </View>
+
+          {identity.city?.trim() ? (
+            <T weight={w.body} size={12.5} color={colour.ink2} numberOfLines={1} style={{ marginTop: 4 }}>
+              {`${identity.kind?.trim() || "Property dealer"} in ${identity.city.trim()}`}
+            </T>
           ) : null}
-        </View>
 
-        {/* "Property dealer in Kurnool". RENDERS NOTHING when there is no
-            city — the seeded sellers have never had one, and both "Property
-            dealer in" and a stand-in city would be worse than silence. The
-            moment a city exists on the record this line appears, with no
-            further change to this file. */}
-        {identity.city?.trim() ? (
-          <T weight={w.body} size={12.5} color={colour.ink2} numberOfLines={1} style={{ marginTop: 3 }}>
-            {`${identity.kind?.trim() || "Property dealer"} in ${identity.city.trim()}`}
-          </T>
-        ) : null}
+          {identity.bio?.trim() ? (
+            <T weight={w.body} size={13} color={colour.ink2} numberOfLines={2} style={styles.bio}>
+              {identity.bio.trim()}
+            </T>
+          ) : null}
 
-        {/* EXACTLY THREE, and not one of them is a claim about quality. */}
-        <View style={styles.stats}>
-          <Stat
-            value={String(liveListings.length)}
-            label={liveListings.length === 1 ? "Listing" : "Listings"}
-          />
-          <Stat
-            value={typeof identity.followers === "number" ? String(identity.followers) : "–"}
-            label="Followers"
-          />
-          <Stat value={since ?? "–"} label="On AASTHI" />
-        </View>
+          <View style={styles.stats}>
+            <Stat
+              value={String(liveListings.length)}
+              label={liveListings.length === 1 ? "Listing" : "Listings"}
+            />
+            <View style={styles.statRule} />
+            <Stat
+              value={typeof identity.followers === "number" ? String(identity.followers) : "-"}
+              label="Followers"
+            />
+            <View style={styles.statRule} />
+            <Stat value={since ?? "-"} label="On AASTHI" />
+          </View>
 
-        {identity.bio?.trim() ? (
-          <T weight={w.body} size={13} color={colour.ink2} numberOfLines={3} style={styles.bio}>
-            {identity.bio.trim()}
-          </T>
-        ) : null}
-
-        <View style={styles.actions}>
-          {owning ? (
-            <>
-              <Pressable style={[styles.btn, styles.btnInk]} onPress={() => router.push("/sell")} testID="store-add">
-                <T weight={w.title} size={14.5} color={colour.paper}>
-                  Add a property
-                </T>
-              </Pressable>
-              <Pressable
-                style={[styles.btn, styles.btnGhost]}
-                onPress={() => setViewAsBuyer(true)}
-                testID="store-view-as-buyer"
-              >
-                <T weight={w.title} size={14.5} color={colour.ink2}>
-                  View as buyer
-                </T>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              {/* Follow IS savedSellers. Same field, same write — the control
-                  was called Save, and what it does is follow a shop. */}
-              {isOwner ? null : (
-                <Pressable
-                  style={[styles.btn, following ? styles.btnGhost : styles.btnInk]}
-                  onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
-                  testID="store-follow"
-                >
-                  <T weight={w.title} size={14.5} color={following ? colour.ink2 : colour.paper}>
-                    {following ? "Following" : "Follow"}
+          <View style={styles.actions}>
+            {owning ? (
+              <>
+                <Pressable style={[styles.btn, styles.btnInk]} onPress={() => router.push("/sell")} testID="store-add">
+                  <T weight={w.title} size={14.5} color={colour.paper}>
+                    Add a property
                   </T>
                 </Pressable>
-              )}
-              <Pressable style={[styles.btn, styles.btnGhost]} onPress={onMessage} testID="store-message">
-                <T weight={w.title} size={14.5} color={colour.ink2}>
-                  Message
-                </T>
-              </Pressable>
-            </>
-          )}
+                <Pressable
+                  style={[styles.btn, styles.btnGhost]}
+                  onPress={() => setViewAsBuyer(true)}
+                  testID="store-view-as-buyer"
+                >
+                  <T weight={w.title} size={14.5} color={colour.ink2}>
+                    View as buyer
+                  </T>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                {isOwner ? null : (
+                  <Pressable
+                    style={[styles.btn, following ? styles.btnGhost : styles.btnInk]}
+                    onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
+                    testID="store-follow"
+                  >
+                    <T weight={w.title} size={14.5} color={following ? colour.ink2 : colour.paper}>
+                      {following ? "Following" : "Follow"}
+                    </T>
+                  </Pressable>
+                )}
+                <Pressable style={[styles.btn, styles.btnGhost]} onPress={onMessage} testID="store-message">
+                  <T weight={w.title} size={14.5} color={colour.ink2}>
+                    Message
+                  </T>
+                </Pressable>
+              </>
+            )}
+          </View>
         </View>
       </View>
 
@@ -467,24 +457,18 @@ export function Storefront({
 }
 
 const styles = StyleSheet.create({
-  cover: { height: 88, justifyContent: "flex-start" },
-  coverBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-  },
+  top: { backgroundColor: colour.paper, paddingHorizontal: 16, paddingBottom: 16 },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   round: {
     width: 30,
     height: 30,
     borderRadius: r.pill,
-    backgroundColor: colour.scrim,
+    backgroundColor: colour.shell,
     alignItems: "center",
     justifyContent: "center",
   },
-  identity: { backgroundColor: colour.paper, paddingHorizontal: 16, paddingBottom: 14 },
-  avatar: { marginTop: -26, borderWidth: 3, borderColor: colour.paper },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  identity: { alignItems: "center", marginTop: 6 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
   tick: {
     width: 16,
     height: 16,
@@ -493,9 +477,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stats: { flexDirection: "row", gap: 20, marginTop: 14 },
-  bio: { marginTop: 12, lineHeight: 19 },
-  actions: { flexDirection: "row", gap: 10, marginTop: 14 },
+  stats: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginTop: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colour.line,
+  },
+  statRule: { width: 1, height: 26, backgroundColor: colour.line },
+  bio: { marginTop: 10, textAlign: "center", lineHeight: 19, paddingHorizontal: 8 },
+  actions: { flexDirection: "row", gap: 10, marginTop: 16, alignSelf: "stretch" },
   btn: { flex: 1, borderRadius: r.md, paddingVertical: 14, alignItems: "center" },
   btnInk: { backgroundColor: colour.ink },
   btnGhost: { borderWidth: 1, borderColor: colour.line },

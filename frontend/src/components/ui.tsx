@@ -305,11 +305,16 @@ export function SectionHead({
   sub,
   link,
   onLink,
+  // Anything that belongs opposite the title on the same line — the browse
+  // view toggle uses it. A control that sits on its own line above the first
+  // card looks like it belongs to nothing.
+  right,
 }: {
   title: string;
   sub?: string;
   link?: string;
   onLink?: () => void;
+  right?: React.ReactNode;
 }) {
   return (
     <View style={styles.sectionHead}>
@@ -330,6 +335,7 @@ export function SectionHead({
           </T>
         </Pressable>
       ) : null}
+      {right}
     </View>
   );
 }

@@ -150,31 +150,33 @@ export default function Home() {
               which is why the chip strip could not scroll cleanly. */}
           <Chips items={CATEGORIES} active={cat} onSelect={setCat} />
 
-          <View style={styles.toggleRow}>
-            <View style={styles.viewToggle}>
-              {(["card", "compact", "grid"] as const).map((v) => {
-                const on = browseView === v;
-                return (
-                  <Pressable
-                    key={v}
-                    style={[styles.viewBtn, on && styles.viewBtnOn]}
-                    onPress={() => setBrowseView(v)}
-                    testID={`view-${v}`}
-                  >
-                    <Icon
-                      name={v === "card" ? "square" : v === "compact" ? "rows" : "grid"}
-                      size={16}
-                      color={on ? colors.white : colors.muted}
-                    />
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
+          {/* The toggle sits OPPOSITE the section title, on the same line —
+              it belongs to the list below it, and a control floating on its
+              own line belongs to nothing. */}
           <SectionHead
             title="Featured Properties"
             sub={`Showing ${selectedLocation.name} properties.`}
+            right={
+              <View style={styles.viewToggle}>
+                {(["card", "compact", "grid"] as const).map((v) => {
+                  const on = browseView === v;
+                  return (
+                    <Pressable
+                      key={v}
+                      style={[styles.viewBtn, on && styles.viewBtnOn]}
+                      onPress={() => setBrowseView(v)}
+                      testID={`view-${v}`}
+                    >
+                      <Icon
+                        name={v === "card" ? "square" : v === "compact" ? "rows" : "grid"}
+                        size={16}
+                        color={on ? colors.white : colors.muted}
+                      />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            }
           />
           {visibleListings.length ? (
             <View style={browseView === "grid" ? styles.grid : undefined}>
@@ -313,8 +315,6 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  // Right-aligned, on its own line, directly above the first card.
-  toggleRow: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
   locChip: {
     flexDirection: "row",
     alignItems: "center",
