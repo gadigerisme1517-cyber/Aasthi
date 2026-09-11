@@ -60,7 +60,7 @@ export function SelectChips({
             testID={testIDPrefix ? `${testIDPrefix}-${it}` : undefined}
             style={[styles.chip, on && styles.chipOn]}
           >
-            <T weight={800} size={12} color={on ? "#fff" : colors.ink}>
+            <T weight={700} size={12} color={on ? "#fff" : colors.ink}>
               {it}
             </T>
           </Pressable>

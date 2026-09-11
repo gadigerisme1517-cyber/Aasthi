@@ -17,7 +17,7 @@ export default function SellVastu() {
 
   return (
     <Screen keyboard header={<PageHead title="Vastu" onBack={() => router.back()} />}>
-      <T weight={800} size={11} color={colors.faint} ls={0.6} style={{ marginTop: 20, marginBottom: 8, textTransform: "uppercase" }}>
+      <T weight={700} size={11} color={colors.faint} ls={0.6} style={{ marginTop: 20, marginBottom: 8, textTransform: "uppercase" }}>
         Facing
       </T>
       <SelectChips items={FACINGS} value={facing} onSelect={setFacing} testIDPrefix="vastu-facing" />

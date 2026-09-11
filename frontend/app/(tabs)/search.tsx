@@ -42,7 +42,7 @@ export default function Search() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.screen }}>
       <View style={[styles.head, { paddingTop: insets.top + 12 }]}>
-        <T weight={800} size={20} ls={-1}>
+        <T weight={700} size={20} ls={-1}>
           Search
         </T>
         <View style={styles.searchBar}>

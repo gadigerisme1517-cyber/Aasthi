@@ -99,7 +99,7 @@ function localityOf(items: Listing[]): string | null {
 function Cell({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.cell}>
-      <T weight={800} size={16} color={colors.white} numberOfLines={1}>
+      <T weight={700} size={16} color={colors.white} numberOfLines={1}>
         {value}
       </T>
       <T weight={700} size={10.5} ls={0.74} color={WHITE_50} numberOfLines={1} style={styles.cellLabel}>
@@ -246,14 +246,14 @@ export function Storefront({
             <Image source={{ uri: identity.avatar }} style={styles.avatar} contentFit="cover" />
           ) : (
             <View style={[styles.avatar, styles.avatarLetter]}>
-              <T weight={800} size={26} color={colors.ink}>
+              <T weight={700} size={26} color={colors.ink}>
                 {initial}
               </T>
             </View>
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.nameRow}>
-              <T weight={800} size={22} ls={-0.7} color={colors.white} numberOfLines={1} style={{ flexShrink: 1 }}>
+              <T weight={700} size={22} ls={-0.7} color={colors.white} numberOfLines={1} style={{ flexShrink: 1 }}>
                 {identity.name}
               </T>
               {identity.verified ? (
@@ -297,7 +297,7 @@ export function Storefront({
           {owning ? (
             <>
               <Pressable style={[styles.btn, styles.btnSolid]} onPress={() => router.push("/sell")} testID="store-add">
-                <T weight={800} size={13} color={colors.ink}>
+                <T weight={700} size={13} color={colors.ink}>
                   Add a property
                 </T>
               </Pressable>
@@ -306,7 +306,7 @@ export function Storefront({
                 onPress={() => setViewAsBuyer(true)}
                 testID="store-view-as-buyer"
               >
-                <T weight={800} size={13} color={colors.white}>
+                <T weight={700} size={13} color={colors.white}>
                   View as buyer
                 </T>
               </Pressable>
@@ -318,12 +318,12 @@ export function Storefront({
                 onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
                 testID="store-save"
               >
-                <T weight={800} size={13} color={colors.ink}>
+                <T weight={700} size={13} color={colors.ink}>
                   {isSellerSaved(identity.key as any) ? "Saved" : "Save store"}
                 </T>
               </Pressable>
               <Pressable style={[styles.btn, styles.btnOutline]} onPress={onShare} testID="store-share-action">
-                <T weight={800} size={13} color={colors.white}>
+                <T weight={700} size={13} color={colors.white}>
                   Share
                 </T>
               </Pressable>
@@ -368,7 +368,7 @@ export function Storefront({
             and goes anonymous when it fills up. */}
         {owning ? (
           <View style={{ marginTop: 18 }}>
-            <T weight={800} size={19} ls={-0.5}>
+            <T weight={700} size={19} ls={-0.5}>
               Inquiries
             </T>
             {storeLeads.length ? (
@@ -412,7 +412,7 @@ export function Storefront({
 
         {/* ---------- CATALOGUE ---------- */}
         <View style={styles.sectionHead}>
-          <T weight={800} size={19} ls={-0.5}>
+          <T weight={700} size={19} ls={-0.5}>
             All properties
           </T>
           <T weight={600} size={12} color={colors.muted}>

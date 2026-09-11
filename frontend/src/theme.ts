@@ -46,7 +46,8 @@ export const radius = {
   pill: 999,
   field: 16,
   result: 20,
-  card: 22,
+  // Was 22, and 26 on the browse card. One card radius now: tokens.radius.lg.
+  card: 16,
   feature: 24,
   block: 20,
   sheet: 22,

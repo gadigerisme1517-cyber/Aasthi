@@ -42,7 +42,7 @@ export default function Premium() {
         {active ? (
           <View style={styles.activeBox}>
             <Icon name="check" size={17} color={colors.green} />
-            <T weight={800} size={13} color={colors.green}>
+            <T weight={700} size={13} color={colors.green}>
               {(user as any).premiumPlan} active · {(user as any).contactViewsRemaining ?? 0} views left
             </T>
           </View>

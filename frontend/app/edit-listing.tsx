@@ -256,7 +256,7 @@ export default function EditListing() {
             <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
             {i === 0 ? (
               <View style={styles.coverTag}>
-                <T weight={800} size={8.5} color="#fff">
+                <T weight={700} size={8.5} color="#fff">
                   Cover
                 </T>
               </View>
@@ -285,7 +285,7 @@ export default function EditListing() {
           so the cost is never a surprise. */}
       {needsReverify && !confirmingReverify ? (
         <View style={styles.notice} testID="edit-reverify-notice">
-          <T weight={800} size={12.5} color={colors.ink}>
+          <T weight={700} size={12.5} color={colors.ink}>
             This will need re-verification
           </T>
           <T weight={500} size={12.5} color={colors.muted} style={{ marginTop: 6, lineHeight: 18 }}>
@@ -298,7 +298,7 @@ export default function EditListing() {
 
       {confirmingReverify ? (
         <View style={styles.notice} testID="edit-reverify-confirm">
-          <T weight={800} size={13} color={colors.ink}>
+          <T weight={700} size={13} color={colors.ink}>
             Save and lose the verified badge?
           </T>
           <T weight={500} size={12.5} color={colors.muted} style={{ marginTop: 6, lineHeight: 18 }}>

@@ -57,8 +57,8 @@ export default function Home() {
                   <T weight={900} size={16} color={colors.black}>A</T>
                 </View>
                 <View>
-                  <T weight={800} size={11.5} color="#fff" ls={2.6}>AASTHI</T>
-                  <T weight={650} size={10} color="rgba(255,255,255,0.7)" style={{ marginTop: 2 }}>
+                  <T weight={700} size={11.5} color="#fff" ls={2.6}>AASTHI</T>
+                  <T weight={600} size={10} color="rgba(255,255,255,0.7)" style={{ marginTop: 2 }}>
                     Simple property marketplace
                   </T>
                 </View>
@@ -80,7 +80,7 @@ export default function Home() {
               <T weight={900} size={9.5} color="rgba(255,255,255,0.74)" ls={1.2} style={{ textTransform: "uppercase" }}>
                 For local Indian property buyers
               </T>
-              <T weight={800} size={34} color="#fff" ls={-1.3} style={{ marginTop: 10, marginBottom: 9, lineHeight: 34 }}>
+              <T weight={700} size={34} color="#fff" ls={-1.3} style={{ marginTop: 10, marginBottom: 9, lineHeight: 34 }}>
                 Find property without confusion.
               </T>
               <T weight={600} size={13} color="rgba(255,255,255,0.8)" style={{ lineHeight: 18, maxWidth: 315 }}>
@@ -98,8 +98,8 @@ export default function Home() {
                     : []),
                 ].map((x) => (
                   <View key={x.s} style={styles.stat}>
-                    <T weight={800} size={15} color="#fff">{x.b}</T>
-                    <T weight={800} size={9} color="rgba(255,255,255,0.7)" numberOfLines={1} style={{ marginTop: 2 }}>
+                    <T weight={700} size={15} color="#fff">{x.b}</T>
+                    <T weight={700} size={9} color="rgba(255,255,255,0.7)" numberOfLines={1} style={{ marginTop: 2 }}>
                       {x.s}
                     </T>
                   </View>
@@ -112,7 +112,7 @@ export default function Home() {
         <View style={styles.searchWrap}>
           <Pressable style={styles.search} onPress={() => router.push("/search")} testID="home-search">
             <Icon name="search" size={18} color="#202020" />
-            <T weight={800} size={13} color="#202020" numberOfLines={1} style={{ flex: 1 }}>
+            <T weight={700} size={13} color="#202020" numberOfLines={1} style={{ flex: 1 }}>
               Search locality, seller or property
             </T>
             <View style={styles.filterBtn}>
@@ -148,7 +148,7 @@ export default function Home() {
             <T weight={900} size={9.5} color="#8c7555" ls={1.1} style={{ textTransform: "uppercase" }}>
               Why AASTHI
             </T>
-            <T weight={800} size={20} ls={-0.7} style={{ marginTop: 9 }}>
+            <T weight={700} size={20} ls={-0.7} style={{ marginTop: 9 }}>
               Simple. Trusted. Easy to contact.
             </T>
             <T weight={500} size={12} color="#6b665f" style={{ marginTop: 8, lineHeight: 17 }}>
@@ -195,7 +195,7 @@ export default function Home() {
             <T weight={900} size={9.5} color="#b9b9b9" ls={1.1} style={{ textTransform: "uppercase" }}>
               Promoted Property
             </T>
-            <T weight={800} size={18} color="#fff" ls={-0.5} style={{ marginTop: 6 }}>
+            <T weight={700} size={18} color="#fff" ls={-0.5} style={{ marginTop: 6 }}>
               Get more views on your property.
             </T>
             <T weight={500} size={12} color="#c7c7c7" style={{ marginTop: 5, lineHeight: 17 }}>

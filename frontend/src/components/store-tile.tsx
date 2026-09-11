@@ -140,14 +140,14 @@ export function StoreTile({
           {photos.length > 1 ? (
             <View style={styles.darkPill}>
               <Icon name="camera" size={10} color="#fff" />
-              <T weight={650} size={10} color="#fff">
+              <T weight={600} size={10} color="#fff">
                 {photos.length}
               </T>
             </View>
           ) : null}
           {isTokenPaid ? (
             <View style={styles.darkPill}>
-              <T weight={650} size={10} color="#fff">
+              <T weight={600} size={10} color="#fff">
                 Token paid
               </T>
             </View>
@@ -156,14 +156,14 @@ export function StoreTile({
               opening anything. A buyer never receives these listings. */}
           {hidden ? (
             <View style={styles.darkPill}>
-              <T weight={650} size={10} color="#fff">
+              <T weight={600} size={10} color="#fff">
                 Hidden
               </T>
             </View>
           ) : null}
           {sold ? (
             <View style={styles.darkPill}>
-              <T weight={650} size={10} color="#fff">
+              <T weight={600} size={10} color="#fff">
                 Sold
               </T>
             </View>
@@ -173,7 +173,7 @@ export function StoreTile({
 
       <View style={styles.panel}>
         <View style={styles.priceRow}>
-          <T weight={800} size={16.5} ls={-0.4} numberOfLines={1}>
+          <T weight={700} size={16.5} ls={-0.4} numberOfLines={1}>
             {listing.price}
           </T>
           {isRent ? (

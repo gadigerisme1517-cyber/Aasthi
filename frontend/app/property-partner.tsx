@@ -52,7 +52,7 @@ export default function PropertyPartner() {
       </View>
 
       <View style={styles.note}>
-        <T weight={800} size={13}>What happens next?</T>
+        <T weight={700} size={13}>What happens next?</T>
         <T weight={500} size={12} color={colors.muted} style={{ marginTop: 6, lineHeight: 18 }}>
           Your normal account still works. AASTHI can review partner details later before showing Verified Partner or Top Partner badges.
         </T>

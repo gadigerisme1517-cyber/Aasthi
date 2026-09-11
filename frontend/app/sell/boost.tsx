@@ -15,7 +15,7 @@ export default function Boost() {
         <T weight={900} size={10} color="#b9b9b9" ls={1.4} style={{ textTransform: "uppercase" }}>
           Property Promotion
         </T>
-        <T weight={800} size={21} color="#fff" ls={-1} style={{ marginTop: 8 }}>
+        <T weight={700} size={21} color="#fff" ls={-1} style={{ marginTop: 8 }}>
           Get more views on your listing.
         </T>
         <T weight={500} size={13} color="#c7c7c7" style={{ marginTop: 7, lineHeight: 19 }}>

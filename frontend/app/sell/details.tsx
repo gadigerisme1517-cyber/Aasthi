@@ -74,7 +74,7 @@ export default function SellDetails() {
         <Field value={title} onChangeText={setTitle} placeholder="Listing title" testID="details-title" />
         <Field value={price} onChangeText={setPrice} placeholder="Price" testID="details-price" />
         <View>
-          <T weight={800} size={11} color={colors.faint} ls={0.6} style={{ marginBottom: 8, textTransform: "uppercase" }}>
+          <T weight={700} size={11} color={colors.faint} ls={0.6} style={{ marginBottom: 8, textTransform: "uppercase" }}>
             Area unit
           </T>
           <SelectChips items={UNITS} value={unit} onSelect={setUnit} testIDPrefix="details-unit" />

@@ -54,7 +54,7 @@ function Avatar({ uri, name }: { uri?: string; name: string }) {
   const letter = (name.trim()[0] || "A").toUpperCase();
   return (
     <View style={[styles.avatar, styles.avatarLetter]}>
-      <T weight={800} size={17} color={colors.muted}>
+      <T weight={700} size={17} color={colors.muted}>
         {letter}
       </T>
     </View>

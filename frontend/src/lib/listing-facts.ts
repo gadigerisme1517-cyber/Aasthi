@@ -1,0 +1,113 @@
+import { Listing } from "@/src/data/seed";
+
+// THE ONE TYPE-SWITCH. Both the browse card and the compact row read from
+// here, so the columns can never disagree between the two views. Nothing in
+// this file renders; it decides what a listing HAS to say.
+
+export type Fact = { value: string; label: string };
+export type Kind = "home" | "land" | "other";
+
+const MISSING = "–";
+
+function has(v: unknown): v is string {
+  const s = String(v ?? "").trim();
+  return s.length > 0 && s !== "-" && s !== MISSING;
+}
+
+function val(v: unknown): string {
+  return has(v) ? String(v).trim() : MISSING;
+}
+
+// The number without its unit: "2,240 sq.ft" -> "2,240". The unit is the
+// column label, so repeating it in the value wastes the width the label needs.
+function bare(v: unknown): string {
+  if (!has(v)) return MISSING;
+  const first = String(v).trim().split(/\s+/)[0];
+  return first || MISSING;
+}
+
+export function kindOf(listing: Listing): Kind {
+  const t = `${(listing as any).propertyType ?? ""} ${listing.type ?? ""}`.toLowerCase();
+  if (/plot|land|commercial|shop|office/.test(t)) return "land";
+  if (/house|flat|apartment|villa|buy|rent/.test(t)) return "home";
+  return "other";
+}
+
+// A type pill is only worth the space when the type is NOT already obvious
+// from the plaque line and the columns. A flat says "3 BHK" and shows beds;
+// a plot says neither, so it gets the pill.
+export function showsTypePill(listing: Listing): boolean {
+  return kindOf(listing) !== "home";
+}
+
+export function localityOf(listing: Listing): string {
+  const first = String(listing.addr ?? "").split(",")[0].trim();
+  return first || String(listing.addr ?? "").trim();
+}
+
+// Plaque line 2. "3 BHK, Nandyal Road" for a home, "Plots, Nandyal Road"
+// otherwise. One line, the card ellipsises it.
+export function plaqueLine(listing: Listing): string {
+  const where = localityOf(listing);
+  const kind = kindOf(listing);
+  const label =
+    kind === "home" && has(listing.beds)
+      ? `${String(listing.beds).trim()} BHK`
+      : (listing as any).propertyType?.trim() || listing.type;
+  return [label, where].filter(Boolean).join(", ");
+}
+
+// SHORT LABELS ON PURPOSE. "Commercial" and "position" both overflowed a
+// column at 360px, which is the narrowest phone this ships to.
+export function factsFor(listing: Listing): Fact[] {
+  const kind = kindOf(listing);
+  const anyL = listing as any;
+
+  if (kind === "home") {
+    // "floor" is in the spec but there is NO floor field on Listing, so this
+    // branch can never fire today. Left in place, and named in the report,
+    // rather than quietly dropped: it becomes live the day the field exists.
+    const third = has(anyL.floor) && !has(listing.facing)
+      ? { value: val(anyL.floor), label: "floor" }
+      : { value: val(listing.facing), label: "facing" };
+    return [
+      { value: val(listing.beds), label: "bed" },
+      { value: bare(listing.area), label: "sq ft" },
+      third,
+    ];
+  }
+
+  if (kind === "land") {
+    // `corner` does not exist on Listing either. It renders "–" and keeps its
+    // column, which is what the spec asks for a missing field.
+    return [
+      { value: bare(listing.area), label: "sq yd" },
+      { value: val(listing.facing), label: "facing" },
+      { value: val(anyL.corner), label: "corner" },
+    ];
+  }
+
+  // Anything else: the three most populated numeric fields, in a fixed order
+  // so two listings of the same shape never show different columns.
+  const pool: Fact[] = [
+    { value: val(listing.beds), label: "bed" },
+    { value: val(listing.baths), label: "bath" },
+    { value: bare(listing.area), label: "area" },
+    { value: val(listing.facing), label: "facing" },
+    { value: val(listing.dist), label: "away" },
+  ];
+  const filled = pool.filter((f) => f.value !== MISSING);
+  const out = filled.slice(0, 3);
+  while (out.length < 3) out.push(pool[out.length] ?? { value: MISSING, label: "—" });
+  return out;
+}
+
+// Column 4, always. A claim about whether AASTHI checked the documents.
+export function trustFact(listing: Listing): { value: string; label: string; verified: boolean } {
+  const verified = (listing as any).verificationStatus === "verified";
+  return verified
+    ? { value: "✓", label: "verified", verified: true }
+    : { value: "○", label: "pending", verified: false };
+}
+
+export const FACT_MISSING = MISSING;

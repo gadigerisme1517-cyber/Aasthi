@@ -102,7 +102,7 @@ export default function Login() {
           <T weight={900} size={10.5} color="#fff" ls={3} style={{ marginTop: 8 }}>
             AASTHI
           </T>
-          <T weight={800} size={26} color="#fff" ls={-0.5} style={{ marginTop: "auto", maxWidth: 300 }}>
+          <T weight={700} size={26} color="#fff" ls={-0.5} style={{ marginTop: "auto", maxWidth: 300 }}>
             Property, made clear.
           </T>
           <T weight={500} size={11.5} color="rgba(255,255,255,0.82)" style={{ marginTop: 5, lineHeight: 16 }}>
@@ -138,7 +138,7 @@ export default function Login() {
             </Pressable>
           </View>
 
-          <T weight={800} size={18} ls={-0.4}>
+          <T weight={700} size={18} ls={-0.4}>
             {mode === "signin" ? "Welcome back" : "Create your AASTHI account"}
           </T>
           <T weight={500} size={11.5} color={colors.muted} style={{ marginTop: 3, marginBottom: 10 }}>
@@ -187,7 +187,7 @@ export default function Login() {
             onPress={() => setMode(mode === "signin" ? "signup" : "signin")}
             testID="auth-mode-switch"
           >
-            <T weight={800} size={12}>
+            <T weight={700} size={12}>
               {mode === "signin"
                 ? "New to AASTHI? Create account"
                 : "Already have an account? Sign in"}

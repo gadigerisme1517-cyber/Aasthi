@@ -18,7 +18,7 @@ export default function About() {
             A
           </T>
         </View>
-        <T weight={800} size={24} ls={-1} style={{ marginTop: 12 }}>
+        <T weight={700} size={24} ls={-1} style={{ marginTop: 12 }}>
           AASTHI
         </T>
         <T weight={500} size={13} color={colors.muted} style={{ marginTop: 6 }}>

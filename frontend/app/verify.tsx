@@ -77,7 +77,7 @@ export default function Verify() {
     <Screen header={<PageHead title="Get verified" onBack={() => router.back()} />}>
       {status && STATUS_COPY[status] ? (
         <View style={[styles.status, { borderColor: STATUS_COPY[status].color }]}>
-          <T weight={800} size={17} color={STATUS_COPY[status].color}>
+          <T weight={700} size={17} color={STATUS_COPY[status].color}>
             {STATUS_COPY[status].title}
           </T>
           <T weight={500} size={13.5} color={colors.muted} style={{ marginTop: 8, lineHeight: 20 }}>

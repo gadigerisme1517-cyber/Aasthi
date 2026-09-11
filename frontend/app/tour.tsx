@@ -79,7 +79,7 @@ export default function Tour() {
             <Icon name="arrowLeft" size={20} color="#fff" />
           </Pressable>
           <View>
-            <T weight={800} size={20} color="#fff">
+            <T weight={700} size={20} color="#fff">
               360° Tour
             </T>
             <T weight={700} size={11} color="#aaa" style={{ marginTop: 2 }}>

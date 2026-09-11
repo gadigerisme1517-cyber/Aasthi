@@ -138,7 +138,7 @@ export default function Thread() {
             <View style={styles.blocked} testID="thread-blocked">
               <Icon name="shield" size={15} color={colors.red} />
               <View style={{ flex: 1 }}>
-                <T weight={800} size={12.5} color={colors.red}>
+                <T weight={700} size={12.5} color={colors.red}>
                   {blockReason}
                 </T>
                 {blockSample ? (
@@ -191,7 +191,7 @@ export default function Thread() {
           <View style={[styles.stripImg, { backgroundColor: colors.soft2 }]} />
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <T weight={800} size={14} numberOfLines={1}>
+          <T weight={700} size={14} numberOfLines={1}>
             {title}
           </T>
           {gone ? (
@@ -249,7 +249,7 @@ export default function Thread() {
             it is not stored in the messages collection — nothing was written
             for the inquiries that already existed. */}
         <View style={[styles.bubble, iAmSeller ? styles.theirs : styles.mine]}>
-          <T weight={800} size={12} color={iAmSeller ? colors.muted : "rgba(255,255,255,0.75)"}>
+          <T weight={700} size={12} color={iAmSeller ? colors.muted : "rgba(255,255,255,0.75)"}>
             {iAmSeller ? lead.buyerName?.trim() || "AASTHI buyer" : "You"}{" "}
             {ASK[lead.type] ?? "sent an inquiry"}
           </T>

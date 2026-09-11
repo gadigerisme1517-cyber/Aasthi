@@ -139,7 +139,7 @@ export default function Admin() {
               A
             </T>
           </View>
-          <T weight={800} size={22} ls={-1} style={{ marginTop: 14 }}>
+          <T weight={700} size={22} ls={-1} style={{ marginTop: 14 }}>
             AASTHI Admin
           </T>
           <T weight={500} size={13} color={colors.muted} style={{ marginTop: 6, marginBottom: 18, textAlign: "center" }}>
@@ -192,13 +192,13 @@ export default function Admin() {
               A
             </T>
           </View>
-          <T weight={800} size={18} ls={-0.6}>
+          <T weight={700} size={18} ls={-0.6}>
             AASTHI Admin
           </T>
         </View>
         <Pressable onPress={() => signOutUser().then(() => setPhase("login"))} style={styles.signout} testID="admin-signout">
           <Icon name="logout" size={16} color={colors.ink} />
-          <T weight={800} size={12}>
+          <T weight={700} size={12}>
             Sign out
           </T>
         </Pressable>
@@ -213,7 +213,7 @@ export default function Admin() {
             const on = t.key === tab;
             return (
               <Pressable key={t.key} onPress={() => setTab(t.key)} style={[styles.tab, on && styles.tabOn]} testID={`admin-tab-${t.key}`}>
-                <T weight={800} size={13} color={on ? "#fff" : colors.ink}>
+                <T weight={700} size={13} color={on ? "#fff" : colors.ink}>
                   {t.label}
                 </T>
                 {typeof t.count === "number" ? (
@@ -254,7 +254,7 @@ export default function Admin() {
               <View key={it.id} style={styles.row} testID={`admin-item-${it.id}`}>
                 {tab === "verifications" ? (
                   <>
-                    <T weight={800} size={15}>
+                    <T weight={700} size={15}>
                       {it.sellerName ?? "Seller"}
                     </T>
                     <T weight={500} size={12} color={colors.muted} style={{ marginTop: 3 }}>
@@ -295,7 +295,7 @@ export default function Admin() {
                   </>
                 ) : tab === "listings" ? (
                   <>
-                    <T weight={800} size={15} numberOfLines={1}>
+                    <T weight={700} size={15} numberOfLines={1}>
                       {it.title ?? "Listing"}
                     </T>
                     <T weight={500} size={12} color={colors.muted} style={{ marginTop: 3 }}>
@@ -304,7 +304,7 @@ export default function Admin() {
                   </>
                 ) : (
                   <>
-                    <T weight={800} size={15}>
+                    <T weight={700} size={15}>
                       {it.ticket ?? "Bug"} · {it.category}
                     </T>
                     <T weight={500} size={12} color={colors.muted} style={{ marginTop: 4, lineHeight: 18 }}>

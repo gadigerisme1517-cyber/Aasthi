@@ -4,7 +4,9 @@ import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 import { Listing, Seller } from "@/src/data/seed";
 import { Icon } from "@/src/icons";
+import { factsFor, plaqueLine, showsTypePill, trustFact } from "@/src/lib/listing-facts";
 import { colors, radius, shadow } from "@/src/theme";
+import { colour, radius as r, weight as w } from "@/src/theme/tokens";
 import { T } from "@/src/components/ui";
 
 // ONE browse card, exported under both historical names.
@@ -20,7 +22,6 @@ import { T } from "@/src/components/ui";
 // on /detail and the seller shop. Status is stated once, beside the price.
 
 const VERIFIED_GREEN = "#12a05e";
-const DOT = "rgba(115,115,115,0.55)"; // colors.muted at 55%
 
 function photosOf(listing: Listing): string[] {
   // Same convention as /detail and /gallery: `img` is the cover and `g` holds
@@ -30,87 +31,40 @@ function photosOf(listing: Listing): string[] {
   return [listing.img, ...rest].filter(Boolean) as string[];
 }
 
-function TrustMarker({ status }: { status?: string }) {
-  if (status === "verified") {
-    return (
-      <View style={styles.trust} testID="card-trust-verified">
-        <Icon name="check" size={13} color={VERIFIED_GREEN} />
-        <T weight={700} size={12} color={VERIFIED_GREEN}>
-          Verified
-        </T>
-      </View>
-    );
-  }
-  if (status === "pending") {
-    return (
-      <View style={styles.trust} testID="card-trust-pending">
-        <View style={styles.hollow} />
-        <T weight={700} size={12} color={colors.muted}>
-          Pending
-        </T>
-      </View>
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <View style={styles.trust} testID="card-trust-rejected">
-        <View style={[styles.hollow, { borderColor: colors.red }]} />
-        <T weight={700} size={12} color={colors.red}>
-          Rejected
-        </T>
-      </View>
-    );
-  }
-  return null;
-}
-
-// "2 BHK · 2 baths · 2,240 sq.ft · East" as ONE text line: numbers heavier
-// than the words, separators dimmed. Nested Text rather than boxed chips.
-function SpecLine({ listing }: { listing: Listing }) {
-  const parts: React.ReactNode[] = [];
-  const push = (num: string | null, word: string, key: string) => {
-    parts.push(
-      <T key={key} weight={550} size={13} color={colors.muted}>
-        {num ? <T weight={700} size={13} color={colors.ink}>{num}</T> : null}
-        {num ? " " : ""}
-        {word}
-      </T>,
-    );
-  };
-
-  if (listing.beds && listing.beds !== "-") push(listing.beds, "BHK", "beds");
-  if (listing.baths && listing.baths !== "-") {
-    push(listing.baths, listing.baths === "1" ? "bath" : "baths", "baths");
-  }
-  if (listing.area) {
-    // "2,240 sq.ft" -> number bold, unit lighter.
-    const [n, ...unit] = String(listing.area).trim().split(" ");
-    push(n, unit.join(" "), "area");
-  }
-  if (listing.facing) push(null, listing.facing, "facing");
-
-  if (!parts.length) return null;
-
+// ONE browse card. Price and locality sit ON the photo in a plaque; the
+// facts sit BELOW it in ruled columns. The old white panel that overlapped
+// the photo by -36 is gone: it hid the bottom of every photograph and made
+// the card taller than the information in it.
+function FactCol({
+  value,
+  label,
+  first,
+  trust,
+  green,
+}: {
+  value: string;
+  label: string;
+  first?: boolean;
+  trust?: boolean;
+  green?: boolean;
+}) {
   return (
-    <T weight={550} size={13} color={colors.muted} numberOfLines={1}>
-      {parts.map((p, i) => (
-        <T key={`w${i}`} weight={550} size={13} color={colors.muted}>
-          {i > 0 ? <T weight={550} size={13} color={DOT}>{"  ·  "}</T> : null}
-          {p}
-        </T>
-      ))}
-    </T>
+    <View style={[styles.col, trust && styles.colTrust, !first && styles.colRuled]}>
+      <T
+        weight={green ? w.title : trust ? w.label : w.title}
+        size={13}
+        ls={-0.1}
+        color={green ? colour.green : trust ? colour.ink3 : colour.ink}
+        numberOfLines={1}
+      >
+        {value}
+      </T>
+      <T weight={w.body} size={11} color={colour.ink3} numberOfLines={1} style={{ marginTop: 2 }}>
+        {label}
+      </T>
+    </View>
   );
 }
-
-export type OwnerBar = {
-  onEdit: () => void;
-  onToggleHide: () => void;
-  hidden?: boolean;
-  // Exactly one of these is supplied: Delete for rentals, Mark sold for sales.
-  onMarkSold?: () => void;
-  onDelete?: () => void;
-};
 
 function BrowseCard({
   listing,
@@ -118,7 +72,6 @@ function BrowseCard({
   onPress,
   onToggleSave,
   preview,
-  ownerBar,
   testIDPrefix,
 }: {
   listing: Listing;
@@ -126,14 +79,11 @@ function BrowseCard({
   onPress?: () => void;
   onToggleSave?: () => void;
   preview?: boolean;
-  ownerBar?: OwnerBar;
   testIDPrefix: string;
 }) {
   const photos = photosOf(listing);
-  const isRent = listing.type === "Rent";
-  const status = (listing as any).verificationStatus as string | undefined;
-  // "sold" never reaches browse — browseListings filters it out — so the only
-  // sale state worth a pill here is token-paid.
+  const facts = factsFor(listing);
+  const trust = trustFact(listing);
   const isTokenPaid = (listing as any).saleStatus === "token";
 
   return (
@@ -141,127 +91,63 @@ function BrowseCard({
       <View style={styles.photoWrap}>
         <Image source={{ uri: listing.img }} style={StyleSheet.absoluteFill} contentFit="cover" transition={180} />
 
-        <View style={styles.topRow}>
-          {/* TYPE ONLY. Verification is stated once, beside the price. */}
-          <View style={styles.typePill}>
-            <T weight={700} size={11.5} ls={0.63} color={colors.ink} style={styles.upper}>
-              {listing.type}
-            </T>
-          </View>
+        {/* TOP LEFT. The type pill only when the type is not already implied,
+            and Token paid beside it — availability has to live somewhere and
+            the bottom edge belongs to the plaque now. Verification is never
+            here: that is column four. */}
+        <View style={styles.topLeft}>
+          {showsTypePill(listing) ? (
+            <View style={styles.scrimPill}>
+              <T weight={w.title} size={10.5} color={colour.paper}>
+                {listing.type}
+              </T>
+            </View>
+          ) : null}
+          {isTokenPaid ? (
+            <View style={styles.scrimPill} testID={`token-paid-${listing.id}`}>
+              <T weight={w.title} size={10.5} color={colour.paper}>
+                Token paid
+              </T>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.topRight}>
+          {photos.length > 1 ? (
+            <View style={styles.photoCount} testID={`photo-count-${listing.id}`}>
+              <T weight={w.title} size={10.5} color={colour.paper}>
+                {photos.length}
+              </T>
+            </View>
+          ) : null}
           {onToggleSave && !preview ? (
-            <Pressable style={styles.save} onPress={onToggleSave} testID={`save-${listing.id}`} hitSlop={8}>
-              <Icon name="heart" size={17} color={saved ? colors.red : colors.ink} filled={saved} />
+            <Pressable
+              style={[styles.heart, saved && styles.heartOn]}
+              onPress={onToggleSave}
+              testID={`save-${listing.id}`}
+              hitSlop={8}
+            >
+              <Icon name="heart" size={16} color={saved ? colour.accent : colour.paper} filled={saved} />
             </Pressable>
           ) : null}
         </View>
 
-        {/* Bottom-left cluster on the photo. Availability lives HERE, not on
-            the price row: how many photos there are and whether the property
-            is still going are facts about the listing, whereas the
-            Verified/Pending marker beside the price is a claim about whether
-            AASTHI checked it. They must not share a slot.
-            The row collapses cleanly — with one photo the count is hidden and
-            the Token paid pill takes the bottom-left position on its own. */}
-        {photos.length > 1 || isTokenPaid ? (
-          <View style={styles.photoTags}>
-            {photos.length > 1 ? (
-              <View style={styles.darkPill} testID={`photo-count-${listing.id}`}>
-                <Icon name="camera" size={12} color="#fff" />
-                <T weight={650} size={11.5} color="#fff">
-                  {photos.length}
-                </T>
-              </View>
-            ) : null}
-            {isTokenPaid ? (
-              <View style={styles.darkPill} testID={`token-paid-${listing.id}`}>
-                <T weight={650} size={11.5} color="#fff">
-                  Token paid
-                </T>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.panel}>
-        <View style={styles.priceRow}>
-          <View style={styles.priceWrap}>
-            <T weight={800} size={27} ls={-0.95} numberOfLines={1}>
-              {listing.price}
-            </T>
-            {isRent ? (
-              <T weight={600} size={13} color={colors.muted} style={{ marginLeft: 4 }}>
-                /month
-              </T>
-            ) : null}
-          </View>
-          <TrustMarker status={status} />
+        <View style={styles.plaque}>
+          <T weight={w.price} size={23} ls={-0.7} style={{ lineHeight: 23 }} numberOfLines={1}>
+            {listing.price}
+          </T>
+          <T weight={w.label} size={12.5} color={colour.ink2} numberOfLines={1} style={{ marginTop: 4 }}>
+            {plaqueLine(listing)}
+          </T>
         </View>
-
-        <T weight={700} size={17} numberOfLines={1} style={{ marginTop: 6 }}>
-          {listing.title}
-        </T>
-
-        <T weight={500} size={13.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 3 }}>
-          {listing.addr}
-        </T>
-
-        <View style={styles.hairline} />
-        <SpecLine listing={listing} />
-
-        {/* OWNER BAR. Rendered only when the storefront passes it, which it
-            does only on the agent's own store. A buyer never receives these
-            handlers, so there is no branch here that could leak them. */}
-        {ownerBar ? (
-          <>
-            <View style={styles.hairline} />
-            <View style={styles.ownerBar}>
-              <OwnerAction label="Edit" onPress={ownerBar.onEdit} testID={`own-edit-${listing.id}`} />
-              <View style={styles.vDivider} />
-              <OwnerAction
-                label={ownerBar.hidden ? "Unhide" : "Hide"}
-                onPress={ownerBar.onToggleHide}
-                testID={`own-hide-${listing.id}`}
-              />
-              <View style={styles.vDivider} />
-              {ownerBar.onDelete ? (
-                <OwnerAction
-                  label="Delete"
-                  onPress={ownerBar.onDelete}
-                  danger
-                  testID={`own-delete-${listing.id}`}
-                />
-              ) : (
-                <OwnerAction
-                  label="Mark sold"
-                  onPress={ownerBar.onMarkSold ?? (() => {})}
-                  testID={`own-sold-${listing.id}`}
-                />
-              )}
-            </View>
-          </>
-        ) : null}
       </View>
-    </Pressable>
-  );
-}
 
-function OwnerAction({
-  label,
-  onPress,
-  danger,
-  testID,
-}: {
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-  testID: string;
-}) {
-  return (
-    <Pressable style={styles.ownerAction} onPress={onPress} testID={testID} hitSlop={6}>
-      <T weight={600} size={13} color={danger ? colors.red : colors.ink}>
-        {label}
-      </T>
+      <View style={styles.facts}>
+        {facts.map((f, i) => (
+          <FactCol key={`${f.label}-${i}`} value={f.value} label={f.label} first={i === 0} />
+        ))}
+        <FactCol value={trust.value} label={trust.label} trust={!trust.verified} green={trust.verified} />
+      </View>
     </Pressable>
   );
 }
@@ -272,14 +158,12 @@ export function FeatureCard({
   onPress,
   onToggleSave,
   preview,
-  ownerBar,
 }: {
   listing: Listing;
   saved?: boolean;
   onPress?: () => void;
   onToggleSave?: () => void;
   preview?: boolean;
-  ownerBar?: OwnerBar;
 }) {
   return (
     <BrowseCard
@@ -288,7 +172,6 @@ export function FeatureCard({
       onPress={onPress}
       onToggleSave={onToggleSave}
       preview={preview}
-      ownerBar={ownerBar}
       testIDPrefix="feature-card"
     />
   );
@@ -352,7 +235,7 @@ function countLabel(n: number): string {
 export function CountPill({ n, style }: { n: number; style?: ViewStyle }) {
   return (
     <View style={[styles.countPill, style]}>
-      <T weight={800} size={11}>
+      <T weight={700} size={11}>
         {countLabel(n)}
       </T>
     </View>
@@ -429,94 +312,81 @@ export function SellerWideCard({
 }
 
 const styles = StyleSheet.create({
+  // No shadow. A hairline and a corner are enough to separate a card from
+  // paper, and a stack of shadows on a scrolling list reads as fog.
   card: {
     marginBottom: 16,
-    borderRadius: 26,
+    borderRadius: r.lg,
     overflow: "hidden",
-    backgroundColor: colors.black,
-    ...shadow.card,
+    backgroundColor: colour.paper,
+    borderWidth: 1,
+    borderColor: colour.line,
   },
-  // 210, not 246: at 246 a card ran ~1374px and two of them plus the section
-  // header did not clear the floating nav island on a 3120px screen.
-  photoWrap: { height: 210, backgroundColor: colors.black },
-  topRow: {
+  photoWrap: { height: 198, backgroundColor: colour.shell },
+  topLeft: {
     position: "absolute",
-    left: 14,
-    right: 14,
-    top: 14,
+    top: 9,
+    left: 9,
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 6,
+    maxWidth: "70%",
+    flexWrap: "wrap",
+  },
+  topRight: {
+    position: "absolute",
+    top: 9,
+    right: 9,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 6,
   },
-  typePill: {
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  scrimPill: {
+    borderRadius: r.sm,
+    backgroundColor: colour.scrim,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
   },
-  upper: { textTransform: "uppercase" },
-  save: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.95)",
+  photoCount: {
+    borderRadius: r.sm,
+    backgroundColor: colour.scrim,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+  },
+  heart: {
+    width: 30,
+    height: 30,
+    borderRadius: r.pill,
+    backgroundColor: colour.scrim,
     alignItems: "center",
     justifyContent: "center",
   },
-  // bottom 48 still clears the panel at the shorter photo: the panel's top
-  // edge sits at 210-36 = 174, this row's bottom edge at 210-48 = 162, so
-  // there is 12px of daylight. No nudge needed.
-  photoTags: {
+  heartOn: { backgroundColor: colour.paper },
+  // Flush into the bottom-left corner: the only rounded corner is the one
+  // facing into the photo.
+  plaque: {
     position: "absolute",
-    left: 14,
-    bottom: 48,
+    left: 0,
+    bottom: 0,
+    maxWidth: "86%",
+    backgroundColor: colour.paper,
+    paddingTop: 11,
+    paddingRight: 16,
+    paddingBottom: 11,
+    paddingLeft: 14,
+    borderTopRightRadius: r.lg,
+  },
+  facts: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    paddingTop: 11,
+    paddingRight: 14,
+    paddingBottom: 12,
+    paddingLeft: 14,
   },
-  darkPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(10,10,10,0.62)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  panel: {
-    marginTop: -36,
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 22,
-    backgroundColor: colors.white,
-    padding: 16,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  priceWrap: { flexDirection: "row", alignItems: "baseline", flexShrink: 1 },
-  trust: { flexDirection: "row", alignItems: "center", gap: 5 },
-  hollow: {
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.muted,
-  },
-  hairline: {
-    height: 1,
-    backgroundColor: colors.line,
-    marginTop: 12,
-    marginBottom: 10,
-  },
-  ownerBar: { flexDirection: "row", alignItems: "center" },
-  ownerAction: { flex: 1, alignItems: "center", paddingVertical: 4 },
-  vDivider: { width: 1, height: 16, backgroundColor: colors.line },
-
-  // ---- seller cards, unchanged ----
+  col: { flex: 1, minWidth: 0 },
+  // Fixed so the three data columns never steal from trust, and trust never
+  // steals from them.
+  colTrust: { flex: 0, flexBasis: 58, flexGrow: 0, flexShrink: 0 },
+  colRuled: { borderLeftWidth: 1, borderLeftColor: colour.line, paddingLeft: 10 },
   sellerMini: {
     width: 168,
     borderRadius: radius.card,

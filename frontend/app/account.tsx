@@ -95,7 +95,7 @@ export default function Account() {
       <Block style={{ marginTop: 18, alignItems: "center" }}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
         <Pressable onPress={changePhoto} testID="account-change-photo" style={{ marginTop: 12 }}>
-          <T weight={800} size={13} color={colors.ink}>
+          <T weight={700} size={13} color={colors.ink}>
             Change photo
           </T>
         </Pressable>
@@ -113,13 +113,13 @@ export default function Account() {
         )}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
           <Pressable onPress={() => pickInto(setCover)} testID="account-change-cover">
-            <T weight={800} size={13} color={colors.ink}>
+            <T weight={700} size={13} color={colors.ink}>
               {cover ? "Change cover" : "Add a cover"}
             </T>
           </Pressable>
           {cover ? (
             <Pressable onPress={() => setCover("")} testID="account-clear-cover">
-              <T weight={800} size={13} color={colors.red}>
+              <T weight={700} size={13} color={colors.red}>
                 Remove
               </T>
             </Pressable>

@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, font, NAV_HEIGHT, radius, shadow } from "@/src/theme";
+import { radius as r, weight as w } from "@/src/theme/tokens";
 import { Icon, IconName } from "@/src/icons";
 import { useApp } from "@/src/store/AppContext";
 
@@ -149,7 +150,7 @@ export function PageHead({
       >
         <Icon name="arrowLeft" size={18} color={colors.ink} />
       </Pressable>
-      <T weight={800} size={18} ls={-0.6} style={{ flex: 1 }}>
+      <T weight={700} size={18} ls={-0.6} style={{ flex: 1 }}>
         {title}
       </T>
       {right}
@@ -187,7 +188,7 @@ export function Button({
         style,
       ]}
     >
-      <T weight={900} size={13} color={fg}>
+      <T weight={w.title} size={14.5} color={fg}>
         {label}
       </T>
     </Pressable>
@@ -313,7 +314,7 @@ export function SectionHead({
   return (
     <View style={styles.sectionHead}>
       <View style={{ flex: 1 }}>
-        <T weight={800} size={20} ls={-0.7}>
+        <T weight={700} size={20} ls={-0.7}>
           {title}
         </T>
         {sub ? (
@@ -359,7 +360,7 @@ export function Block({
   return (
     <View style={[styles.block, style]}>
       {title ? (
-        <T weight={800} size={16} ls={-0.4} style={{ marginBottom: 7 }}>
+        <T weight={700} size={16} ls={-0.4} style={{ marginBottom: 7 }}>
           {title}
         </T>
       ) : null}
@@ -389,7 +390,7 @@ export function MenuRow({
         <Icon name={icon} size={17} color={danger ? colors.red : colors.ink} />
       </View>
       <View style={{ flex: 1 }}>
-        <T weight={800} size={14} color={danger ? colors.red : colors.ink}>
+        <T weight={700} size={14} color={danger ? colors.red : colors.ink}>
           {title}
         </T>
         {sub ? (
@@ -444,7 +445,7 @@ export function ToggleRow({
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1, paddingRight: 12 }}>
-        <T weight={800} size={14}>
+        <T weight={700} size={14}>
           {title}
         </T>
         {sub ? (
@@ -461,7 +462,7 @@ export function ToggleRow({
 export function Empty({ title, body }: { title: string; body: string }) {
   return (
     <View style={styles.empty}>
-      <T weight={800} size={16} style={{ marginBottom: 5 }}>
+      <T weight={700} size={16} style={{ marginBottom: 5 }}>
         {title}
       </T>
       <T weight={500} size={12.5} color={colors.muted} style={{ textAlign: "center", lineHeight: 18 }}>
@@ -623,9 +624,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...shadow.soft,
   },
+  // Padding, not a fixed height: the label sets the height, so a button never
+  // clips when the system font scale is up. tokens: padding 14, radius md.
   btn: {
-    height: 46,
-    borderRadius: 15,
+    paddingVertical: 14,
+    borderRadius: r.md,
     alignItems: "center",
     justifyContent: "center",
   },

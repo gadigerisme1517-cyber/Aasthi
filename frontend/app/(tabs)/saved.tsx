@@ -140,7 +140,7 @@ export default function Saved() {
                     )}
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <View style={styles.nameRow}>
-                        <T weight={800} size={15} numberOfLines={1} style={{ flexShrink: 1 }}>
+                        <T weight={700} size={15} numberOfLines={1} style={{ flexShrink: 1 }}>
                           {row.name}
                         </T>
                         {row.verified ? <Icon name="check" size={15} color="#12a05e" /> : null}
@@ -157,7 +157,7 @@ export default function Saved() {
                     hitSlop={8}
                     testID={`saved-store-remove-${row.key}`}
                   >
-                    <T weight={800} size={12} color={colors.muted}>
+                    <T weight={700} size={12} color={colors.muted}>
                       Remove
                     </T>
                   </Pressable>

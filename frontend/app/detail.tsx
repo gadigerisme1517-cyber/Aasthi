@@ -35,7 +35,7 @@ function Fact({ value, label }: { value: string; label: string }) {
       <T weight={900} size={13} numberOfLines={1}>
         {value}
       </T>
-      <T weight={800} size={8.5} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
+      <T weight={700} size={8.5} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
         {label}
       </T>
     </View>
@@ -246,7 +246,7 @@ export default function Detail() {
                 <T weight={900} size={25} ls={-1}>
                   {listing.price}
                 </T>
-                <T weight={800} size={17} ls={-0.4} style={{ marginTop: 4 }} numberOfLines={2}>
+                <T weight={700} size={17} ls={-0.4} style={{ marginTop: 4 }} numberOfLines={2}>
                   {listing.title}
                 </T>
               </View>
@@ -254,7 +254,7 @@ export default function Detail() {
                 <T weight={900} size={9} color={colors.green}>
                   Vastu
                 </T>
-                <T weight={800} size={11} color={colors.ink} style={{ marginTop: 2 }}>
+                <T weight={700} size={11} color={colors.ink} style={{ marginTop: 2 }}>
                   {listing.facing}
                 </T>
               </View>
@@ -335,7 +335,7 @@ export default function Detail() {
               >
                 <Image source={{ uri: seller.img }} style={styles.sellerImg} />
                 <View style={{ flex: 1 }}>
-                  <T weight={800} size={14} numberOfLines={1}>
+                  <T weight={700} size={14} numberOfLines={1}>
                     {seller.name}
                   </T>
                   {/* The city, or nothing at all. This line used to print
@@ -366,7 +366,7 @@ export default function Detail() {
                   <T weight={900} size={11}>
                     {item.label}
                   </T>
-                  <T weight={800} size={10} color={colors.muted} style={{ marginLeft: 5 }}>
+                  <T weight={700} size={10} color={colors.muted} style={{ marginLeft: 5 }}>
                     {item.dist}
                   </T>
                 </View>
@@ -389,7 +389,7 @@ export default function Detail() {
                 <T weight={900} size={9.5} color={colors.faint} ls={0.5} style={{ textTransform: "uppercase" }}>
                   Vastu
                 </T>
-                <T weight={800} size={14} style={{ marginTop: 4 }}>
+                <T weight={700} size={14} style={{ marginTop: 4 }}>
                   {listing.facing}-facing property
                 </T>
                 <T weight={500} size={12} color={colors.muted} style={{ marginTop: 4, lineHeight: 17 }}>
@@ -410,7 +410,7 @@ export default function Detail() {
 
           <Section title="Property ID">
             <View style={styles.propertyIdRow}>
-              <T weight={800} size={12.5} color={colors.muted} numberOfLines={1}>
+              <T weight={700} size={12.5} color={colors.muted} numberOfLines={1}>
                 {listing.id}
               </T>
             </View>

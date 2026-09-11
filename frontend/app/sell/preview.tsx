@@ -102,7 +102,7 @@ export default function Preview() {
           listing will be attributed to before publishing — which is the whole
           reason that strip mattered on this screen. */}
       <View style={styles.attribution}>
-        <T weight={800} size={11} color={colors.faint} ls={0.6} style={{ textTransform: "uppercase" }}>
+        <T weight={700} size={11} color={colors.faint} ls={0.6} style={{ textTransform: "uppercase" }}>
           Will be published as
         </T>
         <T weight={700} size={15} style={{ marginTop: 4 }} numberOfLines={1}>
@@ -118,7 +118,7 @@ export default function Preview() {
       </View>
       {!user.phone.trim() ? (
         <View style={styles.warn} testID="preview-no-phone">
-          <T weight={800} size={13} color={colors.red}>
+          <T weight={700} size={13} color={colors.red}>
             Add a phone number first
           </T>
           <T weight={500} size={12.5} color={colors.muted} style={{ marginTop: 6, lineHeight: 18 }}>
@@ -129,7 +129,7 @@ export default function Preview() {
       ) : null}
       {failedLabels.length ? (
         <View style={styles.warn} testID="preview-upload-failed">
-          <T weight={800} size={13} color={colors.red}>
+          <T weight={700} size={13} color={colors.red}>
             {failedLabels.length === 1
               ? "1 photo did not upload"
               : `${failedLabels.length} photos did not upload`}
@@ -140,7 +140,7 @@ export default function Preview() {
           </T>
           <View style={{ marginTop: 8, gap: 4 }}>
             {failedLabels.map((label) => (
-              <T key={label} weight={800} size={12.5} color={colors.ink}>
+              <T key={label} weight={700} size={12.5} color={colors.ink}>
                 • {label}
               </T>
             ))}

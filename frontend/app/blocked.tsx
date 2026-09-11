@@ -71,7 +71,7 @@ export default function Blocked() {
             <View key={String(row.key)} style={styles.row} testID={`blocked-${row.key}`}>
               <Image source={{ uri: row.img }} style={styles.avatar} />
               <View style={{ flex: 1 }}>
-                <T weight={800} size={14.5} numberOfLines={1}>
+                <T weight={700} size={14.5} numberOfLines={1}>
                   {row.name}
                 </T>
                 {row.city ? (
