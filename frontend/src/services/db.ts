@@ -359,6 +359,76 @@ export function watchLeadsForBuyer(uid: string, cb: (items: any[]) => void) {
   );
 }
 
+// ---------- Thread messages ----------
+//
+// messages/{leadId}/items/{messageId}. A SUBCOLLECTION, so the lead id lives
+// in the PATH: the rule reads it from there rather than trusting a field, and
+// every document in one thread resolves the same get() on the lead, which
+// Firestore caches for the request. Listing two hundred messages therefore
+// costs one document access call, not two hundred.
+//
+// The lead itself is never touched. It stays immutable, both sides.
+
+export function watchThread(leadId: string, cb: (items: any[]) => void) {
+  const qy = query(collection(db, "messages", leadId, "items"));
+  return onSnapshot(
+    qy,
+    (snap) => {
+      const arr = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      // Sorted here rather than with orderBy: a message that has just been
+      // sent carries a null sentAt until the server stamps it, and orderBy
+      // would sort that pending message to the wrong end. Infinity keeps it
+      // last, which is where the person who just typed it expects to see it.
+      arr.sort(
+        (a: any, b: any) =>
+          (a.sentAt?.seconds ?? Number.POSITIVE_INFINITY) -
+          (b.sentAt?.seconds ?? Number.POSITIVE_INFINITY),
+      );
+      cb(arr);
+    },
+    () => cb([]),
+  );
+}
+
+export async function addMessage(payload: {
+  leadId: string;
+  senderUid: string;
+  text: string;
+  // Who to notify. The other party on the lead.
+  recipientUid?: string;
+  senderName?: string;
+  listingTitle?: string;
+}) {
+  const { leadId, senderUid, text } = payload;
+  await addDoc(collection(db, "messages", leadId, "items"), {
+    leadId,
+    senderUid,
+    text,
+    sentAt: serverTimestamp(),
+  });
+
+  // Without this a reply is invisible until the other person happens to open
+  // the thread. Same collection and the same rules as every other
+  // notification: anyone signed in may create one, only the recipient reads.
+  if (payload.recipientUid && payload.recipientUid !== senderUid) {
+    const who = payload.senderName?.trim() || "Someone";
+    const what = payload.listingTitle?.trim();
+    await addDoc(collection(db, "notifications"), {
+      uid: payload.recipientUid,
+      title: "New message",
+      body: what
+        ? `${who} replied about "${what}". Open Inquiries to read it.`
+        : `${who} sent you a message. Open Inquiries to read it.`,
+      // Carried so the inquiry list can tell WHICH thread has something new
+      // without subscribing to every thread. AppContext reads it to decide
+      // the unread dot; see lastMessageAtByLead.
+      leadId,
+      kind: "message",
+      ts: serverTimestamp(),
+    });
+  }
+}
+
 export function watchNotifications(uid: string, cb: (items: any[]) => void) {
   const qy = query(collection(db, "notifications"), where("uid", "==", uid));
   return onSnapshot(qy, (snap) => {

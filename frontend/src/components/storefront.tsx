@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { FeatureCard, type OwnerBar } from "@/src/components/cards";
@@ -69,7 +69,6 @@ export function Storefront({
   const {
     myLeads,
     isLeadUnread,
-    markInquiriesSeen,
     isSellerSaved,
     toggleSaveSeller,
     isSaved,
@@ -134,11 +133,10 @@ export function Storefront({
   // scoped to the signed-in user by the rules.
   const storeLeads = useMemo(() => (isOwner ? myLeads : []), [isOwner, myLeads]);
 
-  useEffect(() => {
-    // Opening your own store is seeing your inquiries.
-    if (owning && storeLeads.length) markInquiriesSeen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [owning, storeLeads.length]);
+  // Opening the store no longer marks anything read. Unread is per THREAD
+  // now (users.threadsSeenAt), and a screen that showed three of your
+  // inquiries had no business declaring all of them seen. Reading happens in
+  // app/thread.tsx, one conversation at a time.
 
   const ownerBarFor = (l: Listing): OwnerBar => ({
     onEdit: () => router.push(`/edit-listing?id=${l.id}`),
@@ -283,7 +281,7 @@ export function Storefront({
                 <Pressable
                   key={lead.id}
                   style={[styles.leadRow, i > 0 && styles.leadDivider]}
-                  onPress={() => router.push("/my-enquiries")}
+                  onPress={() => router.push(`/thread?id=${lead.id}`)}
                   testID={`store-lead-${lead.id}`}
                 >
                   <View style={[styles.dot, !isLeadUnread(lead) && styles.dotRead]} />

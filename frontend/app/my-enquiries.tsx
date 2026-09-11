@@ -88,11 +88,12 @@ export default function MyEnquiries() {
         <View style={{ gap: 12 }}>
           {rows.map((lead: any) => {
             const listing = listings.find((l) => l.id === lead.listingId);
-            // A lead outlives its listing on purpose. When the property is
-            // gone the row still renders from the title stored on the lead,
-            // and the row simply is not pressable — no navigation to a
-            // listing that cannot be resolved, so no crash and no blank
-            // screen.
+            // A lead outlives its listing on purpose: the row still renders
+            // from the title stored on the lead.
+            // The listing can be gone; the CONVERSATION cannot. The row used
+            // to be disabled when the property was deleted because there was
+            // nowhere to navigate. Now it always opens the thread, and it is
+            // the property strip inside the thread that degrades.
             const gone = !listing;
             const title = lead.listingTitle || listing?.title || "A listing";
             const label = TYPE_LABEL[lead.type] ?? "Inquiry";
@@ -106,8 +107,7 @@ export default function MyEnquiries() {
                 key={lead.id}
                 style={[styles.row, gone && styles.rowGone]}
                 testID={`enquiry-${lead.id}`}
-                disabled={gone}
-                onPress={() => (listing ? router.push(`/detail?id=${listing.id}`) : undefined)}
+                onPress={() => router.push(`/thread?id=${lead.id}`)}
               >
                 <View style={styles.top}>
                   <View style={styles.typePill}>

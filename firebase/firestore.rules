@@ -90,6 +90,44 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Thread messages: the conversation on one lead.
+    //
+    // A SUBCOLLECTION so the lead id is in the PATH. The rule reads it from
+    // there instead of trusting a field, so a sender cannot post into someone
+    // else's thread by writing a different leadId in the payload. Every
+    // document in one thread also resolves the SAME get(), which Firestore
+    // caches per request, so reading a whole thread costs one document access
+    // call rather than one per message.
+    //
+    // Both parties to the lead may read and write. Nobody else, including the
+    // other side's future self: revoking is a matter of deleting the lead,
+    // which nothing can do.
+    //
+    // Immutable once sent, for exactly the reason a lead is immutable: a
+    // record of what was said must not be editable by the person who said it.
+    // The phone-number filter runs on the client (src/lib/phone-filter.ts);
+    // rules cannot inspect a string that closely, which is why this is
+    // friction rather than enforcement.
+    match /messages/{leadId}/items/{messageId} {
+      function lead() {
+        return get(/databases/$(database)/documents/leads/$(leadId)).data;
+      }
+      function party() {
+        return signedIn() && (
+          lead().get('sellerUid', '') == request.auth.uid ||
+          lead().get('buyerUid', '') == request.auth.uid
+        );
+      }
+      allow read: if party();
+      allow create: if party()
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.leadId == leadId
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000;
+      allow update, delete: if false;
+    }
+
     // Notifications: created for another user (e.g. seller notified of a
     // buyer's enquiry), so create isn't owner-scoped — only the recipient
     // can read their own notifications.

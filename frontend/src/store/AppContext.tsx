@@ -23,6 +23,7 @@ import {
   addBugReport,
   addLead as fsAddLead,
   addListing,
+  addMessage,
   createEmailUser,
   deleteAuthUser,
   deleteListing as fsDeleteListing,
@@ -82,6 +83,12 @@ export type User = {
   // update to a lead — deliberately, a lead is an immutable record of contact.
   // So "read" cannot be a flag on the lead itself.
   inquiriesSeenAt?: number;
+  // Per-THREAD watermark: { [leadId]: epoch ms of the last time this
+  // user opened that thread }. Replaces the single number above for
+  // everything unread-related. One list-wide watermark marked every
+  // thread read the moment you opened any one of them, which is not a
+  // thing an inbox may do.
+  threadsSeenAt?: Record<string, number>;
   // Epoch ms, written once at profile setup. Absent for every account created
   // before this existed, and "Member since" shows a dash for those rather
   // than inventing a date.
@@ -202,6 +209,10 @@ type Ctx = {
   isLeadUnread: (lead: any) => boolean;
   markInquiriesSeen: () => void;
   markReplied: (leadId: string) => void;
+  // One inquiry thread, from either side.
+  leadById: (leadId: string) => any | null;
+  sendMessage: (leadId: string, text: string) => Promise<void>;
+  markThreadSeen: (leadId: string) => void;
   savedSellers: BlockKey[];
   isSellerSaved: (key: BlockKey | undefined) => boolean;
   toggleSaveSeller: (key: BlockKey) => void;
@@ -367,6 +378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       cover: profile?.cover,
       bio: profile?.bio ?? "",
       inquiriesSeenAt: profile?.inquiriesSeenAt,
+      threadsSeenAt: profile?.threadsSeenAt,
       createdAt: profile?.createdAt,
     }),
     [profile],
@@ -828,17 +840,80 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // Unread inquiries. A lead cannot carry a read flag — firestore.rules
+  // Unread, PER THREAD. A lead cannot carry a read flag — firestore.rules
   // denies every lead update on purpose — so the watermark lives on the user
-  // document instead and each lead is compared against it.
-  const unreadLeadCount = useMemo(() => {
-    const seen = user.inquiriesSeenAt ?? 0;
-    return myLeads.filter((l: any) => (l.ts?.seconds ?? 0) * 1000 > seen).length;
-  }, [myLeads, user.inquiriesSeenAt]);
+  // document, now as a map keyed by lead id rather than one number for the
+  // whole list.
+  //
+  // A thread is unread when either the original inquiry, or a message in it,
+  // is newer than the last time this user opened THAT thread. The message
+  // side is read off `notifications`, which the app already subscribes to and
+  // which now carries `leadId` on every message notification. That avoids
+  // subscribing to every thread just to render a dot on a list.
+  const threadsSeenAt = useMemo(() => user.threadsSeenAt ?? {}, [user.threadsSeenAt]);
+
+  const lastMessageAtByLead = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const n of notifications as any[]) {
+      if (!n?.leadId) continue;
+      const ms = (n.ts?.seconds ?? 0) * 1000;
+      if (ms > (out[n.leadId] ?? 0)) out[n.leadId] = ms;
+    }
+    return out;
+  }, [notifications]);
 
   const isLeadUnread = useCallback(
-    (lead: any) => (lead?.ts?.seconds ?? 0) * 1000 > (user.inquiriesSeenAt ?? 0),
-    [user.inquiriesSeenAt],
+    (lead: any) => {
+      if (!lead?.id) return false;
+      // Legacy fallback: accounts that only ever had the old list-wide
+      // watermark keep it as the floor, so nothing that was already read
+      // lights up again after the upgrade.
+      const seen = threadsSeenAt[lead.id] ?? user.inquiriesSeenAt ?? 0;
+      const newest = Math.max((lead.ts?.seconds ?? 0) * 1000, lastMessageAtByLead[lead.id] ?? 0);
+      return newest > seen;
+    },
+    [threadsSeenAt, user.inquiriesSeenAt, lastMessageAtByLead],
+  );
+
+  const unreadLeadCount = useMemo(
+    () => myLeads.filter((l: any) => isLeadUnread(l)).length,
+    [myLeads, isLeadUnread],
+  );
+
+  const leadById = useCallback(
+    (leadId: string) =>
+      (myLeads as any[]).find((l) => l.id === leadId) ??
+      // myBuyerLeads, not mySentLeads: same documents, but the sorted
+      // `mySentLeads` is declared further down the file.
+      (myBuyerLeads as any[]).find((l) => l.id === leadId) ??
+      null,
+    [myLeads, myBuyerLeads],
+  );
+
+  const markThreadSeen = useCallback(
+    (leadId: string) => {
+      if (!uid || !leadId) return;
+      saveUserDoc(uid, { threadsSeenAt: { ...threadsSeenAt, [leadId]: Date.now() } }).catch(() => {});
+    },
+    [uid, threadsSeenAt],
+  );
+
+  // The other party on a lead, which is who gets the notification.
+  const sendMessage = useCallback(
+    async (leadId: string, text: string) => {
+      if (!uid) return;
+      const lead = leadById(leadId);
+      const recipientUid = lead?.sellerUid === uid ? lead?.buyerUid : lead?.sellerUid;
+      await addMessage({
+        leadId,
+        senderUid: uid,
+        text,
+        ...(recipientUid ? { recipientUid } : {}),
+        ...(user.name ? { senderName: user.name } : {}),
+        ...(lead?.listingTitle ? { listingTitle: lead.listingTitle } : {}),
+      });
+    },
+    [uid, leadById, user.name],
   );
 
   // Saved STORES, distinct from saved listings. The storefront's buyer-side
@@ -947,6 +1022,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isLeadUnread,
       markInquiriesSeen,
       markReplied,
+      leadById,
+      sendMessage,
+      markThreadSeen,
       savedSellers,
       isSellerSaved,
       toggleSaveSeller,
@@ -1003,6 +1081,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isLeadUnread,
       markInquiriesSeen,
       markReplied,
+      leadById,
+      sendMessage,
+      markThreadSeen,
       savedSellers,
       isSellerSaved,
       toggleSaveSeller,
