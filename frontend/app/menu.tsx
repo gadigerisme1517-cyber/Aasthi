@@ -18,7 +18,7 @@ import { FEATURES } from "@/src/config";
 
 export default function Menu() {
   const router = useRouter();
-  const { user, savedSellers } = useApp();
+  const { user, savedSellers, myListings } = useApp();
 
   return (
     <Screen header={<PageHead title="Settings" onBack={() => router.back()} />}>
@@ -29,6 +29,24 @@ export default function Menu() {
         sub="Photo, name, phone, email, area and bio"
         onPress={() => router.push("/account")}
         testID="menu-account"
+      />
+      {/* RESTORED. This row existed on the old profile and I dropped it when
+          I folded that screen into the storefront — the commit that said
+          "NOTHING WAS DROPPED" was wrong about exactly this one. /my-listings
+          is a different job from browsing your own shopfront: it lists your
+          properties with their verification AND sale status together. */}
+      <MenuRow
+        icon="home"
+        title="My listings"
+        sub={
+          myListings.length === 0
+            ? "No properties published yet"
+            : myListings.length === 1
+              ? "1 property · tap to edit or remove"
+              : `${myListings.length} properties · tap to edit or remove`
+        }
+        onPress={() => router.push("/my-listings")}
+        testID="menu-my-listings"
       />
       <MenuRow
         icon="shield"
