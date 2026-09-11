@@ -156,6 +156,19 @@ export default function Detail() {
   // number just by checking their listing.
   const counted = useRef<string | null>(null);
   const authUid = auth.currentUser?.uid ?? null;
+
+  // AM I LOOKING AT MY OWN PROPERTY?
+  //
+  // /detail had no idea. It showed the owner the buyer's controls — Inquiry
+  // and Request number — so an agent opening their own listing was offered
+  // the chance to send themselves a lead, and offered no way to edit the
+  // thing they were looking at. The only edit route left was a 26pt overflow
+  // dot on the store tile.
+  //
+  // sellerUid is the only truth here. A seeded listing has none, so nobody
+  // owns it and every viewer stays a buyer.
+  const iOwnThis =
+    Boolean((listing as any)?.sellerUid) && (listing as any).sellerUid === authUid;
   useEffect(() => {
     const id = listing?.id;
     if (!id || counted.current === id) return;
@@ -406,6 +419,25 @@ export default function Detail() {
       </ScrollView>
 
       <View style={[styles.stickyActions, { paddingBottom: insets.bottom + 8 }]}>
+        {iOwnThis ? (
+          // The owner gets ONE action, full width. Not the buyer's two.
+          <Pressable
+            style={[styles.stickyPill, styles.ownerPill]}
+            onPress={() => router.push(`/edit-listing?id=${listing.id}`)}
+            testID="detail-edit-listing"
+          >
+            <Icon name="gear" size={16} color="#fff" />
+            <View style={{ marginLeft: 8 }}>
+              <T weight={900} size={12.5} color="#fff">
+                Edit listing
+              </T>
+              <T weight={700} size={9.5} color="rgba(255,255,255,0.65)" style={{ marginTop: 1 }}>
+                Photos, price, visibility and status
+              </T>
+            </View>
+          </Pressable>
+        ) : (
+          <>
         <Pressable style={[styles.stickyPill, styles.messagePill]} onPress={() => router.push(`/enquiry${q}`)} testID="detail-message">
           <Icon name="message" size={16} color="#fff" />
           <T weight={900} size={12.5} color="#fff">
@@ -451,6 +483,8 @@ export default function Detail() {
             </View>
           )}
         </Pressable>
+          </>
+        )}
       </View>
     </View>
   );
@@ -648,6 +682,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  ownerPill: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.black,
   },
   messagePill: {
     flex: 0.9,
