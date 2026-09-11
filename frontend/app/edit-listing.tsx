@@ -14,6 +14,7 @@ import {
   SectionLabel,
   T,
   Textarea,
+  ToggleRow,
 } from "@/src/components/ui";
 import { SelectChips } from "@/src/components/choice";
 import { SALE_STATUS_LABEL, type SaleStatus } from "@/src/data/seed";
@@ -51,6 +52,12 @@ export default function EditListing() {
   const [saleStatus, setSaleStatus] = useState<SaleStatus>(
     ((listing as any)?.saleStatus as SaleStatus) ?? "live",
   );
+  // Visibility used to live ONLY on the owner bar under the card in the
+  // storefront. That bar is gone — three text buttons do not fit in a
+  // half-width tile panel — so the control moved here, where the rest of a
+  // listing's settings already are. It is not a new capability and it is not
+  // a lost one.
+  const [visible, setVisible] = useState<boolean>(!(listing as any)?.hidden);
 
   // The photo list as it was when this screen opened. Captured once so that
   // adding then removing the same photo does not count as a change.
@@ -159,6 +166,7 @@ export default function EditListing() {
         img: finalPhotos[0],
         g: finalPhotos.slice(1),
         saleStatus,
+        hidden: !visible,
         // Only written when a re-review is actually due, so a description
         // fix never touches an approved listing's status.
         ...(needsReverify ? { verificationStatus: "pending" } : {}),
@@ -211,6 +219,19 @@ export default function EditListing() {
             ? "Token paid stays visible to buyers, marked so they know it is nearly gone."
             : "Live means still available and shown everywhere."}
       </T>
+
+      <SectionLabel>Visibility</SectionLabel>
+      <ToggleRow
+        title="Visible to buyers"
+        sub={
+          visible
+            ? "Shown on Home, Search and your store."
+            : "Hidden from buyers. Only you can see it, under the Hidden filter on your store."
+        }
+        value={visible}
+        onChange={() => setVisible((v) => !v)}
+        testID="edit-visible"
+      />
 
       <SectionLabel>Details</SectionLabel>
       <View style={{ gap: 12 }}>

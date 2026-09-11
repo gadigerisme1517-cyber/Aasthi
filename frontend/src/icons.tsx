@@ -35,6 +35,10 @@ export type IconName =
   | "bug"
   | "phone"
   | "mapPin"
+  // Stores get shared; profiles do not. Added with the storefront rebuild.
+  | "share"
+  // Overflow on a half-width store tile, where three text buttons will not fit.
+  | "more"
   | "close";
 
 const FEATHER: Partial<Record<IconName, string>> = {
@@ -62,6 +66,8 @@ const FEATHER: Partial<Record<IconName, string>> = {
   inbox: "inbox",
   phone: "phone",
   mapPin: "map-pin",
+  share: "share-2",
+  more: "more-horizontal",
   close: "x",
 };
 

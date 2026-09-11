@@ -28,6 +28,10 @@ export default function Profile() {
         city: user.city?.split(",")[0],
         area: user.operatingAreas,
         bio: user.bio,
+        // "Agent", "Broker", "Builder"… set in /property-partner. Absent
+        // until that form is filled, and the header falls back to
+        // "Property dealer" rather than inventing a trade.
+        kind: (user as any).partnerType,
       }}
       listings={myListings}
     />
