@@ -94,7 +94,8 @@ export default function Detail() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
-  const { listings, sellerOf, isSaved, toggleSave, user, contactedListingIds } = useApp();
+  const { listings, sellerOf, isSaved, toggleSave, user, contactedListingIds, addLead, showToast } =
+    useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const seller = sellerOf(listing ?? ({} as any));
   const saved = listing ? isSaved(listing.id) : false;
@@ -117,6 +118,32 @@ export default function Detail() {
   const contactNumberLabel = buyerIsPremium ? "Request number" : "Get Premium";
   const contactNumberHint = buyerIsPremium ? "Seller approval needed" : "To view number";
   const descriptionText = cleanDescription(listing as any);
+
+  // REQUEST NUMBER HAPPENS HERE, IN PLACE. It used to push /contact, a
+  // screen whose whole job was to write the lead on mount and then say it
+  // had. The write is identical — same collection, same "contact" type, same
+  // payload — but the buyer now stays on the property at the same scroll
+  // position and the button confirms itself.
+  const [requesting, setRequesting] = useState(false);
+  const [requested, setRequested] = useState(false);
+
+  const requestNumber = async () => {
+    if (requesting || requested || !listing) return;
+    if (!seller) {
+      showToast("This listing has no seller on record. Nothing was sent.");
+      return;
+    }
+    setRequesting(true);
+    try {
+      await addLead(listing.id, seller.id, "contact");
+      setRequested(true);
+      showToast("Request sent. The seller has been notified.");
+    } catch {
+      showToast("Could not send the request. Check your connection and try again.");
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   // Count one view per opening of this screen, by anyone who is not the
   // owner. The ref stops React re-renders (hero paging, save toggles) from
@@ -382,26 +409,42 @@ export default function Detail() {
         </Pressable>
         <Pressable
           style={[styles.stickyPill, styles.numberPill]}
+          // Once requested, the pill is a confirmation and nothing else. It
+          // stays that way until the seller's number actually arrives, at
+          // which point numberRevealed takes over and it becomes Call.
+          disabled={requested && !numberRevealed}
           onPress={() =>
             numberRevealed
               ? Linking.openURL(`tel:${sellerPhone.replace(/\s+/g, "")}`)
-              : router.push(buyerIsPremium ? `/contact${q}` : `/premium${q}`)
+              : buyerIsPremium
+                ? requestNumber()
+                : router.push(`/premium${q}`)
           }
           testID={numberRevealed ? "detail-call-seller" : "detail-contact-number"}
         >
           <View style={styles.numberText}>
             <T weight={900} size={12.5} color={colors.ink} numberOfLines={1}>
-              {numberRevealed ? sellerPhone : "Contact number"}
+              {numberRevealed ? sellerPhone : requested ? "Requested" : "Contact number"}
             </T>
             <T weight={700} size={9.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 1 }}>
-              {numberRevealed ? seller?.name ?? "" : contactNumberHint}
+              {numberRevealed
+                ? seller?.name ?? ""
+                : requested
+                  ? "The seller has been notified"
+                  : contactNumberHint}
             </T>
           </View>
-          <View style={styles.numberAction}>
-            <T weight={900} size={10.5} color="#fff" numberOfLines={1}>
-              {numberRevealed ? "Call" : contactNumberLabel}
-            </T>
-          </View>
+          {requested && !numberRevealed ? (
+            <View style={styles.numberDone}>
+              <Icon name="check" size={14} color={colors.white} />
+            </View>
+          ) : (
+            <View style={styles.numberAction}>
+              <T weight={900} size={10.5} color="#fff" numberOfLines={1}>
+                {numberRevealed ? "Call" : requesting ? "Sending…" : contactNumberLabel}
+              </T>
+            </View>
+          )}
         </Pressable>
       </View>
     </View>
@@ -619,6 +662,16 @@ const styles = StyleSheet.create({
   numberText: {
     flex: 1,
     minWidth: 0,
+  },
+  // The confirmed state: a green disc instead of the black action pill, so
+  // the change is visible without reading the label.
+  numberDone: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#12a05e",
+    alignItems: "center",
+    justifyContent: "center",
   },
   numberAction: {
     minWidth: 86,

@@ -37,10 +37,11 @@ export default function Visit() {
   const [SLOTS] = useState(() => buildSlots(new Date()));
 
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   // Same reason as enquiry.tsx: confirm only after the write lands.
   const onRequest = async () => {
-    if (sending) return;
+    if (sending || sent) return;
     // Same guard as enquiry.tsx: no resolvable seller, no request.
     const seller = sellerOf(listing);
     if (!seller) {
@@ -52,7 +53,10 @@ export default function Visit() {
     try {
       await addLead(listing.id, seller.id, "visit", `${chosen.title}, ${chosen.sub}`);
       showToast("Visit request sent");
-      router.replace(`/request-sent?type=visit&id=${listing.id}`);
+      // Confirms in place. This used to replace the screen with
+      // /request-sent, a page whose only content was the sentence the toast
+      // now carries — and which threw away the slot the buyer had picked.
+      setSent(true);
     } catch {
       showToast("Could not send your visit request. Check your connection and try again.");
       setSending(false);
@@ -76,7 +80,18 @@ export default function Visit() {
           );
         })}
       </View>
-      <Button label={sending ? "Sending…" : "Request Visit"} onPress={onRequest} style={{ marginTop: 14 }} testID="visit-request" />
+      <Button
+        label={sent ? "Visit requested" : sending ? "Sending…" : "Request Visit"}
+        variant={sent ? "light" : undefined}
+        onPress={onRequest}
+        style={{ marginTop: 14 }}
+        testID="visit-request"
+      />
+      {sent ? (
+        <T weight={500} size={12.5} color={colors.muted} style={{ marginTop: 10, lineHeight: 18 }}>
+          The seller has been notified and will confirm the slot with you.
+        </T>
+      ) : null}
     </Screen>
   );
 }

@@ -355,11 +355,24 @@ export function Storefront({
           </T>
         )}
 
-        {/* ---------- INQUIRIES, above the catalogue, owner only ---------- */}
+        {/* ---------- INQUIRIES, above the catalogue, owner only ----------
+
+            THE ZERO STATE IS NOT A BOX. A bordered container with three
+            lines in it made having no inquiries the loudest thing on an
+            agent's own shop. Nothing is a heading and one muted line; the
+            bordered strip appears only once there is something in it.
+
+            The heading is rendered in BOTH states, not just the empty one:
+            the strip had no label at all before, and giving one only to the
+            empty case would mean the section names itself when it is empty
+            and goes anonymous when it fills up. */}
         {owning ? (
-          <View style={styles.strip} testID="store-inquiry-strip">
+          <View style={{ marginTop: 18 }}>
+            <T weight={800} size={19} ls={-0.5}>
+              Inquiries
+            </T>
             {storeLeads.length ? (
-              <>
+              <View style={styles.strip} testID="store-inquiry-strip">
                 {storeLeads.slice(0, 3).map((lead: any, i: number) => (
                   <View key={lead.id}>
                     {i > 0 ? <View style={threadRowStyles.divider} /> : null}
@@ -386,11 +399,11 @@ export function Storefront({
                     </T>
                   </Pressable>
                 ) : null}
-              </>
+              </View>
             ) : (
-              <View style={styles.leadRow}>
-                <T weight={500} size={13.5} color={colors.muted} style={{ lineHeight: 19 }}>
-                  Add a property and buyers who contact you will show up here first.
+              <View testID="store-inquiry-empty">
+                <T weight={500} size={13.5} color={colors.muted} style={{ marginTop: 6, lineHeight: 19 }}>
+                  Buyers who contact you will show up here.
                 </T>
               </View>
             )}
@@ -517,7 +530,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 18, paddingTop: 16 },
   bio: { lineHeight: 20, color: "#2f2f2f" },
   strip: {
-    marginTop: 16,
+    marginTop: 10,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.line,

@@ -3,7 +3,8 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { ChoiceCard, ChoiceGrid } from "@/src/components/choice";
-import { Button, PageHead, Screen, SectionLabel, Textarea } from "@/src/components/ui";
+import { Button, PageHead, Screen, SectionLabel, T, Textarea } from "@/src/components/ui";
+import { colors } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
 const TYPES = [
@@ -15,13 +16,28 @@ const TYPES = [
 
 export default function ReportBug() {
   const router = useRouter();
-  const { submitBug } = useApp();
+  const { submitBug, showToast } = useApp();
   const [type, setType] = useState(TYPES[0].title);
   const [desc, setDesc] = useState("");
+  const [sending, setSending] = useState(false);
+  // Confirms in place, and KEEPS THE TICKET ON SCREEN. /bug-submitted was the
+  // only place the ticket number ever appeared, so a toast on its own would
+  // have thrown away the one piece of information the user needs to quote
+  // back. The toast says it went; the line below says what it is called.
+  const [ticket, setTicket] = useState<string | null>(null);
 
   const submit = async () => {
-    const ticket = await submitBug(type, desc);
-    router.replace(`/bug-submitted?ticket=${encodeURIComponent(ticket)}`);
+    if (sending || ticket) return;
+    setSending(true);
+    try {
+      const id = await submitBug(type, desc);
+      setTicket(id);
+      showToast("Report sent");
+    } catch {
+      showToast("Could not send the report. Check your connection and try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -34,7 +50,17 @@ export default function ReportBug() {
       </ChoiceGrid>
       <View style={{ marginTop: 16, gap: 12 }}>
         <Textarea value={desc} onChangeText={setDesc} placeholder="Describe what happened, and what you expected instead..." testID="bug-desc" />
-        <Button label="Submit report" onPress={submit} testID="bug-submit" />
+        <Button
+          label={ticket ? "Report sent" : sending ? "Sending…" : "Submit report"}
+          variant={ticket ? "light" : undefined}
+          onPress={submit}
+          testID="bug-submit"
+        />
+        {ticket ? (
+          <T weight={500} size={13} color={colors.muted} style={{ lineHeight: 19 }}>
+            Your reference is {ticket}. Quote it if you contact support about this.
+          </T>
+        ) : null}
       </View>
     </Screen>
   );

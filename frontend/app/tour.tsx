@@ -16,12 +16,36 @@ export default function Tour() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listings } = useApp();
+  const { listings, sellerOf, addLead, showToast } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const pano = listing.g[0];
   const q = `?id=${listing.id}`;
 
   const [room, setRoom] = useState(ROOMS[0]);
+  // Same treatment as /detail: contacting the seller writes the lead here and
+  // confirms in place. It used to push /contact, which existed only to write
+  // that lead and then say so.
+  const [contacting, setContacting] = useState(false);
+  const [contacted, setContacted] = useState(false);
+
+  const contactSeller = async () => {
+    if (contacting || contacted) return;
+    const seller = sellerOf(listing);
+    if (!seller) {
+      showToast("This listing has no seller on record. Nothing was sent.");
+      return;
+    }
+    setContacting(true);
+    try {
+      await addLead(listing.id, seller.id, "contact");
+      setContacted(true);
+      showToast("Request sent. The seller has been notified.");
+    } catch {
+      showToast("Could not send the request. Check your connection and try again.");
+    } finally {
+      setContacting(false);
+    }
+  };
   const [paused, setPaused] = useState(false);
   const pan = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -130,9 +154,14 @@ export default function Tour() {
               Schedule Visit
             </T>
           </Pressable>
-          <Pressable style={[styles.actBtn, { backgroundColor: colors.red }]} onPress={() => router.push(`/contact${q}`)} testID="tour-contact">
+          <Pressable
+            style={[styles.actBtn, { backgroundColor: contacted ? "#12a05e" : colors.red }]}
+            disabled={contacted}
+            onPress={contactSeller}
+            testID="tour-contact"
+          >
             <T weight={900} size={14} color="#fff">
-              Contact Seller
+              {contacted ? "Requested" : contacting ? "Sending…" : "Contact Seller"}
             </T>
           </Pressable>
         </View>
