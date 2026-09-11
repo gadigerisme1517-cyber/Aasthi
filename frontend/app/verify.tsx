@@ -94,7 +94,7 @@ export default function Verify() {
             </T>
           </Block>
 
-          <T weight={900} size={11} color={colors.faint} ls={0.6} style={{ marginTop: 20, marginBottom: 10, textTransform: "uppercase" }}>
+          <T weight={700} size={11} color={colors.faint} ls={0.6} style={{ marginTop: 20, marginBottom: 10, textTransform: "uppercase" }}>
             Documents
           </T>
           <View style={{ gap: 10 }}>

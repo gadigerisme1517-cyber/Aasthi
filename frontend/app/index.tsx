@@ -12,11 +12,11 @@ export default function Index() {
     return (
       <View style={styles.splash} testID="splash-screen">
         <View style={styles.mark}>
-          <T weight={900} size={30} color={colors.black}>
+          <T weight={700} size={30} color={colors.black}>
             A
           </T>
         </View>
-        <T weight={900} size={22} color={colors.white} ls={4} style={{ marginTop: 20 }}>
+        <T weight={700} size={22} color={colors.white} ls={4} style={{ marginTop: 20 }}>
           AASTHI
         </T>
         <T weight={600} size={12} color="rgba(255,255,255,0.6)" style={{ marginTop: 8 }}>

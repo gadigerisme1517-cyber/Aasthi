@@ -135,7 +135,7 @@ export default function Admin() {
       <View style={[styles.loginWrap, { paddingTop: insets.top + 40 }]}>
         <View style={styles.card}>
           <View style={styles.mark}>
-            <T weight={900} size={22} color="#fff">
+            <T weight={700} size={22} color="#fff">
               A
             </T>
           </View>
@@ -163,7 +163,7 @@ export default function Admin() {
             </View>
             <Pressable style={styles.google} onPress={doGoogle} testID="admin-google">
               <Icon name="globe" size={18} color={colors.ink} />
-              <T weight={900} size={14}>
+              <T weight={700} size={14}>
                 Continue with Google
               </T>
             </Pressable>
@@ -188,7 +188,7 @@ export default function Admin() {
       <View style={[styles.topbar, { paddingTop: insets.top + 14 }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <View style={styles.markSm}>
-            <T weight={900} size={14} color="#fff">
+            <T weight={700} size={14} color="#fff">
               A
             </T>
           </View>
@@ -218,7 +218,7 @@ export default function Admin() {
                 </T>
                 {typeof t.count === "number" ? (
                   <View style={[styles.badge, on && { backgroundColor: "rgba(255,255,255,0.25)" }]}>
-                    <T weight={900} size={11} color={on ? "#fff" : colors.ink}>
+                    <T weight={700} size={11} color={on ? "#fff" : colors.ink}>
                       {t.count}
                     </T>
                   </View>
@@ -272,7 +272,7 @@ export default function Admin() {
                         { label: "Ownership proof", uri: it.ownershipDocUrl },
                       ].map((doc) => (
                         <View key={doc.label} style={{ flex: 1 }}>
-                          <T weight={900} size={9} color={colors.faint} ls={0.5} style={styles.docLabel}>
+                          <T weight={700} size={9} color={colors.faint} ls={0.5} style={styles.docLabel}>
                             {doc.label}
                           </T>
                           {doc.uri ? (
@@ -316,12 +316,12 @@ export default function Admin() {
                 {tab !== "bugs" ? (
                   <View style={styles.actions}>
                     <Pressable style={[styles.act, { backgroundColor: colors.green }]} onPress={() => act(it.id, "approve")} testID={`admin-approve-${it.id}`}>
-                      <T weight={900} size={12} color="#fff">
+                      <T weight={700} size={12} color="#fff">
                         Approve
                       </T>
                     </Pressable>
                     <Pressable style={[styles.act, { backgroundColor: colors.soft }]} onPress={() => act(it.id, "reject")} testID={`admin-reject-${it.id}`}>
-                      <T weight={900} size={12} color={colors.red}>
+                      <T weight={700} size={12} color={colors.red}>
                         Reject
                       </T>
                     </Pressable>

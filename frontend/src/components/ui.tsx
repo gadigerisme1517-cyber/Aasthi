@@ -325,7 +325,7 @@ export function SectionHead({
       </View>
       {link ? (
         <Pressable onPress={onLink} testID={`link-${link}`}>
-          <T weight={900} size={13}>
+          <T weight={700} size={13}>
             {link}
           </T>
         </Pressable>
@@ -337,7 +337,7 @@ export function SectionHead({
 export function SectionLabel({ children }: { children: string }) {
   return (
     <T
-      weight={900}
+      weight={700}
       size={10}
       color={colors.faint}
       ls={0.6}
@@ -475,7 +475,7 @@ export function Empty({ title, body }: { title: string; body: string }) {
 export function TrustTag({ label }: { label: string }) {
   return (
     <View style={styles.trustTag}>
-      <T weight={900} size={10} color={colors.white}>
+      <T weight={700} size={10} color={colors.white}>
         {label}
       </T>
     </View>
@@ -521,7 +521,7 @@ export function ListingStatusTag({
       ]}
     >
       <View style={[styles.statusDot, { backgroundColor: s.color }]} />
-      <T weight={900} size={compact ? 8.5 : 10} color={s.color}>
+      <T weight={700} size={compact ? 8.5 : 10} color={s.color}>
         {compact ? s.short : s.label}
       </T>
     </View>
@@ -558,7 +558,7 @@ export function SaleStatusTag({
         compact && { height: 20, paddingHorizontal: 8 },
       ]}
     >
-      <T weight={900} size={compact ? 8.5 : 10} color={colors.white}>
+      <T weight={700} size={compact ? 8.5 : 10} color={colors.white}>
         {s.label}
       </T>
     </View>

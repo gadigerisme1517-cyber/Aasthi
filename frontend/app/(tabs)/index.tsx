@@ -21,7 +21,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   // browseListings, not listings: blocked sellers' properties must not appear.
   // sellerOf is no longer needed here: the browse card carries no seller strip.
-  const { browseListings, sellers, listingsBySeller, isSaved, toggleSave, selectedLocation } =
+  const { browseListings, sellers, listingsBySeller, isSaved, toggleSave, iOwn, selectedLocation } =
     useApp();
   const [cat, setCat] = useState<string>("All");
 
@@ -54,7 +54,7 @@ export default function Home() {
             <View style={styles.topRow}>
               <View style={styles.brandRow}>
                 <View style={styles.mark}>
-                  <T weight={900} size={16} color={colors.black}>A</T>
+                  <T weight={700} size={16} color={colors.black}>A</T>
                 </View>
                 <View>
                   <T weight={700} size={11.5} color="#fff" ls={2.6}>AASTHI</T>
@@ -66,7 +66,7 @@ export default function Home() {
               <View style={styles.topActions}>
                 <Pressable style={styles.locationPill} onPress={() => router.push("/location")} testID="home-location">
                   <Icon name="mapPin" size={13} color="#fff" />
-                  <T weight={900} size={11.5} color="#fff" numberOfLines={1} style={{ maxWidth: 116 }}>
+                  <T weight={700} size={11.5} color="#fff" numberOfLines={1} style={{ maxWidth: 116 }}>
                     {selectedLocation.name}
                   </T>
                 </Pressable>
@@ -77,7 +77,7 @@ export default function Home() {
             </View>
 
             <View style={styles.heroContent}>
-              <T weight={900} size={9.5} color="rgba(255,255,255,0.74)" ls={1.2} style={{ textTransform: "uppercase" }}>
+              <T weight={700} size={9.5} color="rgba(255,255,255,0.74)" ls={1.2} style={{ textTransform: "uppercase" }}>
                 For local Indian property buyers
               </T>
               <T weight={700} size={34} color="#fff" ls={-1.3} style={{ marginTop: 10, marginBottom: 9, lineHeight: 34 }}>
@@ -137,7 +137,8 @@ export default function Home() {
                 listing={l}
                 saved={isSaved(l.id)}
                 onPress={() => router.push(`/detail?id=${l.id}`)}
-                onToggleSave={() => toggleSave(l.id)}
+                // No heart on a property you published. Ownership, not mode.
+                onToggleSave={iOwn(l) ? undefined : () => toggleSave(l.id)}
               />
             ))
           ) : (
@@ -145,7 +146,7 @@ export default function Home() {
           )}
 
           <View style={styles.editorial}>
-            <T weight={900} size={9.5} color="#8c7555" ls={1.1} style={{ textTransform: "uppercase" }}>
+            <T weight={700} size={9.5} color="#8c7555" ls={1.1} style={{ textTransform: "uppercase" }}>
               Why AASTHI
             </T>
             <T weight={700} size={20} ls={-0.7} style={{ marginTop: 9 }}>
@@ -192,7 +193,7 @@ export default function Home() {
 
         <View style={{ paddingHorizontal: 18 }}>
           <Pressable style={styles.nativeSpot} onPress={() => router.push("/sell/boost")} testID="home-promoted">
-            <T weight={900} size={9.5} color="#b9b9b9" ls={1.1} style={{ textTransform: "uppercase" }}>
+            <T weight={700} size={9.5} color="#b9b9b9" ls={1.1} style={{ textTransform: "uppercase" }}>
               Promoted Property
             </T>
             <T weight={700} size={18} color="#fff" ls={-0.5} style={{ marginTop: 6 }}>
@@ -202,7 +203,7 @@ export default function Home() {
               Paid listings appear neatly inside the app without disturbing users.
             </T>
             <View style={styles.spotBtn}>
-              <T weight={900} size={11} color={colors.ink}>View promotion</T>
+              <T weight={700} size={11} color={colors.ink}>View promotion</T>
             </View>
           </Pressable>
 

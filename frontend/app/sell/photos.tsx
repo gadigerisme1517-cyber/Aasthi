@@ -86,7 +86,7 @@ function MoreRow({ tag, title, sub, onPress, testID }: { tag: string; title: str
   return (
     <Pressable style={styles.moreRow} onPress={onPress} testID={testID}>
       <View style={{ flex: 1 }}>
-        <T weight={900} size={10} color="#8b8b8b" ls={0.6} style={{ textTransform: "uppercase", marginBottom: 5 }}>
+        <T weight={700} size={10} color="#8b8b8b" ls={0.6} style={{ textTransform: "uppercase", marginBottom: 5 }}>
           {tag}
         </T>
         <T weight={700} size={15}>

@@ -98,7 +98,7 @@ export default function Saved() {
               onPress={() => setTab(t)}
               testID={`saved-tab-${t}`}
             >
-              <T weight={900} size={12} color={on ? colors.white : colors.ink}>
+              <T weight={700} size={12} color={on ? colors.white : colors.ink}>
                 {t === "properties" ? "Properties" : "Stores"}
                 {count ? ` (${count})` : ""}
               </T>

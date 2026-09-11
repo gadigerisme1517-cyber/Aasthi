@@ -3,12 +3,16 @@ import { useMemo } from "react";
 
 import { Empty, PageHead, Screen } from "@/src/components/ui";
 import { Storefront } from "@/src/components/storefront";
+import { auth } from "@/src/services/firebase";
 import { useApp } from "@/src/store/AppContext";
 
-// The PUBLIC storefront. Same template as the Profile tab, rendered for a
-// buyer. This route is always the buyer version, including when the agent
-// reaches it themselves — /seller IS the public page, and previewing your own
-// store is a mode switch on the Profile tab, not this route.
+// The PUBLIC storefront. Same template as the Profile tab.
+//
+// It used to be hardcoded to the buyer version even when the agent arrived at
+// their own store. That was wrong: ownership is a fact about the uid, not
+// about the route. When the uid is yours this renders the owner version, the
+// same one the Profile tab shows, and "View as buyer" is still the way to
+// preview it.
 //
 // Two kinds of store arrive here:
 //   ?uid=  a real agent. Identity is reconstructed from the fields
@@ -19,6 +23,7 @@ import { useApp } from "@/src/store/AppContext";
 export default function SellerStore() {
   const { id, uid } = useLocalSearchParams<{ id?: string; uid?: string }>();
   const { sellers, listings, listingsBySeller } = useApp();
+  const isMine = Boolean(uid) && uid === auth.currentUser?.uid;
 
   const mine = useMemo(
     () => (uid ? listings.filter((l) => (l as any).sellerUid === uid) : listingsBySeller(Number(id))),
@@ -65,5 +70,10 @@ export default function SellerStore() {
     );
   }
 
-  return <Storefront identity={identity} listings={mine} isOwner={false} />;
+  // WAS hardcoded false. Reaching your own store through this route — from
+  // the "Listed by" row on one of your own listings, say — rendered it as a
+  // stranger's: Follow, Share, and a muted line offering you your own number
+  // after an inquiry. Ownership is a fact about the uid, not about the route
+  // you arrived by.
+  return <Storefront identity={identity} listings={mine} isOwner={isMine} />;
 }

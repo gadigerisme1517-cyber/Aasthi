@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button, PageHead, Screen, T } from "@/src/components/ui";
+import { Button, Empty, PageHead, Screen, T } from "@/src/components/ui";
 import { colors, shadow } from "@/src/theme";
 import { useApp } from "@/src/store/AppContext";
 
@@ -31,10 +31,13 @@ function buildSlots(now: Date) {
 export default function Visit() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listings, sellerOf, addLead, showToast } = useApp();
+  const { listings, sellerOf, addLead, showToast, iOwn } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const [slot, setSlot] = useState(0);
   const [SLOTS] = useState(() => buildSlots(new Date()));
+
+  // Entry guard, same reason as /enquiry.
+  const mine = iOwn(listing);
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -62,6 +65,17 @@ export default function Visit() {
       setSending(false);
     }
   };
+
+  if (mine) {
+    return (
+      <Screen header={<PageHead title="Schedule Visit" onBack={() => router.back()} />}>
+        <Empty
+          title="This is your listing"
+          body="You cannot book a viewing of a property you published. Buyers who ask to visit appear under Inquiries."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen header={<PageHead title="Schedule Visit" onBack={() => router.back()} />}>

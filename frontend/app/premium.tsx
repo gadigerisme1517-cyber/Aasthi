@@ -33,7 +33,7 @@ export default function Premium() {
   return (
     <Screen header={<PageHead title="AASTHI Premium" onBack={() => router.back()} />}>
       <Block style={{ marginTop: 14 }}>
-        <T weight={900} size={22} ls={-0.8}>
+        <T weight={700} size={22} ls={-0.8}>
           Serious buyer access
         </T>
         <T weight={500} size={13} color={colors.muted} style={{ marginTop: 8, lineHeight: 20 }}>
@@ -54,11 +54,11 @@ export default function Premium() {
         {PLANS.map((plan) => (
           <Pressable key={plan.name} style={styles.plan} onPress={() => choose(plan)} testID={`premium-${plan.name.toLowerCase().replace(/\s+/g, "-")}`}>
             <View style={{ flex: 1 }}>
-              <T weight={900} size={16}>{plan.name}</T>
+              <T weight={700} size={16}>{plan.name}</T>
               <T weight={500} size={12} color={colors.muted} style={{ marginTop: 4 }}>{plan.views} contact number views</T>
             </View>
             <View style={{ alignItems: "flex-end" }}>
-              <T weight={900} size={19}>{plan.price}</T>
+              <T weight={700} size={19}>{plan.price}</T>
               <T weight={700} size={10.5} color={colors.muted}>{plan.term}</T>
             </View>
           </Pressable>

@@ -2,14 +2,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
-import { Button, Field, PageHead, Screen, Textarea } from "@/src/components/ui";
+import { Button, Empty, Field, PageHead, Screen, Textarea } from "@/src/components/ui";
 import { useApp } from "@/src/store/AppContext";
 
 export default function Enquiry() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listings, sellerOf, addLead, showToast } = useApp();
+  const { listings, sellerOf, addLead, showToast, iOwn } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
+
+  // ENTRY GUARD. A deep link is a doorway like any other: /enquiry?id=<my own
+  // listing> used to render the form and write a lead from me to me. Refused
+  // here, and refused again in addLead, which throws on buyerUid === sellerUid.
+  const mine = iOwn(listing);
 
   const [subject, setSubject] = useState("I am interested in this property");
   const [msg, setMsg] = useState("Please share more details and available visit timings.");
@@ -45,6 +50,17 @@ export default function Enquiry() {
       setSending(false);
     }
   };
+
+  if (mine) {
+    return (
+      <Screen header={<PageHead title="Inquiry" onBack={() => router.back()} />}>
+        <Empty
+          title="This is your listing"
+          body="You cannot send an inquiry about a property you published. Open it from your store to edit it instead."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen keyboard header={<PageHead title="Inquiry" onBack={() => router.back()} />}>

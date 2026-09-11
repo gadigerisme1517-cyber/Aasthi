@@ -95,11 +95,11 @@ export default function Login() {
         />
         <View style={[styles.heroContent, { paddingTop: insets.top + 20 }]}>
           <View style={styles.mark}>
-            <T weight={900} size={17} color={colors.black}>
+            <T weight={700} size={17} color={colors.black}>
               A
             </T>
           </View>
-          <T weight={900} size={10.5} color="#fff" ls={3} style={{ marginTop: 8 }}>
+          <T weight={700} size={10.5} color="#fff" ls={3} style={{ marginTop: 8 }}>
             AASTHI
           </T>
           <T weight={700} size={26} color="#fff" ls={-0.5} style={{ marginTop: "auto", maxWidth: 300 }}>
@@ -123,7 +123,7 @@ export default function Login() {
               onPress={() => setMode("signin")}
               testID="mode-signin"
             >
-              <T weight={900} size={12} color={mode === "signin" ? colors.white : colors.ink}>
+              <T weight={700} size={12} color={mode === "signin" ? colors.white : colors.ink}>
                 Sign in
               </T>
             </Pressable>
@@ -132,7 +132,7 @@ export default function Login() {
               onPress={() => setMode("signup")}
               testID="mode-signup"
             >
-              <T weight={900} size={12} color={mode === "signup" ? colors.white : colors.ink}>
+              <T weight={700} size={12} color={mode === "signup" ? colors.white : colors.ink}>
                 Create account
               </T>
             </Pressable>
@@ -205,11 +205,11 @@ export default function Login() {
           <View style={{ gap: 8 }}>
             <Pressable style={styles.social} onPress={submitGoogle} testID="login-google">
               <View style={styles.googleLogo}>
-                <T weight={900} size={16} color="#4285F4" ls={0}>
+                <T weight={700} size={16} color="#4285F4" ls={0}>
                   G
                 </T>
               </View>
-              <T weight={900} size={13}>
+              <T weight={700} size={13}>
                 Continue with Google
               </T>
             </Pressable>

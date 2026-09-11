@@ -64,12 +64,13 @@ export function factsFor(listing: Listing): Fact[] {
   const anyL = listing as any;
 
   if (kind === "home") {
-    // "floor" is in the spec but there is NO floor field on Listing, so this
-    // branch can never fire today. Left in place, and named in the report,
-    // rather than quietly dropped: it becomes live the day the field exists.
-    const third = has(anyL.floor) && !has(listing.facing)
-      ? { value: val(anyL.floor), label: "floor" }
-      : { value: val(listing.facing), label: "facing" };
+    // floor only when there is no facing. A number, so 0 is ground floor and
+    // must not read as missing — hence the typeof test rather than has().
+    const hasFloor = typeof listing.floor === "number" && Number.isFinite(listing.floor);
+    const third =
+      hasFloor && !has(listing.facing)
+        ? { value: String(listing.floor), label: "floor" }
+        : { value: val(listing.facing), label: "facing" };
     return [
       { value: val(listing.beds), label: "bed" },
       { value: bare(listing.area), label: "sq ft" },
@@ -78,12 +79,14 @@ export function factsFor(listing: Listing): Fact[] {
   }
 
   if (kind === "land") {
-    // `corner` does not exist on Listing either. It renders "–" and keeps its
-    // column, which is what the spec asks for a missing field.
+    // corner is a boolean: true -> "Yes", false -> "No", absent -> "–".
+    // A listing that has never been asked the question is not a "No".
+    const corner =
+      typeof listing.corner === "boolean" ? (listing.corner ? "Yes" : "No") : MISSING;
     return [
       { value: bare(listing.area), label: "sq yd" },
       { value: val(listing.facing), label: "facing" },
-      { value: val(anyL.corner), label: "corner" },
+      { value: corner, label: "corner" },
     ];
   }
 

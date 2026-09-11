@@ -48,7 +48,7 @@ export default function MyEnquiries() {
               onPress={() => setSide(s)}
               testID={`enquiries-tab-${s}`}
             >
-              <T weight={900} size={12} color={on ? colors.white : colors.ink}>
+              <T weight={700} size={12} color={on ? colors.white : colors.ink}>
                 {s === "received" ? "Received" : "Sent"}
                 {count ? ` (${count})` : ""}
               </T>

@@ -12,7 +12,7 @@ export default function Boost() {
   return (
     <Screen header={<PageHead title="Promote Listing" onBack={() => router.push("/(tabs)")} />}>
       <View style={styles.spot}>
-        <T weight={900} size={10} color="#b9b9b9" ls={1.4} style={{ textTransform: "uppercase" }}>
+        <T weight={700} size={10} color="#b9b9b9" ls={1.4} style={{ textTransform: "uppercase" }}>
           Property Promotion
         </T>
         <T weight={700} size={21} color="#fff" ls={-1} style={{ marginTop: 8 }}>
@@ -32,7 +32,7 @@ export default function Boost() {
             Top placement · UPI & cards via Razorpay
           </T>
         </View>
-        <T weight={900} size={22} ls={-1}>
+        <T weight={700} size={22} ls={-1}>
           ₹499
         </T>
       </View>

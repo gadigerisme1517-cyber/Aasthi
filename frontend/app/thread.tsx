@@ -170,7 +170,7 @@ export default function Thread() {
               onPress={onSend}
               testID="thread-send"
             >
-              <T weight={900} size={12.5} color={colors.white}>
+              <T weight={700} size={12.5} color={colors.white}>
                 {sending ? "…" : "Send"}
               </T>
             </Pressable>
@@ -226,7 +226,7 @@ export default function Thread() {
             }
           >
             <Icon name="phone" size={15} color={colors.white} />
-            <T weight={900} size={12.5} color={colors.white}>
+            <T weight={700} size={12.5} color={colors.white}>
               Call {lead.buyerPhone}
             </T>
           </Pressable>

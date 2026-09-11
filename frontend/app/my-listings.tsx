@@ -49,10 +49,10 @@ export default function MyListings() {
             >
               <Image source={{ uri: l.img }} style={styles.thumb} contentFit="cover" />
               <View style={{ flex: 1 }}>
-                <T weight={900} size={9.5} ls={0.5} color="#8b8b8b" style={styles.eyebrow}>
+                <T weight={700} size={9.5} ls={0.5} color="#8b8b8b" style={styles.eyebrow}>
                   {l.type} · {l.facing} facing
                 </T>
-                <T weight={900} size={16} ls={-0.5}>
+                <T weight={700} size={16} ls={-0.5}>
                   {l.price}
                 </T>
                 <T weight={700} size={13} numberOfLines={2} style={{ marginVertical: 4 }}>

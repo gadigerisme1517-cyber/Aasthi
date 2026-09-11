@@ -26,7 +26,7 @@ export default function SellLocation() {
         </T>
         <View style={styles.mapBox}>
           <View style={styles.pin}>
-            <T weight={900} size={11} color="#fff">
+            <T weight={700} size={11} color="#fff">
               {draft.addr || "Set your property address"}
             </T>
           </View>

@@ -14,7 +14,7 @@ export default function About() {
     <Screen header={<PageHead title="About AASTHI" onBack={() => router.back()} />}>
       <View style={styles.head}>
         <View style={styles.mark}>
-          <T weight={900} size={26} color="#fff">
+          <T weight={700} size={26} color="#fff">
             A
           </T>
         </View>

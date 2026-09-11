@@ -77,7 +77,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         <Icon name={icon} size={19} color="#7e7e7e" />
         {badge > 0 ? (
           <View style={styles.badge} testID={`${testID}-badge`}>
-            <T weight={900} size={9} color={colors.white}>
+            <T weight={700} size={9} color={colors.white}>
               {badge > 9 ? "9+" : String(badge)}
             </T>
           </View>

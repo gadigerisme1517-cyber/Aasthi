@@ -40,6 +40,14 @@ export default function EditListing() {
   const [beds, setBeds] = useState(listing?.beds === "-" ? "" : (listing?.beds ?? ""));
   const [baths, setBaths] = useState(listing?.baths === "-" ? "" : (listing?.baths ?? ""));
   const [desc, setDesc] = useState(listing?.desc ?? "");
+  // Same two optional answers as the publish form. Blank means unanswered and
+  // stays unanswered; the facts column shows "–" rather than a fabricated 0.
+  const [floor, setFloor] = useState(
+    typeof (listing as any)?.floor === "number" ? String((listing as any).floor) : "",
+  );
+  const [corner, setCorner] = useState<string>(
+    typeof (listing as any)?.corner === "boolean" ? ((listing as any).corner ? "yes" : "no") : "",
+  );
   const [photos, setPhotos] = useState<string[]>(
     listing ? ([listing.img, ...(listing.g ?? [])].filter(Boolean) as string[]) : [],
   );
@@ -167,6 +175,10 @@ export default function EditListing() {
         g: finalPhotos.slice(1),
         saleStatus,
         hidden: !visible,
+        ...(floor.trim() !== "" && Number.isFinite(Number(floor))
+          ? { floor: Number(floor) }
+          : {}),
+        ...(corner === "yes" || corner === "no" ? { corner: corner === "yes" } : {}),
         // Only written when a re-review is actually due, so a description
         // fix never touches an approved listing's status.
         ...(needsReverify ? { verificationStatus: "pending" } : {}),
@@ -219,6 +231,23 @@ export default function EditListing() {
             ? "Token paid stays visible to buyers, marked so they know it is nearly gone."
             : "Live means still available and shown everywhere."}
       </T>
+
+      <SectionLabel>Floor and corner</SectionLabel>
+      <View style={{ gap: 12 }}>
+        <Field
+          value={floor}
+          onChangeText={setFloor}
+          placeholder="Floor (optional, 0 for ground)"
+          keyboardType="number-pad"
+          testID="edit-floor"
+        />
+        <SelectChips
+          items={["Not stated", "Yes", "No"]}
+          value={corner === "yes" ? "Yes" : corner === "no" ? "No" : "Not stated"}
+          onSelect={(v) => setCorner(v === "Yes" ? "yes" : v === "No" ? "no" : "")}
+          testIDPrefix="edit-corner"
+        />
+      </View>
 
       <SectionLabel>Visibility</SectionLabel>
       <ToggleRow

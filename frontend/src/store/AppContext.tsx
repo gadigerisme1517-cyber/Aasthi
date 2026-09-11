@@ -112,6 +112,11 @@ export type Draft = {
   facing: string;
   beds: string;
   baths: string;
+  // Typed as strings on the draft because the form fields are text inputs;
+  // they are parsed at publish time into the number / boolean the Listing
+  // declares. "" means the seller did not answer, and stays unanswered.
+  floor: string;
+  corner: string; // "" | "yes" | "no"
   desc: string;
   vastu: string;
   tourLink: string;
@@ -160,6 +165,8 @@ function freshDraft(): Draft {
     facing: "East",
     beds: "-",
     baths: "-",
+    floor: "",
+    corner: "",
     desc: "East-facing independent house with wide road access, premium interiors and clear documents.",
     vastu: "Entrance east-facing. Kitchen southeast. Puja room northeast.",
     tourLink: "https://youtube.com/360-tour-demo",
@@ -235,6 +242,9 @@ type Ctx = {
   // Null when the listing has no sellerUid and its numeric `seller` matches
   // nothing. Callers render the seller block not at all rather than blank.
   sellerOf: (l: Listing) => Seller | null;
+  // TRUE when the signed-in user published this listing. The one owner test
+  // in the app — every screen asks this, none re-derives it.
+  iOwn: (l: any) => boolean;
   updateAccount: (data: Partial<User>) => Promise<void>;
   setSetting: (k: keyof Settings, v: boolean | string) => void;
   setDraft: (patch: Partial<Draft>) => void;
@@ -485,16 +495,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [uid]);
 
   // ---- Saved ----
+  // OWNERSHIP, decided in one place. sellerUid is the only truth: a seeded
+  // listing has none, so nobody owns it and every viewer stays a buyer.
+  //
+  // Guards read from HERE, never from a view mode. "View as buyer" is a
+  // preview switch, not a change of identity — a guard hung off it evaporates
+  // the moment the agent taps preview, which is exactly the bug that let an
+  // owner heart their own listing on their own storefront.
+  const iOwn = useCallback(
+    (l: any) => Boolean(l?.sellerUid) && l.sellerUid === uid,
+    [uid],
+  );
+
   const toggleSave = useCallback(
     (id: string) => {
       if (!uid) {
         showToast("Sign in to save properties");
         return;
       }
+      // You cannot shortlist your own property. The UI hides the heart, and
+      // this is the floor under it: a deep link or a stale screen cannot
+      // write it either.
+      if (iOwn(listings.find((l) => l.id === id))) {
+        showToast("This is your own listing.");
+        return;
+      }
       const next = saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id];
       saveUserDoc(uid, { saved: next });
     },
-    [uid, saved, showToast],
+    [uid, saved, showToast, iOwn, listings],
   );
 
   const isSaved = useCallback((id: string) => saved.includes(id), [saved]);
@@ -712,6 +741,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       baths: draft.baths,
       area: draft.area,
       facing: draft.facing,
+      // Written ONLY when answered. Firestore is initialised without
+      // ignoreUndefinedProperties, and more to the point an unanswered
+      // question must not arrive as 0 or false.
+      ...(draft.floor.trim() !== "" && Number.isFinite(Number(draft.floor))
+        ? { floor: Number(draft.floor) }
+        : {}),
+      ...(draft.corner === "yes" || draft.corner === "no"
+        ? { corner: draft.corner === "yes" }
+        : {}),
       dist: "1.0 km",
       // USER_SELLER_ID, not 0. `seller: 0` attributed every user's property
       // to the seeded company "Sri Homes Realty".
@@ -763,6 +801,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // when it actually has a value.
       const listing = listings.find((l) => l.id === listingId) as any;
       const sellerUid: string | undefined = listing?.sellerUid;
+      // THE FLOOR UNDER EVERY OWNERSHIP GUARD IN THE APP. A lead where the
+      // buyer and the seller are the same account is not a lead; it is the
+      // agent talking to himself, and three of them are sitting in this
+      // database because nothing stopped it. Entry guards on /enquiry,
+      // /visit and /contact refuse first — this refuses when they are
+      // bypassed by a deep link.
+      if (sellerUid && sellerUid === uid) {
+        const err: any = new Error("own-listing");
+        err.code = "own-listing";
+        throw err;
+      }
       const listingTitle: string | undefined = listing?.title;
       const sellerName: string | undefined = listing
         ? sellerOf(listing)?.name
@@ -956,6 +1005,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         showToast("Sign in to save a store");
         return;
       }
+      // Nor your own store. Same floor, same reason.
+      if (key === uid) {
+        showToast("This is your own store.");
+        return;
+      }
       const next = savedSellers.includes(key)
         ? savedSellers.filter((k) => k !== key)
         : [...savedSellers, key];
@@ -1066,6 +1120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       savedListings,
       listingsBySeller,
       sellerOf,
+      iOwn,
       updateAccount,
       setSetting,
       setDraft,
@@ -1126,6 +1181,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       savedListings,
       listingsBySeller,
       sellerOf,
+      iOwn,
       updateAccount,
       setSetting,
       setDraft,

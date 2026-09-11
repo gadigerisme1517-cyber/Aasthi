@@ -36,7 +36,7 @@ export default function PropertyPartner() {
   return (
     <Screen keyboard header={<PageHead title="Property Partner" onBack={() => router.back()} />}>
       <Block style={{ marginTop: 14 }}>
-        <T weight={900} size={22} ls={-0.8}>Sell professionally on AASTHI</T>
+        <T weight={700} size={22} ls={-0.8}>Sell professionally on AASTHI</T>
         <T weight={500} size={13} color={colors.muted} style={{ marginTop: 8, lineHeight: 20 }}>
           For agents, brokers, builders and developers who manage property sales as work.
         </T>

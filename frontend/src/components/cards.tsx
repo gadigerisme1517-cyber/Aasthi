@@ -385,7 +385,9 @@ const styles = StyleSheet.create({
   col: { flex: 1, minWidth: 0 },
   // Fixed so the three data columns never steal from trust, and trust never
   // steals from them.
-  colTrust: { flex: 0, flexBasis: 58, flexGrow: 0, flexShrink: 0 },
+  // 64, not 58: "verified" measures ~46pt at 11px Inter and 58 left only 48pt
+  // of content after the rule inset, so it sat two points from ellipsising.
+  colTrust: { flex: 0, flexBasis: 64, flexGrow: 0, flexShrink: 0 },
   colRuled: { borderLeftWidth: 1, borderLeftColor: colour.line, paddingLeft: 10 },
   sellerMini: {
     width: 168,

@@ -41,14 +41,14 @@ export default function LocationPicker() {
             <Icon name="mapPin" size={17} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <T weight={900} size={14}>All locations</T>
+            <T weight={700} size={14}>All locations</T>
             <T weight={600} size={11.5} color={colors.muted} style={{ marginTop: 2 }}>
               Show properties from every city
             </T>
           </View>
         </Pressable>
 
-        <T weight={900} size={10} color={colors.faint} ls={0.7} style={styles.label}>
+        <T weight={700} size={10} color={colors.faint} ls={0.7} style={styles.label}>
           {query.trim() ? "MATCHING LOCATIONS" : "POPULAR LOCATIONS"}
         </T>
 
@@ -69,12 +69,12 @@ export default function LocationPicker() {
                   <Icon name={active ? "check" : "mapPin"} size={15} color={active ? colors.ink : colors.muted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <T weight={900} size={14}>{location.name}</T>
+                  <T weight={700} size={14}>{location.name}</T>
                   <T weight={600} size={11.5} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
                     {location.type} - {location.district}, {location.state}
                   </T>
                 </View>
-                {active ? <T weight={900} size={11}>Selected</T> : <Icon name="chev" size={16} color={colors.faint} />}
+                {active ? <T weight={700} size={11}>Selected</T> : <Icon name="chev" size={16} color={colors.faint} />}
               </Pressable>
             );
           })}

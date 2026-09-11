@@ -37,6 +37,8 @@ export default function SellDetails() {
   const [area, setArea] = useState(draft.area);
   const [beds, setBeds] = useState(draft.beds === "-" ? "" : draft.beds);
   const [baths, setBaths] = useState(draft.baths === "-" ? "" : draft.baths);
+  const [floor, setFloor] = useState(draft.floor ?? "");
+  const [corner, setCorner] = useState(draft.corner ?? "");
   const [desc, setDesc] = useState(draft.desc);
 
   const onContinue = () => {
@@ -63,6 +65,8 @@ export default function SellDetails() {
       area: `${bareArea(area)} ${UNIT_SUFFIX[unit] ?? ""}`.trim(),
       beds: beds.trim() || "-",
       baths: baths.trim() || "-",
+      floor: floor.trim(),
+      corner,
       desc: desc.trim(),
     });
     router.push("/sell/photos");
@@ -87,6 +91,26 @@ export default function SellDetails() {
           <View style={{ flex: 1 }}>
             <Field value={baths} onChangeText={setBaths} placeholder="Baths" keyboardType="number-pad" testID="details-baths" />
           </View>
+        </View>
+        {/* BOTH OPTIONAL, and both stay unanswered when skipped. The facts
+            row shows "–" rather than inventing a ground floor or a No. */}
+        <Field
+          value={floor}
+          onChangeText={setFloor}
+          placeholder="Floor (optional, 0 for ground)"
+          keyboardType="number-pad"
+          testID="details-floor"
+        />
+        <View>
+          <T weight={700} size={11} color={colors.faint} ls={0.6} style={{ marginBottom: 8, textTransform: "uppercase" }}>
+            Corner plot
+          </T>
+          <SelectChips
+            items={["Not stated", "Yes", "No"]}
+            value={corner === "yes" ? "Yes" : corner === "no" ? "No" : "Not stated"}
+            onSelect={(v) => setCorner(v === "Yes" ? "yes" : v === "No" ? "no" : "")}
+            testIDPrefix="details-corner"
+          />
         </View>
         <Textarea value={desc} onChangeText={setDesc} placeholder="Describe the property" testID="details-desc" />
         <Button label="Continue" onPress={onContinue} testID="details-continue" />

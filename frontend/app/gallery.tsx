@@ -57,7 +57,7 @@ export default function Gallery() {
         <Pressable style={styles.closeButton} onPress={() => router.back()} testID="gallery-close">
           <Icon name="arrowLeft" size={18} color="#fff" />
         </Pressable>
-        <T weight={900} size={13} color="#fff">
+        <T weight={700} size={13} color="#fff">
           {activeIndex + 1} / {photos.length}
         </T>
       </View>

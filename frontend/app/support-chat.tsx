@@ -17,7 +17,7 @@ export default function SupportChat() {
 
       <View style={styles.row}>
         <Pressable style={[styles.btn, styles.black]} onPress={() => router.push("/report-bug")} testID="support-message">
-          <T weight={900} size={13} color="#fff">
+          <T weight={700} size={13} color="#fff">
             Send a message
           </T>
         </Pressable>

@@ -16,7 +16,7 @@ export default function Tour() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listings, sellerOf, addLead, showToast } = useApp();
+  const { listings, sellerOf, addLead, showToast, iOwn } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const pano = listing.g[0];
   const q = `?id=${listing.id}`;
@@ -96,19 +96,19 @@ export default function Tour() {
 
           <Pressable style={[styles.hotspot, { left: "60%", top: "40%" }]} onPress={() => setRoom("Kitchen")}>
             <View style={styles.dot} />
-            <T weight={900} size={11}>
+            <T weight={700} size={11}>
               Kitchen
             </T>
           </Pressable>
           <Pressable style={[styles.hotspot, { left: "20%", top: "56%" }]} onPress={() => setRoom("Main hall")}>
             <View style={styles.dot} />
-            <T weight={900} size={11}>
+            <T weight={700} size={11}>
               Hall
             </T>
           </Pressable>
           <Pressable style={[styles.hotspot, { left: "46%", top: "70%" }]} onPress={() => setRoom("Balcony")}>
             <View style={styles.dot} />
-            <T weight={900} size={11}>
+            <T weight={700} size={11}>
               Balcony
             </T>
           </Pressable>
@@ -123,7 +123,7 @@ export default function Tour() {
               </T>
             </View>
             <Pressable style={styles.hintBtn} onPress={() => setPaused((p) => !p)} testID="tour-pause">
-              <T weight={900} size={12} color="#fff">
+              <T weight={700} size={12} color="#fff">
                 {paused ? "Play" : "Pause"}
               </T>
             </Pressable>
@@ -135,7 +135,7 @@ export default function Tour() {
             const on = r === room;
             return (
               <Pressable key={r} onPress={() => setRoom(r)} style={[styles.roomChip, on && styles.roomChipOn]}>
-                <T weight={900} size={12} color={on ? colors.ink : "#fff"}>
+                <T weight={700} size={12} color={on ? colors.ink : "#fff"}>
                   {r}
                 </T>
               </Pressable>
@@ -152,9 +152,13 @@ export default function Tour() {
           </T>
         </View>
 
+        {/* Both actions are buyer actions. On your own listing neither is
+            offered: one would book you a viewing of your own property, the
+            other would write you a lead from yourself. */}
+        {iOwn(listing) ? null : (
         <View style={styles.actions}>
           <Pressable style={[styles.actBtn, { backgroundColor: "#fff" }]} onPress={() => router.push(`/visit${q}`)} testID="tour-visit">
-            <T weight={900} size={14} color={colors.ink}>
+            <T weight={700} size={14} color={colors.ink}>
               Schedule Visit
             </T>
           </Pressable>
@@ -164,11 +168,12 @@ export default function Tour() {
             onPress={contactSeller}
             testID="tour-contact"
           >
-            <T weight={900} size={14} color="#fff">
+            <T weight={700} size={14} color="#fff">
               {contacted ? "Requested" : contacting ? "Sending…" : "Contact Seller"}
             </T>
           </Pressable>
         </View>
+        )}
       </ScrollView>
     </View>
   );

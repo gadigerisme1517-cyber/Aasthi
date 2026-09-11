@@ -313,15 +313,20 @@ export function Storefront({
             </>
           ) : (
             <>
-              <Pressable
-                style={[styles.btn, styles.btnSolid]}
-                onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
-                testID="store-save"
-              >
-                <T weight={700} size={13} color={colors.ink}>
-                  {isSellerSaved(identity.key as any) ? "Saved" : "Save store"}
-                </T>
-              </Pressable>
+              {/* Not on your own store. isOwner covers the Profile tab and the
+                  owner route; this also covers buyer PREVIEW of your own
+                  store, where isOwner is true but `owning` is false. */}
+              {isOwner ? null : (
+                <Pressable
+                  style={[styles.btn, styles.btnSolid]}
+                  onPress={() => identity.key !== undefined && toggleSaveSeller(identity.key as any)}
+                  testID="store-save"
+                >
+                  <T weight={700} size={13} color={colors.ink}>
+                    {isSellerSaved(identity.key as any) ? "Saved" : "Save store"}
+                  </T>
+                </Pressable>
+              )}
               <Pressable style={[styles.btn, styles.btnOutline]} onPress={onShare} testID="store-share-action">
                 <T weight={700} size={13} color={colors.white}>
                   Share

@@ -7,10 +7,16 @@ import { useApp } from "@/src/store/AppContext";
 export default function Contact() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listings, sellerOf, addLead, showToast } = useApp();
+  const { listings, sellerOf, addLead, showToast, iOwn } = useApp();
   const listing = listings.find((l) => l.id === id) ?? listings[0];
   const logged = useRef(false);
-  const [state, setState] = useState<"sending" | "sent" | "failed" | "noseller">("sending");
+  // Entry guard. This screen writes its lead ON MOUNT, so the check has to
+  // sit in the same effect rather than in the render — by the time a render
+  // guard ran, the write would already have gone.
+  const mine = iOwn(listing);
+  const [state, setState] = useState<"sending" | "sent" | "failed" | "noseller" | "mine">(
+    "sending",
+  );
 
   // This screen writes its lead on mount, so it cannot ask the user to wait
   // before it renders. It reports the real outcome instead of always claiming
@@ -22,6 +28,10 @@ export default function Contact() {
     // sellerOf is null when this listing has no owner anything can reach.
     // Writing the lead anyway would put a request into a collection nobody
     // can read and then tell the buyer their number is on its way.
+    if (mine) {
+      setState("mine");
+      return;
+    }
     const seller = sellerOf(listing);
     if (!seller) {
       setState("noseller");
@@ -29,8 +39,8 @@ export default function Contact() {
     }
     addLead(listing.id, seller.id, "contact")
       .then(() => setState("sent"))
-      .catch(() => setState("failed"));
-  }, [listing, sellerOf, addLead]);
+      .catch((e: any) => setState(e?.code === "own-listing" ? "mine" : "failed"));
+  }, [listing, sellerOf, addLead, mine]);
 
   const retry = () => {
     const seller = sellerOf(listing);
@@ -48,7 +58,12 @@ export default function Contact() {
   };
 
   const copy =
-    state === "noseller"
+    state === "mine"
+      ? {
+          title: "This is your listing",
+          body: "You cannot request the number on a property you published — it is your own. Open it from your store to edit it.",
+        }
+      : state === "noseller"
       ? {
           title: "No seller on this listing",
           body: "This listing has no seller account behind it, so a contact request would reach nobody. Nothing was sent.",

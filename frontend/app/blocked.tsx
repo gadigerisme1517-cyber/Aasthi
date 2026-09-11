@@ -95,7 +95,7 @@ export default function Blocked() {
                 }}
                 testID={`unblock-${row.key}`}
               >
-                <T weight={900} size={11.5} color={colors.white}>
+                <T weight={700} size={11.5} color={colors.white}>
                   Unblock
                 </T>
               </Pressable>

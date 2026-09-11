@@ -32,7 +32,7 @@ const NEARBY = [
 function Fact({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.fact}>
-      <T weight={900} size={13} numberOfLines={1}>
+      <T weight={700} size={13} numberOfLines={1}>
         {value}
       </T>
       <T weight={700} size={8.5} color={colors.muted} style={{ marginTop: 2 }} numberOfLines={1}>
@@ -51,7 +51,7 @@ function Section({
 }) {
   return (
     <View style={styles.section}>
-      <T weight={900} size={10} color={colors.faint} ls={0.6} style={{ textTransform: "uppercase", marginBottom: 9 }}>
+      <T weight={700} size={10} color={colors.faint} ls={0.6} style={{ textTransform: "uppercase", marginBottom: 9 }}>
         {title}
       </T>
       {children}
@@ -227,13 +227,15 @@ export default function Detail() {
             <Pressable style={styles.circleDark} onPress={() => router.back()} testID="detail-back">
               <Icon name="arrowLeft" size={18} color="#fff" />
             </Pressable>
-            <Pressable style={styles.circleDark} onPress={() => toggleSave(listing.id)} testID="detail-save">
-              <Icon name="heart" size={18} color={saved ? colors.red : "#fff"} filled={saved} />
-            </Pressable>
+            {iOwnThis ? null : (
+              <Pressable style={styles.circleDark} onPress={() => toggleSave(listing.id)} testID="detail-save">
+                <Icon name="heart" size={18} color={saved ? colors.red : "#fff"} filled={saved} />
+              </Pressable>
+            )}
           </View>
           <View style={styles.photoCount}>
             <Icon name="camera" size={14} color="#fff" />
-            <T weight={900} size={11} color="#fff">
+            <T weight={700} size={11} color="#fff">
               {heroIndex + 1} / {heroImages.length}
             </T>
           </View>
@@ -243,7 +245,7 @@ export default function Detail() {
           <View style={styles.summary}>
             <View style={styles.priceRow}>
               <View style={{ flex: 1 }}>
-                <T weight={900} size={25} ls={-1}>
+                <T weight={700} size={25} ls={-1}>
                   {listing.price}
                 </T>
                 <T weight={700} size={17} ls={-0.4} style={{ marginTop: 4 }} numberOfLines={2}>
@@ -251,7 +253,7 @@ export default function Detail() {
                 </T>
               </View>
               <View style={styles.vastuBadge}>
-                <T weight={900} size={9} color={colors.green}>
+                <T weight={700} size={9} color={colors.green}>
                   Vastu
                 </T>
                 <T weight={700} size={11} color={colors.ink} style={{ marginTop: 2 }}>
@@ -286,7 +288,7 @@ export default function Detail() {
                 <Icon name="scan" size={19} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <T weight={900} size={14} color="#fff">
+                <T weight={700} size={14} color="#fff">
                   View 360-degree tour
                 </T>
                 <T weight={600} size={10.5} color="rgba(255,255,255,0.68)" style={{ marginTop: 2 }}>
@@ -298,13 +300,16 @@ export default function Detail() {
           ) : null}
 
           {/* Independent of the tour flag: a visit is always requestable, and
-              when tour360 returns both bars should show, not one or the other. */}
+              when tour360 returns both bars should show, not one or the other.
+              NOT for the owner — you do not book a viewing of your own house,
+              and the request would have written a lead from you to you. */}
+          {iOwnThis ? null : (
           <Pressable style={styles.tourBar} onPress={() => router.push(`/visit${q}`)} testID="detail-visit">
             <View style={styles.tourIcon}>
               <Icon name="mapPin" size={19} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <T weight={900} size={14} color="#fff">
+              <T weight={700} size={14} color="#fff">
                 Schedule a visit
               </T>
               <T weight={600} size={10.5} color="rgba(255,255,255,0.68)" style={{ marginTop: 2 }}>
@@ -313,6 +318,7 @@ export default function Detail() {
             </View>
             <Icon name="chev" size={17} color="rgba(255,255,255,0.7)" />
           </Pressable>
+          )}
 
           {/* THE WHOLE SECTION GOES when the seller cannot be resolved.
               sellerOf returns null for a listing with no sellerUid whose
@@ -363,7 +369,7 @@ export default function Detail() {
             <View style={styles.nearbyPills}>
               {NEARBY.map((item) => (
                 <View key={item.label} style={styles.nearbyPill}>
-                  <T weight={900} size={11}>
+                  <T weight={700} size={11}>
                     {item.label}
                   </T>
                   <T weight={700} size={10} color={colors.muted} style={{ marginLeft: 5 }}>
@@ -376,7 +382,7 @@ export default function Detail() {
               <View style={styles.mapRoad} />
               <View style={[styles.mapRoad, styles.mapRoadAlt]} />
               <View style={styles.mapPin}>
-                <T weight={900} size={10} color="#fff">
+                <T weight={700} size={10} color="#fff">
                   Approx. area
                 </T>
               </View>
@@ -386,7 +392,7 @@ export default function Detail() {
           <Section title="Vastu">
             <Pressable style={styles.plainRow} onPress={() => router.push(`/vastu${q}`)} testID="detail-vastu">
               <View style={{ flex: 1 }}>
-                <T weight={900} size={9.5} color={colors.faint} ls={0.5} style={{ textTransform: "uppercase" }}>
+                <T weight={700} size={9.5} color={colors.faint} ls={0.5} style={{ textTransform: "uppercase" }}>
                   Vastu
                 </T>
                 <T weight={700} size={14} style={{ marginTop: 4 }}>
@@ -428,7 +434,7 @@ export default function Detail() {
           >
             <Icon name="gear" size={16} color="#fff" />
             <View style={{ marginLeft: 8 }}>
-              <T weight={900} size={12.5} color="#fff">
+              <T weight={700} size={12.5} color="#fff">
                 Edit listing
               </T>
               <T weight={700} size={9.5} color="rgba(255,255,255,0.65)" style={{ marginTop: 1 }}>
@@ -440,7 +446,7 @@ export default function Detail() {
           <>
         <Pressable style={[styles.stickyPill, styles.messagePill]} onPress={() => router.push(`/enquiry${q}`)} testID="detail-message">
           <Icon name="message" size={16} color="#fff" />
-          <T weight={900} size={12.5} color="#fff">
+          <T weight={700} size={12.5} color="#fff">
             Inquiry
           </T>
         </Pressable>
@@ -460,7 +466,7 @@ export default function Detail() {
           testID={numberRevealed ? "detail-call-seller" : "detail-contact-number"}
         >
           <View style={styles.numberText}>
-            <T weight={900} size={12.5} color={colors.ink} numberOfLines={1}>
+            <T weight={700} size={12.5} color={colors.ink} numberOfLines={1}>
               {numberRevealed ? sellerPhone : requested ? "Requested" : "Contact number"}
             </T>
             <T weight={700} size={9.5} color={colors.muted} numberOfLines={1} style={{ marginTop: 1 }}>
@@ -477,7 +483,7 @@ export default function Detail() {
             </View>
           ) : (
             <View style={styles.numberAction}>
-              <T weight={900} size={10.5} color="#fff" numberOfLines={1}>
+              <T weight={700} size={10.5} color="#fff" numberOfLines={1}>
                 {numberRevealed ? "Call" : requesting ? "Sending…" : contactNumberLabel}
               </T>
             </View>

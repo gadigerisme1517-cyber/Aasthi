@@ -50,6 +50,15 @@ export type Listing = {
   baths: string;
   area: string;
   facing: string;
+  // Both added with the four-column facts row. NEITHER has a substitute and
+  // neither is back-filled: a listing written before they existed renders "–"
+  // in that column until someone edits it. A number here would be a guess.
+  //
+  // floor is a NUMBER, so 0 means ground floor and reads as "0", not as
+  // missing. The home columns use it only when facing is absent.
+  floor?: number;
+  // corner is a BOOLEAN, so false is an answer ("No") and undefined is not.
+  corner?: boolean;
   dist: string;
   seller: number; // seller id
   img: string;
