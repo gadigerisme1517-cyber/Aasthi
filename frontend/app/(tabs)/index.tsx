@@ -165,11 +165,14 @@ export default function Home() {
                       key={v}
                       style={[styles.viewBtn, on && styles.viewBtnOn]}
                       onPress={() => setBrowseView(v)}
+                      // The box shrank; the TARGET did not. 24 + 8 on every
+                      // side is 40, which is the floor for a thumb.
+                      hitSlop={8}
                       testID={`view-${v}`}
                     >
                       <Icon
                         name={v === "card" ? "square" : v === "compact" ? "rows" : "grid"}
-                        size={16}
+                        size={14}
                         color={on ? colors.white : colors.muted}
                       />
                     </Pressable>
@@ -324,16 +327,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     backgroundColor: colors.soft,
   },
-  viewToggle: { flexDirection: "row", gap: 6 },
+  viewToggle: { flexDirection: "row", gap: 4, alignItems: "center" },
   // Two columns with the same 10 gap the storefront grid uses.
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
+  // SIZED OFF THE HEADING, not off a round number. "Featured Properties" is
+  // Inter-700 at 20, whose cap height is 0.727em = 14.5. The ICON is 14, so
+  // the glyph stands exactly as tall as the letters beside it. The box is
+  // that plus 5 of padding a side = 24.
+  //
+  // UNSELECTED BUTTONS HAVE NO GROUND. Three filled grey boxes read as a
+  // button bar, which is heavier than the heading they sit next to; with
+  // only the selected one filled, exactly one solid shape exists at a time
+  // and the other two are just glyphs on the page.
   viewBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.soft,
+    backgroundColor: "transparent",
   },
   viewBtnOn: { backgroundColor: colors.black },
   hero: { minHeight: 330, backgroundColor: "#111" },
