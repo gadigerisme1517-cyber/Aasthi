@@ -25,8 +25,12 @@ export default function Tour() {
   // Same treatment as /detail: contacting the seller writes the lead here and
   // confirms in place. It used to push /contact, which existed only to write
   // that lead and then say so.
+  // Keyed to the listing for the same reason as /detail: this screen is reused
+  // when it is opened again with a different id, and a bare boolean would
+  // claim a request that was never made.
   const [contacting, setContacting] = useState(false);
-  const [contacted, setContacted] = useState(false);
+  const [contactedId, setContactedId] = useState<string | null>(null);
+  const contacted = contactedId === listing.id;
 
   const contactSeller = async () => {
     if (contacting || contacted) return;
@@ -38,7 +42,7 @@ export default function Tour() {
     setContacting(true);
     try {
       await addLead(listing.id, seller.id, "contact");
-      setContacted(true);
+      setContactedId(listing.id);
       showToast("Request sent. The seller has been notified.");
     } catch {
       showToast("Could not send the request. Check your connection and try again.");

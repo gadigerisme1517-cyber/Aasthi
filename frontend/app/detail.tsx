@@ -124,8 +124,13 @@ export default function Detail() {
   // had. The write is identical — same collection, same "contact" type, same
   // payload — but the buyer now stays on the property at the same scroll
   // position and the button confirms itself.
+  // KEYED TO THE LISTING, not a bare boolean. expo-router reuses this screen
+  // when /detail is opened again with a different id, so a plain flag stayed
+  // true and showed "Requested" on a property nobody had requested. Caught on
+  // the phone, not in review.
   const [requesting, setRequesting] = useState(false);
-  const [requested, setRequested] = useState(false);
+  const [requestedId, setRequestedId] = useState<string | null>(null);
+  const requested = Boolean(listing) && requestedId === listing.id;
 
   const requestNumber = async () => {
     if (requesting || requested || !listing) return;
@@ -136,7 +141,7 @@ export default function Detail() {
     setRequesting(true);
     try {
       await addLead(listing.id, seller.id, "contact");
-      setRequested(true);
+      setRequestedId(listing.id);
       showToast("Request sent. The seller has been notified.");
     } catch {
       showToast("Could not send the request. Check your connection and try again.");
